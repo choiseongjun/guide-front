@@ -4,6 +4,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Image from "next/image";
 import { HiPlus } from "react-icons/hi";
+import Link from "next/link";
 
 const trips = [
   {
@@ -163,7 +164,11 @@ export default function Home() {
 
       <div className="theme-grid">
         {themes.map((theme, index) => (
-          <div key={index} className="theme-item">
+          <Link
+            key={index}
+            href={`/theme/${theme.id}`}
+            className="theme-item cursor-pointer hover:opacity-80 transition-opacity"
+          >
             <div className="theme-image">
               <Image
                 src={theme.image}
@@ -175,7 +180,7 @@ export default function Home() {
               />
             </div>
             <div className="theme-title">{theme.title}</div>
-          </div>
+          </Link>
         ))}
       </div>
 
