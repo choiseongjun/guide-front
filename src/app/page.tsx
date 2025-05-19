@@ -3,6 +3,7 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Image from "next/image";
+import { HiPlus } from "react-icons/hi";
 
 export default function Home() {
   const settings = {
@@ -94,8 +95,8 @@ export default function Home() {
     <main className="main-page">
       <div className="banner-slider">
         <Slider {...settings}>
-          {banners.map((banner) => (
-            <div key={banner.id} className="banner-item">
+          {banners.map((banner, index) => (
+            <div key={index} className="banner-item">
               <div className="banner-image">
                 <Image
                   src={banner.image}
@@ -105,10 +106,10 @@ export default function Home() {
                   style={{ objectFit: "cover" }}
                   unoptimized
                 />
-              </div>
-              <div className="banner-content">
-                <h2>{banner.title}</h2>
-                <p>{banner.description}</p>
+                <div className="banner-content">
+                  <h2>{banner.title}</h2>
+                  <p>{banner.description}</p>
+                </div>
               </div>
             </div>
           ))}
@@ -116,8 +117,8 @@ export default function Home() {
       </div>
 
       <div className="theme-grid">
-        {themes.map((theme) => (
-          <div key={theme.id} className="theme-item">
+        {themes.map((theme, index) => (
+          <div key={index} className="theme-item">
             <div className="theme-image">
               <Image
                 src={theme.image}
@@ -128,10 +129,14 @@ export default function Home() {
                 unoptimized
               />
             </div>
-            <span className="theme-title">{theme.title}</span>
+            <div className="theme-title">{theme.title}</div>
           </div>
         ))}
       </div>
+
+      <button className="floating-button" aria-label="새 여행 만들기">
+        <HiPlus />
+      </button>
     </main>
   );
 }
