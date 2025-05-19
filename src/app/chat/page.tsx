@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
-import { HiOutlineMagnifyingGlass, HiOutlineUserGroup, HiOutlineUser } from "react-icons/hi2";
+import { HiOutlineMagnifyingGlass, HiOutlineUserGroup, HiOutlineUser, HiOutlineArrowLeft } from "react-icons/hi2";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 // 임시 채팅 데이터
 const groupChats = [
@@ -146,7 +147,8 @@ const directChats = [
   }
 ];
 
-export default function ChatPage() {
+export default function ChatListPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"group" | "direct">("group");
 
@@ -163,66 +165,83 @@ export default function ChatPage() {
   const totalUnreadDirectChats = directChats.reduce((sum, chat) => sum + chat.unreadCount, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      {/* 검색바 */}
-      <div className="sticky top-0 bg-white border-b border-gray-200 z-10">
+    <div className="min-h-screen bg-gray-50">
+      {/* 헤더 */}
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
         <div className="max-w-md mx-auto px-4 py-3">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="채팅방 검색"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <div className="flex items-center">
+            <button
+              onClick={() => router.back()}
+              className="p-2 hover:bg-gray-100 rounded-full"
+            >
+              <HiOutlineArrowLeft className="w-6 h-6" />
+            </button>
+            <h1 className="text-xl font-bold ml-4">채팅</h1>
           </div>
         </div>
+      </header>
 
-        {/* 탭 메뉴 */}
-        <div className="flex border-b">
-          <button
-            className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 ${
-              activeTab === "group"
-                ? "text-blue-500 border-b-2 border-blue-500"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            onClick={() => setActiveTab("group")}
-          >
-            <HiOutlineUserGroup className="w-5 h-5" />
-            <span>그룹 채팅</span>
-            {filteredGroupChats.length > 0 && (
-              <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">
-                {filteredGroupChats.length}
-              </span>
-            )}
-            {totalUnreadGroupChats > 0 && (
-              <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                {totalUnreadGroupChats}
-              </span>
-            )}
-          </button>
-          <button
-            className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 ${
-              activeTab === "direct"
-                ? "text-blue-500 border-b-2 border-blue-500"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            onClick={() => setActiveTab("direct")}
-          >
-            <HiOutlineUser className="w-5 h-5" />
-            <span>1:1 채팅</span>
-            {filteredDirectChats.length > 0 && (
-              <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">
-                {filteredDirectChats.length}
-              </span>
-            )}
-            {totalUnreadDirectChats > 0 && (
-              <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                {totalUnreadDirectChats}
-              </span>
-            )}
-          </button>
+      {/* 검색바 */}
+      <div className="max-w-md mx-auto px-4 py-3">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="채팅 검색"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-10 pl-10 pr-4 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none text-sm"
+          />
+          <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        </div>
+      </div>
+
+      {/* 탭 메뉴 */}
+      <div className="sticky top-0 bg-white border-b border-gray-200 z-10">
+        <div className="max-w-md mx-auto px-4 py-3">
+          <div className="flex border-b">
+            <button
+              className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 ${
+                activeTab === "group"
+                  ? "text-blue-500 border-b-2 border-blue-500"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+              onClick={() => setActiveTab("group")}
+            >
+              <HiOutlineUserGroup className="w-5 h-5" />
+              <span>그룹 채팅</span>
+              {filteredGroupChats.length > 0 && (
+                <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">
+                  {filteredGroupChats.length}
+                </span>
+              )}
+              {totalUnreadGroupChats > 0 && (
+                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                  {totalUnreadGroupChats}
+                </span>
+              )}
+            </button>
+            <button
+              className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 ${
+                activeTab === "direct"
+                  ? "text-blue-500 border-b-2 border-blue-500"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+              onClick={() => setActiveTab("direct")}
+            >
+              <HiOutlineUser className="w-5 h-5" />
+              <span>1:1 채팅</span>
+              {filteredDirectChats.length > 0 && (
+                <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">
+                  {filteredDirectChats.length}
+                </span>
+              )}
+              {totalUnreadDirectChats > 0 && (
+                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                  {totalUnreadDirectChats}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -238,6 +257,7 @@ export default function ChatPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => router.push(`/chat/${chat.id}`)}
                 >
                   <div className="flex items-start gap-3">
                     <div className="relative">
@@ -290,6 +310,7 @@ export default function ChatPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => router.push(`/chat/${chat.id}`)}
                 >
                   <div className="flex items-start gap-3">
                     <div className="relative">
