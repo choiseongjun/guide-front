@@ -100,7 +100,7 @@ img {
 
 /* 중앙 컨테이너 */
 .main-container {
-  width: 370px;
+  width: min(max(360px, 100%), 400px);
   background: white;
   min-height: 100vh;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
