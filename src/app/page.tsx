@@ -5,6 +5,36 @@ import "slick-carousel/slick/slick-theme.css";
 import Image from "next/image";
 import { HiPlus } from "react-icons/hi";
 
+const trips = [
+  {
+    id: 1,
+    title: "제주도 3박 4일 힐링 여행",
+    image:
+      "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&auto=format&fit=crop&q=60",
+    members: 4,
+    price: 450000,
+    date: "2024.04.15 - 2024.04.18",
+  },
+  {
+    id: 2,
+    title: "부산 해운대 바다 여행",
+    image:
+      "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&auto=format&fit=crop&q=60",
+    members: 2,
+    price: 280000,
+    date: "2024.04.20 - 2024.04.22",
+  },
+  {
+    id: 3,
+    title: "강원도 설악산 등반",
+    image:
+      "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&auto=format&fit=crop&q=60",
+    members: 6,
+    price: 320000,
+    date: "2024.04.25 - 2024.04.27",
+  },
+];
+
 export default function Home() {
   const settings = {
     dots: true,
@@ -132,6 +162,53 @@ export default function Home() {
             <div className="theme-title">{theme.title}</div>
           </div>
         ))}
+      </div>
+
+      <div className="px-4 mt-6">
+        <h2 className="text-lg font-semibold mb-4">추천 여행</h2>
+        <div className="space-y-4">
+          {trips.map((trip) => (
+            <div
+              key={trip.id}
+              className="flex gap-3 bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="relative w-24 h-24 flex-shrink-0">
+                <Image
+                  src={trip.image}
+                  alt={trip.title}
+                  fill
+                  className="rounded-lg object-cover"
+                  unoptimized
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-medium text-gray-900 truncate">
+                  {trip.title}
+                </h3>
+                <div className="mt-1 flex items-center text-xs text-gray-500">
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                  </svg>
+                  {trip.members}명
+                </div>
+                <div className="mt-1 text-xs text-gray-500">{trip.date}</div>
+                <div className="mt-1 text-sm font-semibold text-blue-600">
+                  {trip.price.toLocaleString()}원
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <button className="floating-button" aria-label="새 여행 만들기">
