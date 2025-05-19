@@ -3,20 +3,13 @@ import { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
-  HiOutlineUser,
   HiOutlineCog6Tooth,
   HiOutlineBell,
   HiOutlineGlobeAlt,
   HiOutlineShieldCheck,
   HiOutlinePencil,
-  HiOutlineMapPin,
-  HiOutlineLanguage,
-  HiOutlineUserGroup,
   HiOutlineStar,
-  HiOutlineCollection,
   HiOutlineChevronRight,
-  HiOutlineLockClosed,
-  HiOutlineFlag,
   HiOutlineHeart,
 } from "react-icons/hi2";
 
