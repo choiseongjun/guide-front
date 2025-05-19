@@ -58,6 +58,9 @@ export default function MainLayout({
     setTotalUnreadChats(totalUnread);
   }, [pathname]);
 
+  // 현재 경로가 여행 관련 페이지인지 확인
+  const isTravelPage = pathname === "/" || pathname.startsWith("/theme/");
+
   return (
     <html lang="en">
       <body>
@@ -127,7 +130,7 @@ export default function MainLayout({
                 <div className="flex items-center justify-around h-16">
                   <Link
                     href="/"
-                    className={`flex flex-col items-center flex-1 ${pathname === "/" ? "text-blue-500" : "text-gray-600"}`}
+                    className={`flex flex-col items-center flex-1 ${isTravelPage ? "text-blue-500" : "text-gray-600"}`}
                   >
                     <HiOutlineHome className="w-6 h-6" />
                     <span className="text-xs mt-1">여행</span>
