@@ -1,5 +1,6 @@
 import TripDetailClient from './TripDetailClient';
 
-export default function TripDetailPage({ params }: { params: { id: string } }) {
-  return <TripDetailClient params={params} />;
+export default async function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  return <TripDetailClient params={resolvedParams} />;
 } 
