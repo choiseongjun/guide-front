@@ -6,6 +6,7 @@ import Image from "next/image";
 import { HiPlus, HiOutlineCalendar, HiOutlineUserGroup, HiOutlineMap } from "react-icons/hi";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { HiPlus as HiPlusIcon } from "react-icons/hi2";
 
 const trips = [
   {
@@ -265,8 +266,11 @@ export default function Home() {
         </section>
       </div>
 
-      <button className="floating-button" aria-label="새 여행 만들기">
-        <HiPlus />
+      <button
+        onClick={() => router.push("/trip/create")}
+        className="floating-button"
+      >
+        <HiPlusIcon className="w-6 h-6" />
       </button>
     </main>
   );

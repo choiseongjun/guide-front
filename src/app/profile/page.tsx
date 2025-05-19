@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import {
   HiOutlineCog6Tooth,
   HiOutlineBell,
@@ -11,10 +12,12 @@ import {
   HiOutlineStar,
   HiOutlineChevronRight,
   HiOutlineHeart,
+  HiOutlineUser,
 } from "react-icons/hi2";
 
 // 임시 사용자 데이터
 const userData = {
+  isLoggedIn: true,
   profileImage: "https://i.pravatar.cc/150?img=1",
   nickname: "여행러",
   introduction: "혼자 여행 좋아하는 30대 직장인입니다!",
@@ -92,7 +95,18 @@ const settingsMenu = [
 ];
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [activeSection, setActiveSection] = useState("profile");
+  const [isLoggedIn, setIsLoggedIn] = useState(userData.isLoggedIn);
+
+  const handleLogin = () => {
+    router.push("/login");
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    // TODO: 로그아웃 로직 구현
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -126,7 +140,7 @@ export default function ProfilePage() {
           </div>
 
           {/* 통계 */}
-          <div className="flex justify-around mt-6 py-4 border-t border-b">
+          <div className="grid grid-cols-3 gap-4 mt-6">
             <div className="text-center">
               <div className="font-bold">{userData.followers}</div>
               <div className="text-sm text-gray-500">팔로워</div>
@@ -144,83 +158,87 @@ export default function ProfilePage() {
       </div>
 
       {/* 트립 레벨 */}
-      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">트립 레벨</h2>
-          <span className="text-sm text-gray-500">다음 레벨까지 3회 남음</span>
-        </div>
-        <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                Lv.3
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center text-xs font-bold">
-                +3
-              </div>
-            </div>
-            <div className="flex-1">
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-600">트립 마스터</span>
-                <span className="text-blue-600 font-medium">12/15</span>
-              </div>
-              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div className="w-4/5 h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full"></div>
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gray-50 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <HiOutlineStar className="w-4 h-4 text-yellow-400" />
-                <span className="text-sm font-medium">획득한 뱃지</span>
-              </div>
-              <div className="flex gap-1">
-                <span className="px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded-full">여행가</span>
-                <span className="px-2 py-1 bg-green-100 text-green-600 text-xs rounded-full">맛집탐험가</span>
-                <span className="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded-full">문화인</span>
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <HiOutlineHeart className="w-4 h-4 text-red-400" />
-                <span className="text-sm font-medium">특별 혜택</span>
-              </div>
-              <div className="text-xs text-gray-600">
-                <p>• 여행 상품 5% 할인</p>
-                <p>• 프리미엄 가이드 서비스</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 컬렉션 */}
-      <div className="mt-4 bg-white p-4">
-        <div className="max-w-md mx-auto">
+      {isLoggedIn && (
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-medium">나의 여행 컬렉션</h2>
-            <button className="text-blue-500 text-sm">더보기</button>
+            <h2 className="text-lg font-semibold">트립 레벨</h2>
+            <span className="text-sm text-gray-500">다음 레벨까지 3회 남음</span>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            {userData.collections.map((collection) => (
-              <div key={collection.id} className="relative rounded-lg overflow-hidden">
-                <Image
-                  src={collection.image}
-                  alt={collection.title}
-                  width={200}
-                  height={120}
-                  className="w-full h-24 object-cover"
-                />
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                  <h3 className="text-white text-sm font-medium">{collection.title}</h3>
-                  <p className="text-white/80 text-xs">{collection.count}개의 여행</p>
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                  Lv.3
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center text-xs font-bold">
+                  +3
                 </div>
               </div>
-            ))}
+              <div className="flex-1">
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-600">트립 마스터</span>
+                  <span className="text-blue-600 font-medium">12/15</span>
+                </div>
+                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="w-4/5 h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full"></div>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <HiOutlineStar className="w-4 h-4 text-yellow-400" />
+                  <span className="text-sm font-medium">획득한 뱃지</span>
+                </div>
+                <div className="flex gap-1">
+                  <span className="px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded-full">여행가</span>
+                  <span className="px-2 py-1 bg-green-100 text-green-600 text-xs rounded-full">맛집탐험가</span>
+                  <span className="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded-full">문화인</span>
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <HiOutlineHeart className="w-4 h-4 text-red-400" />
+                  <span className="text-sm font-medium">특별 혜택</span>
+                </div>
+                <div className="text-xs text-gray-600">
+                  <p>• 여행 상품 5% 할인</p>
+                  <p>• 프리미엄 가이드 서비스</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* 컬렉션 */}
+      {isLoggedIn && (
+        <div className="bg-white">
+          <div className="max-w-md mx-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-medium">나의 여행 컬렉션</h2>
+              <button className="text-blue-500 text-sm">더보기</button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {userData.collections.map((collection) => (
+                <div key={collection.id} className="relative rounded-lg overflow-hidden">
+                  <Image
+                    src={collection.image}
+                    alt={collection.title}
+                    width={200}
+                    height={120}
+                    className="w-full h-24 object-cover"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                    <h3 className="text-white text-sm font-medium">{collection.title}</h3>
+                    <p className="text-white/80 text-xs">{collection.count}개의 여행</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 설정 메뉴 */}
       <div className="mt-4 bg-white">
@@ -240,6 +258,20 @@ export default function ProfilePage() {
               </button>
             </div>
           ))}
+          {/* 로그인/로그아웃 버튼 */}
+          <div className="border-b last:border-b-0">
+            <button
+              className="w-full px-4 py-4 flex items-center gap-3 hover:bg-gray-50 transition-colors"
+              onClick={isLoggedIn ? handleLogout : handleLogin}
+            >
+              <HiOutlineUser className="w-6 h-6 text-gray-500" />
+              <div className="flex-1 text-left">
+                <h3 className="font-medium">{isLoggedIn ? "로그아웃" : "로그인"}</h3>
+                <p className="text-sm text-gray-500">{isLoggedIn ? "계정에서 로그아웃합니다" : "계정에 로그인합니다"}</p>
+              </div>
+              <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
