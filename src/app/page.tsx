@@ -146,9 +146,9 @@ export default function Home() {
     },
     {
       id: 6,
-      title: "지식 & 교육",
+      title: "캠핑",
       image:
-        "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&auto=format&fit=crop&q=60",
+        "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=400&auto=format&fit=crop&q=60",
     },
     {
       id: 7,
