@@ -356,39 +356,72 @@ export default function CreateTripClient() {
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
+    const files = e.target.files;
+    if (!files) return;
+
+    const newImages: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImages([...images, reader.result as string]);
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          newImages.push(e.target.result as string);
+          if (newImages.length === files.length) {
+            setImages((prev) => [...prev, ...newImages]);
+          }
+        }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleEditorImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const imageUrl = reader.result as string;
-        // 현재 스크롤 위치 저장
-        const scrollPosition = window.scrollY;
+  const handleEditorImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (!e.target.files || !e.target.files.length || !editor) return;
 
+    const files = Array.from(e.target.files);
+    console.log("Selected files:", files.length);
+
+    for (const file of files) {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        const imageUrl = reader.result as string;
+
+        // 이미지 삽입
         editor
-          ?.chain()
+          .chain()
           .focus()
-          .setImage({ src: imageUrl })
-          .insertContent("\n")
+          .setImage({
+            src: imageUrl,
+            alt: "Uploaded image",
+            title: "Uploaded image",
+          })
           .run();
 
-        // 스크롤 위치 복원
-        window.scrollTo(0, scrollPosition);
-
-        // input 초기화
-        e.target.value = "";
+        // 이미지 삽입 후 약간의 지연을 두고 커서 이동
+        setTimeout(() => {
+          // 현재 선택 해제
+          editor.commands.blur();
+          // 커서를 문서 끝으로 이동
+          editor.commands.setTextSelection(
+            editor.state.selection.$anchor.pos + 1
+          );
+          // 줄바꿈 추가
+          editor.commands.insertContent("\n\n\n");
+        }, 100);
       };
+
       reader.readAsDataURL(file);
+
+      // 각 이미지 처리 사이에 지연 추가
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+
+    // 모든 이미지 처리 완료 후 input 초기화
+    if (e.target) {
+      e.target.value = "";
     }
   };
 

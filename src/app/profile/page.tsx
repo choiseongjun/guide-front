@@ -18,6 +18,7 @@ import {
   HiOutlineMapPin,
   HiOutlineFire,
 } from "react-icons/hi2";
+import axios from "axios";
 
 // 임시 사용자 데이터
 const userData = {
@@ -107,9 +108,31 @@ export default function ProfilePage() {
     router.push("/login");
   };
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    // TODO: 로그아웃 로직 구현
+  const handleLogout = async () => {
+    try {
+      const refreshToken = localStorage.getItem('rt');
+      
+      // 카카오 로그아웃 API 호출
+      await axios.post('http://localhost:8080/api/auth/kakao/logout', null, {
+        headers: {
+          'Refresh-Token': refreshToken
+        }
+      });
+
+      // 로컬 스토리지 정리
+      localStorage.removeItem('at');
+      localStorage.removeItem('rt');
+      localStorage.removeItem('user');
+      
+      // 로그인 상태 변경
+      setIsLoggedIn(false);
+      
+      // 로그인 페이지로 리다이렉션
+      router.push('/login');
+    } catch (error) {
+      console.error('로그아웃 에러:', error);
+      alert('로그아웃 중 오류가 발생했습니다.');
+    }
   };
 
   const calculateTripLevel = (recommendations: number) => {
