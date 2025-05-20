@@ -1,16 +1,32 @@
 "use client";
 import Image from "next/image";
-import { HiOutlineHeart, HiOutlineChatBubbleLeftRight, HiOutlineShare } from "react-icons/hi2";
+import {
+  HiOutlineHeart,
+  HiOutlineChatBubbleLeftRight,
+  HiOutlineShare,
+  HiPlus,
+} from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+
+const categories = [
+  { id: "review", name: "여행 후기" },
+  { id: "food", name: "맛집 추천" },
+  { id: "accommodation", name: "숙소 추천" },
+  { id: "tips", name: "여행 팁" },
+  { id: "companion", name: "동행 구함" },
+  { id: "question", name: "여행 질문" },
+];
 
 const posts = [
   {
     id: 1,
     author: {
       name: "여행러",
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=60",
+      avatar:
+        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=60",
     },
     content: "제주도 여행에서 만난 아름다운 풍경들 🌊 #제주여행 #힐링여행",
     images: [
@@ -22,12 +38,14 @@ const posts = [
     shares: 8,
     location: "제주도 서귀포시",
     timeAgo: "2시간 전",
+    category: "review",
   },
   {
     id: 2,
     author: {
       name: "여행작가",
-      avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=400&auto=format&fit=crop&q=60",
+      avatar:
+        "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=400&auto=format&fit=crop&q=60",
     },
     content: `부산 해운대에서의 일몰이 너무 아름다웠어요 🌅 
 
@@ -51,12 +69,14 @@ const posts = [
     shares: 15,
     location: "부산 해운대구",
     timeAgo: "5시간 전",
+    category: "food",
   },
   {
     id: 3,
     author: {
       name: "여행가이드",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&auto=format&fit=crop&q=60",
+      avatar:
+        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&auto=format&fit=crop&q=60",
     },
     content: "강원도 설악산 등반 후기 ⛰️ #설악산 #등산",
     images: [
@@ -69,17 +89,19 @@ const posts = [
     shares: 32,
     location: "강원도 속초시",
     timeAgo: "어제",
+    category: "tips",
   },
 ];
 
 export default function SocialPage() {
   const router = useRouter();
   const [expandedPosts, setExpandedPosts] = useState<number[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const toggleExpand = (postId: number) => {
-    setExpandedPosts(prev => 
-      prev.includes(postId) 
-        ? prev.filter(id => id !== postId)
+    setExpandedPosts((prev) =>
+      prev.includes(postId)
+        ? prev.filter((id) => id !== postId)
         : [...prev, postId]
     );
   };
@@ -88,115 +110,163 @@ export default function SocialPage() {
     router.push(`/social/${postId}`);
   };
 
+  const toggleCategory = (categoryId: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(categoryId)
+        ? prev.filter((id) => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
+  const filteredPosts =
+    selectedCategories.length === 0
+      ? posts
+      : posts.filter((post) => selectedCategories.includes(post.category));
+
   return (
-    <motion.main 
-      className="max-w-md mx-auto pb-20"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <AnimatePresence>
-        {posts.map((post) => (
-          <motion.article 
-            key={post.id}
-            className="bg-white mb-4 rounded-lg shadow-sm overflow-hidden"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-            onClick={() => handlePostClick(post.id)}
-            whileTap={{ scale: 0.98 }}
-          >
-            {/* 작성자 정보 */}
-            <div className="p-4 flex items-center gap-3">
-              <div className="relative w-10 h-10 rounded-full overflow-hidden">
-                <Image
-                  src={post.author.avatar}
-                  alt={post.author.name}
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-sm">{post.author.name}</h3>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <span>{post.location}</span>
-                  <span>•</span>
-                  <span>{post.timeAgo}</span>
-                </div>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* 카테고리 필터 */}
+      <div className="sticky top-0 bg-white border-b border-gray-200 z-10">
+        <div className="max-w-md mx-auto px-4 py-3">
+          <div className="flex flex-wrap gap-2">
+            {categories.map((category) => (
+              <motion.button
+                key={category.id}
+                onClick={() => toggleCategory(category.id)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  selectedCategories.includes(category.id)
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+                whileTap={{ scale: 0.95 }}
+              >
+                {category.name}
+              </motion.button>
+            ))}
+          </div>
+        </div>
+      </div>
 
-            {/* 게시글 내용 */}
-            <div className="px-4 pb-3">
-              <p className={`text-sm text-gray-800 whitespace-pre-line ${
-                !expandedPosts.includes(post.id) ? 'line-clamp-3' : ''
-              }`}>
-                {post.content}
-              </p>
-              {post.content.split('\n').length > 3 && (
-                <motion.button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleExpand(post.id);
-                  }}
-                  className="text-sm text-blue-500 mt-1"
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {expandedPosts.includes(post.id) ? '접기' : '더보기'}
-                </motion.button>
-              )}
-            </div>
-
-            {/* 이미지 그리드 */}
-            <div className="grid grid-cols-2 gap-1">
-              {post.images.map((image, index) => (
-                <div 
-                  key={index} 
-                  className="relative aspect-square"
-                >
+      <motion.main
+        className="max-w-md mx-auto pb-20"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <AnimatePresence>
+          {filteredPosts.map((post) => (
+            <motion.article
+              key={post.id}
+              className="bg-white mb-4 rounded-lg shadow-sm overflow-hidden"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => handlePostClick(post.id)}
+              whileTap={{ scale: 0.98 }}
+            >
+              {/* 작성자 정보 */}
+              <div className="p-4 flex items-center gap-3">
+                <div className="relative w-10 h-10 rounded-full overflow-hidden">
                   <Image
-                    src={image}
-                    alt={`Post image ${index + 1}`}
+                    src={post.author.avatar}
+                    alt={post.author.name}
                     fill
                     className="object-cover"
                     unoptimized
                   />
                 </div>
-              ))}
-            </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-sm">{post.author.name}</h3>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <span>{post.location}</span>
+                    <span>•</span>
+                    <span>{post.timeAgo}</span>
+                    <span>•</span>
+                    <span className="text-blue-500">
+                      {categories.find((c) => c.id === post.category)?.name}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-            {/* 액션 버튼 */}
-            <div className="p-4 flex items-center justify-between border-t border-gray-100">
-              <motion.button 
-                className="flex items-center gap-1 text-gray-500 hover:text-blue-500 transition-colors"
-                whileTap={{ scale: 0.95 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <HiOutlineHeart className="w-5 h-5" />
-                <span className="text-sm">{post.likes}</span>
-              </motion.button>
-              <motion.button 
-                className="flex items-center gap-1 text-gray-500 hover:text-blue-500 transition-colors"
-                whileTap={{ scale: 0.95 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <HiOutlineChatBubbleLeftRight className="w-5 h-5" />
-                <span className="text-sm">{post.comments}</span>
-              </motion.button>
-              <motion.button 
-                className="flex items-center gap-1 text-gray-500 hover:text-blue-500 transition-colors"
-                whileTap={{ scale: 0.95 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <HiOutlineShare className="w-5 h-5" />
-                <span className="text-sm">{post.shares}</span>
-              </motion.button>
-            </div>
-          </motion.article>
-        ))}
-      </AnimatePresence>
-    </motion.main>
+              {/* 게시글 내용 */}
+              <div className="px-4 pb-3">
+                <p
+                  className={`text-sm text-gray-800 whitespace-pre-line ${
+                    !expandedPosts.includes(post.id) ? "line-clamp-3" : ""
+                  }`}
+                >
+                  {post.content}
+                </p>
+                {post.content.split("\n").length > 3 && (
+                  <motion.button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleExpand(post.id);
+                    }}
+                    className="text-sm text-blue-500 mt-1"
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {expandedPosts.includes(post.id) ? "접기" : "더보기"}
+                  </motion.button>
+                )}
+              </div>
+
+              {/* 이미지 그리드 */}
+              <div className="grid grid-cols-2 gap-1">
+                {post.images.map((image, index) => (
+                  <div key={index} className="relative aspect-square">
+                    <Image
+                      src={image}
+                      alt={`Post image ${index + 1}`}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* 액션 버튼 */}
+              <div className="p-4 flex items-center justify-between border-t border-gray-100">
+                <motion.button
+                  className="flex items-center gap-1 text-gray-500 hover:text-blue-500 transition-colors"
+                  whileTap={{ scale: 0.95 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <HiOutlineHeart className="w-5 h-5" />
+                  <span className="text-sm">{post.likes}</span>
+                </motion.button>
+                <motion.button
+                  className="flex items-center gap-1 text-gray-500 hover:text-blue-500 transition-colors"
+                  whileTap={{ scale: 0.95 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <HiOutlineChatBubbleLeftRight className="w-5 h-5" />
+                  <span className="text-sm">{post.comments}</span>
+                </motion.button>
+                <motion.button
+                  className="flex items-center gap-1 text-gray-500 hover:text-blue-500 transition-colors"
+                  whileTap={{ scale: 0.95 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <HiOutlineShare className="w-5 h-5" />
+                  <span className="text-sm">{post.shares}</span>
+                </motion.button>
+              </div>
+            </motion.article>
+          ))}
+        </AnimatePresence>
+      </motion.main>
+
+      {/* 플로팅 버튼 */}
+      <button
+        onClick={() => router.push("/social/create")}
+        className="floating-button"
+      >
+        <HiPlus className="w-6 h-6" />
+      </button>
+    </div>
   );
-} 
+}
