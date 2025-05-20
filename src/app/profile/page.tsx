@@ -16,6 +16,7 @@ import {
   HiOutlineCalendar,
   HiOutlineBookmark,
   HiOutlineMapPin,
+  HiOutlineFire,
 } from "react-icons/hi2";
 
 // 임시 사용자 데이터
@@ -111,6 +112,29 @@ export default function ProfilePage() {
     // TODO: 로그아웃 로직 구현
   };
 
+  const calculateTripLevel = (recommendations: number) => {
+    if (recommendations >= 101) return { level: 5, title: "마스터 여행러" };
+    if (recommendations >= 61) return { level: 4, title: "베테랑 여행러" };
+    if (recommendations >= 31) return { level: 3, title: "경험 많은 여행러" };
+    if (recommendations >= 11) return { level: 2, title: "성장하는 여행러" };
+    return { level: 1, title: "초보 여행러" };
+  };
+
+  const getLevelColor = (level: number) => {
+    switch (level) {
+      case 5:
+        return "text-purple-600";
+      case 4:
+        return "text-blue-600";
+      case 3:
+        return "text-green-600";
+      case 2:
+        return "text-yellow-600";
+      default:
+        return "text-gray-600";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* 프로필 섹션 */}
@@ -125,21 +149,39 @@ export default function ProfilePage() {
                 height={80}
                 className="rounded-full"
               />
-              <button className="absolute bottom-0 right-0 bg-blue-500 text-white p-1 rounded-full">
-                <HiOutlinePencil className="w-4 h-4" />
-              </button>
             </div>
             <div className="flex-1">
-              <h1 className="text-xl font-bold">{userData.nickname}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold">{userData.nickname}</h1>
+                <div className="flex items-center space-x-1 bg-gradient-to-r from-orange-400 to-red-500 text-white px-2 py-1 rounded-full text-sm">
+                  <HiOutlineFire className="w-4 h-4" />
+                  <span>36.5°C</span>
+                </div>
+              </div>
               <p className="text-gray-600 text-sm mt-1">
                 {userData.introduction}
               </p>
-              <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
-                <span>{userData.gender}</span>
-                <span>•</span>
-                <span>{userData.age}세</span>
-                <span>•</span>
-                <span>{userData.nationality}</span>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
+                <div className="flex items-center gap-1 text-sm text-gray-500">
+                  <HiOutlineUser className="w-4 h-4" />
+                  <span>{userData.gender}</span>
+                </div>
+                <div className="flex items-center gap-1 text-sm text-gray-500">
+                  <HiOutlineCalendar className="w-4 h-4" />
+                  <span>{userData.age}세</span>
+                </div>
+                <div className="flex items-center gap-1 text-sm text-gray-500">
+                  <HiOutlineMapPin className="w-4 h-4" />
+                  <span>{userData.nationality}</span>
+                </div>
+                <div
+                  className={`flex items-center gap-1 text-sm ${getLevelColor(
+                    calculateTripLevel(userData.tripLevel).level
+                  )}`}
+                >
+                  <HiOutlineStar className="w-4 h-4" />
+                  <span>{calculateTripLevel(userData.tripLevel).title}</span>
+                </div>
               </div>
             </div>
           </div>
