@@ -489,13 +489,16 @@ export default function CreateTripClient() {
                 </button>
                 <div className="w-px h-6 bg-gray-300 mx-0.5" />
                 <button
-                  onClick={() => {
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
                     const input = document.createElement("input");
                     input.type = "file";
                     input.accept = "image/*";
+                    input.style.display = "none";
+                    document.body.appendChild(input);
                     input.onchange = (e) => {
                       handleEditorImageUpload(e as any);
-                      // input 제거
                       input.remove();
                     };
                     input.click();
