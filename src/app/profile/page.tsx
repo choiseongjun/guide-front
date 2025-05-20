@@ -35,15 +35,15 @@ const userData = {
       id: 1,
       title: "2024 봄 유럽 여행",
       image: "https://picsum.photos/seed/europe/200/120",
-      count: 12
+      count: 12,
     },
     {
       id: 2,
       title: "혼자 떠난 제주 3박 4일",
       image: "https://picsum.photos/seed/jeju/200/120",
-      count: 8
-    }
-  ]
+      count: 8,
+    },
+  ],
 };
 
 // 설정 메뉴 데이터
@@ -56,8 +56,8 @@ const settingsMenu = [
     items: [
       { id: "email", title: "이메일 변경" },
       { id: "password", title: "비밀번호 변경" },
-      { id: "phone", title: "전화번호 변경" }
-    ]
+      { id: "phone", title: "전화번호 변경" },
+    ],
   },
   {
     id: "notifications",
@@ -67,8 +67,8 @@ const settingsMenu = [
     items: [
       { id: "push", title: "푸시 알림" },
       { id: "email", title: "이메일 알림" },
-      { id: "marketing", title: "마케팅 알림" }
-    ]
+      { id: "marketing", title: "마케팅 알림" },
+    ],
   },
   {
     id: "privacy",
@@ -78,8 +78,8 @@ const settingsMenu = [
     items: [
       { id: "profile", title: "프로필 공개" },
       { id: "reviews", title: "리뷰 공개" },
-      { id: "collections", title: "컬렉션 공개" }
-    ]
+      { id: "collections", title: "컬렉션 공개" },
+    ],
   },
   {
     id: "safety",
@@ -89,9 +89,9 @@ const settingsMenu = [
     items: [
       { id: "blocked", title: "차단한 사용자" },
       { id: "report", title: "신고 내역" },
-      { id: "privacy", title: "개인정보 보호" }
-    ]
-  }
+      { id: "privacy", title: "개인정보 보호" },
+    ],
+  },
 ];
 
 export default function ProfilePage() {
@@ -128,7 +128,9 @@ export default function ProfilePage() {
             </div>
             <div className="flex-1">
               <h1 className="text-xl font-bold">{userData.nickname}</h1>
-              <p className="text-gray-600 text-sm mt-1">{userData.introduction}</p>
+              <p className="text-gray-600 text-sm mt-1">
+                {userData.introduction}
+              </p>
               <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
                 <span>{userData.gender}</span>
                 <span>•</span>
@@ -162,7 +164,9 @@ export default function ProfilePage() {
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">트립 레벨</h2>
-            <span className="text-sm text-gray-500">다음 레벨까지 3회 남음</span>
+            <span className="text-sm text-gray-500">
+              다음 레벨까지 3회 남음
+            </span>
           </div>
           <div className="space-y-4">
             <div className="flex items-center gap-4">
@@ -191,9 +195,15 @@ export default function ProfilePage() {
                   <span className="text-sm font-medium">획득한 뱃지</span>
                 </div>
                 <div className="flex gap-1">
-                  <span className="px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded-full">여행가</span>
-                  <span className="px-2 py-1 bg-green-100 text-green-600 text-xs rounded-full">맛집탐험가</span>
-                  <span className="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded-full">문화인</span>
+                  <span className="px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded-full">
+                    여행가
+                  </span>
+                  <span className="px-2 py-1 bg-green-100 text-green-600 text-xs rounded-full">
+                    맛집탐험가
+                  </span>
+                  <span className="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded-full">
+                    문화인
+                  </span>
                 </div>
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
@@ -221,7 +231,10 @@ export default function ProfilePage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               {userData.collections.map((collection) => (
-                <div key={collection.id} className="relative rounded-lg overflow-hidden">
+                <div
+                  key={collection.id}
+                  className="relative rounded-lg overflow-hidden"
+                >
                   <Image
                     src={collection.image}
                     alt={collection.title}
@@ -230,8 +243,12 @@ export default function ProfilePage() {
                     className="w-full h-24 object-cover"
                   />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                    <h3 className="text-white text-sm font-medium">{collection.title}</h3>
-                    <p className="text-white/80 text-xs">{collection.count}개의 여행</p>
+                    <h3 className="text-white text-sm font-medium">
+                      {collection.title}
+                    </h3>
+                    <p className="text-white/80 text-xs">
+                      {collection.count}개의 여행
+                    </p>
                   </div>
                 </div>
               ))}
@@ -247,15 +264,33 @@ export default function ProfilePage() {
             <div key={section.id} className="border-b last:border-b-0">
               <button
                 className="w-full px-4 py-4 flex items-center gap-3 hover:bg-gray-50 transition-colors"
-                onClick={() => setActiveSection(section.id)}
+                onClick={() => {
+                  if (section.id === "account") {
+                    router.push("/profile/account");
+                  } else {
+                    setActiveSection(section.id);
+                  }
+                }}
               >
-                <section.icon className="w-6 h-6 text-gray-500" />
+                <section.icon className="w-6 h-6 text-gray-600" />
                 <div className="flex-1 text-left">
                   <h3 className="font-medium">{section.title}</h3>
                   <p className="text-sm text-gray-500">{section.description}</p>
                 </div>
                 <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
               </button>
+              {activeSection === section.id && (
+                <div className="bg-gray-50 px-4 py-2">
+                  {section.items.map((item) => (
+                    <button
+                      key={item.id}
+                      className="w-full py-2 text-left text-sm text-gray-600 hover:text-blue-500"
+                    >
+                      {item.title}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
           {/* 로그인/로그아웃 버튼 */}
@@ -266,8 +301,14 @@ export default function ProfilePage() {
             >
               <HiOutlineUser className="w-6 h-6 text-gray-500" />
               <div className="flex-1 text-left">
-                <h3 className="font-medium">{isLoggedIn ? "로그아웃" : "로그인"}</h3>
-                <p className="text-sm text-gray-500">{isLoggedIn ? "계정에서 로그아웃합니다" : "계정에 로그인합니다"}</p>
+                <h3 className="font-medium">
+                  {isLoggedIn ? "로그아웃" : "로그인"}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {isLoggedIn
+                    ? "계정에서 로그아웃합니다"
+                    : "계정에 로그인합니다"}
+                </p>
               </div>
               <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
             </button>
@@ -276,4 +317,4 @@ export default function ProfilePage() {
       </div>
     </div>
   );
-} 
+}

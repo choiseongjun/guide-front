@@ -48,9 +48,9 @@ export default function MainLayout({
 
   useEffect(() => {
     setIsNotificationsPage(pathname === "/notifications");
-    
+
     // 읽지 않은 알림 개수 계산
-    const unreadCount = notifications.filter(n => !n.read).length;
+    const unreadCount = notifications.filter((n) => !n.read).length;
     setUnreadNotifications(unreadCount);
 
     // 읽지 않은 채팅 메시지 총 개수 계산
@@ -68,7 +68,7 @@ export default function MainLayout({
           <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
             <div className="max-w-md mx-auto">
               <div className="flex items-center px-4 py-3 relative">
-                <motion.div 
+                <motion.div
                   className="flex items-center gap-2"
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -78,14 +78,14 @@ export default function MainLayout({
                     <HiOutlineGlobeAlt className="w-7 h-7 text-blue-500" />
                     <motion.div
                       className="absolute -top-1 -right-1"
-                      animate={{ 
+                      animate={{
                         rotate: [0, 15, -15, 0],
-                        scale: [1, 1.2, 1.2, 1]
+                        scale: [1, 1.2, 1.2, 1],
                       }}
-                      transition={{ 
+                      transition={{
                         duration: 2,
                         repeat: Infinity,
-                        repeatType: "reverse"
+                        repeatType: "reverse",
                       }}
                     >
                       <HiOutlineStar className="w-4 h-4 text-yellow-400" />
@@ -103,10 +103,16 @@ export default function MainLayout({
                 </div>
 
                 <div className="flex items-center gap-1 ml-auto">
-                  <Link href="/wishlist" className="text-gray-600 hover:text-blue-500 transition-colors">
+                  <Link
+                    href="/wishlist"
+                    className="text-gray-600 hover:text-blue-500 transition-colors"
+                  >
                     <HiOutlineHeart className="w-6 h-6" />
                   </Link>
-                  <Link href="/notifications" className="text-gray-600 hover:text-blue-500 transition-colors relative">
+                  <Link
+                    href="/notifications"
+                    className="text-gray-600 hover:text-blue-500 transition-colors relative"
+                  >
                     <HiOutlineBell className="w-6 h-6" />
                     {unreadNotifications > 0 && (
                       <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
@@ -114,7 +120,10 @@ export default function MainLayout({
                       </span>
                     )}
                   </Link>
-                  <Link href="/support" className="text-gray-600 hover:text-blue-500 transition-colors">
+                  <Link
+                    href="/support"
+                    className="text-gray-600 hover:text-blue-500 transition-colors"
+                  >
                     <BsHeadset className="w-6 h-6" />
                   </Link>
                 </div>
@@ -130,21 +139,27 @@ export default function MainLayout({
                 <div className="flex items-center justify-around h-16">
                   <Link
                     href="/"
-                    className={`flex flex-col items-center flex-1 ${isTravelPage ? "text-blue-500" : "text-gray-600"}`}
+                    className={`flex flex-col items-center flex-1 ${
+                      isTravelPage ? "text-blue-500" : "text-gray-600"
+                    }`}
                   >
                     <HiOutlineHome className="w-6 h-6" />
                     <span className="text-xs mt-1">여행</span>
                   </Link>
                   <Link
                     href="/social"
-                    className={`flex flex-col items-center flex-1 ${pathname === "/social" ? "text-blue-500" : "text-gray-600"}`}
+                    className={`flex flex-col items-center flex-1 ${
+                      pathname === "/social" ? "text-blue-500" : "text-gray-600"
+                    }`}
                   >
                     <HiOutlineUserGroup className="w-6 h-6" />
                     <span className="text-xs mt-1">소셜</span>
                   </Link>
                   <Link
                     href="/chat"
-                    className={`flex flex-col items-center flex-1 relative ${pathname === "/chat" ? "text-blue-500" : "text-gray-600"}`}
+                    className={`flex flex-col items-center flex-1 relative ${
+                      pathname === "/chat" ? "text-blue-500" : "text-gray-600"
+                    }`}
                   >
                     {totalUnreadChats > 0 && (
                       <span className="absolute -top-[0.5rem] -right-[-1.8rem] bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
@@ -156,7 +171,11 @@ export default function MainLayout({
                   </Link>
                   <Link
                     href="/profile"
-                    className={`flex flex-col items-center flex-1 ${pathname === "/profile" ? "text-blue-500" : "text-gray-600"}`}
+                    className={`flex flex-col items-center flex-1 ${
+                      pathname === "/profile"
+                        ? "text-blue-500"
+                        : "text-gray-600"
+                    }`}
                   >
                     <HiOutlineUser className="w-6 h-6" />
                     <span className="text-xs mt-1">마이</span>
