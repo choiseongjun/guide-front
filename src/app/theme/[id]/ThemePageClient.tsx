@@ -13,6 +13,7 @@ import {
   HiOutlineHeart,
   HiOutlineStar,
   HiOutlineArrowsUpDown,
+  HiXMark,
 } from "react-icons/hi2";
 import { useRouter, usePathname } from "next/navigation";
 import TripList from "@/components/TripList";
@@ -321,6 +322,10 @@ interface SelectedFilters {
   date: string;
   priceRange: string;
   participants: string;
+  location: string;
+  time: string;
+  rating: string;
+  wishlist: string;
 }
 
 type SortOption = "date" | "price" | "popular";
@@ -342,6 +347,10 @@ export default function ThemePageClient({
     date: "",
     priceRange: "",
     participants: "",
+    location: "",
+    time: "",
+    rating: "",
+    wishlist: "",
   });
 
   // 현재 경로가 여행 관련 페이지인지 확인
@@ -433,138 +442,245 @@ export default function ThemePageClient({
         </div>
       </header>
 
-      {/* 필터 패널 */}
+      {/* 필터 오버레이 */}
       {showFilters && (
-        <div className="fixed inset-0 bg-black/50 z-50">
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-4 max-h-[80vh] overflow-y-auto">
-            <div className="max-w-md mx-auto space-y-4">
+        <div className="fixed inset-0 bg-transparent bg-opacity-50 z-50">
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[50vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">필터</h2>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <HiXMark className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            <div className="p-3 space-y-4">
+              {/* 가격 범위 */}
+              <div>
+                <h3 className="font-medium mb-3">가격 범위</h3>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="number"
+                    value={selectedFilters.priceRange.split("-")[0] || ""}
+                    onChange={(e) =>
+                      setSelectedFilters((prev) => ({
+                        ...prev,
+                        priceRange: `${e.target.value}-${
+                          prev.priceRange.split("-")[1] || ""
+                        }`,
+                      }))
+                    }
+                    className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="최소"
+                  />
+                  <span>~</span>
+                  <input
+                    type="number"
+                    value={selectedFilters.priceRange.split("-")[1] || ""}
+                    onChange={(e) =>
+                      setSelectedFilters((prev) => ({
+                        ...prev,
+                        priceRange: `${prev.priceRange.split("-")[0] || ""}-${
+                          e.target.value
+                        }`,
+                      }))
+                    }
+                    className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="최대"
+                  />
+                </div>
+              </div>
+
               {/* 날짜 선택 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  날짜
-                </label>
-                <input
-                  type="date"
-                  value={selectedFilters.date}
-                  onChange={(e) =>
-                    setSelectedFilters((prev) => ({
-                      ...prev,
-                      date: e.target.value,
-                    }))
-                  }
-                  className="w-full p-2 border rounded-lg"
-                />
+                <h3 className="font-medium mb-3">여행 기간</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">
+                      시작일
+                    </label>
+                    <input
+                      type="date"
+                      value={selectedFilters.date.split("-")[0] || ""}
+                      onChange={(e) =>
+                        setSelectedFilters((prev) => ({
+                          ...prev,
+                          date: `${e.target.value}-${
+                            prev.date.split("-")[1] || ""
+                          }`,
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">
+                      종료일
+                    </label>
+                    <input
+                      type="date"
+                      value={selectedFilters.date.split("-")[1] || ""}
+                      onChange={(e) =>
+                        setSelectedFilters((prev) => ({
+                          ...prev,
+                          date: `${prev.date.split("-")[0] || ""}-${
+                            e.target.value
+                          }`,
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* 가격대 선택 */}
+              {/* 인원수 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  가격대
-                </label>
-                <select
-                  value={selectedFilters.priceRange}
-                  onChange={(e) =>
-                    setSelectedFilters((prev) => ({
-                      ...prev,
-                      priceRange: e.target.value,
-                    }))
-                  }
-                  className="w-full p-2 border rounded-lg"
+                <h3 className="font-medium mb-3">남은 인원수</h3>
+                <div className="flex flex-wrap gap-2">
+                  {["1-2명", "3-4명", "5-6명", "7-8명", "9명 이상"].map(
+                    (size) => (
+                      <button
+                        key={size}
+                        onClick={() =>
+                          setSelectedFilters((prev) => ({
+                            ...prev,
+                            participants: size,
+                          }))
+                        }
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          selectedFilters.participants === size
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {/* 지역 */}
+              <div>
+                <h3 className="font-medium mb-3">지역</h3>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "서울",
+                    "부산",
+                    "제주",
+                    "강원",
+                    "경기",
+                    "전라",
+                    "경상",
+                    "충청",
+                  ].map((region) => (
+                    <button
+                      key={region}
+                      onClick={() =>
+                        setSelectedFilters((prev) => ({
+                          ...prev,
+                          location: region,
+                        }))
+                      }
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                        selectedFilters.location === region
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                    >
+                      {region}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 시작 시간 */}
+              <div>
+                <h3 className="font-medium mb-3">시작 시간</h3>
+                <div className="flex flex-wrap gap-2">
+                  {["오전", "오후"].map((period) => (
+                    <button
+                      key={period}
+                      onClick={() =>
+                        setSelectedFilters((prev) => ({
+                          ...prev,
+                          time: period,
+                        }))
+                      }
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                        selectedFilters.time === period
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                    >
+                      {period}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 리뷰 평점 */}
+              <div>
+                <h3 className="font-medium mb-3">리뷰 평점</h3>
+                <div className="flex flex-wrap gap-2">
+                  {["4.5점 이상", "4.0점 이상", "3.5점 이상", "3.0점 이상"].map(
+                    (rating) => (
+                      <button
+                        key={rating}
+                        onClick={() =>
+                          setSelectedFilters((prev) => ({ ...prev, rating }))
+                        }
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          selectedFilters.rating === rating
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        }`}
+                      >
+                        {rating}
+                      </button>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {/* 찜 수 */}
+              <div>
+                <h3 className="font-medium mb-3">찜 수</h3>
+                <div className="flex flex-wrap gap-2">
+                  {["100개 이상", "50개 이상", "30개 이상", "10개 이상"].map(
+                    (wishlist) => (
+                      <button
+                        key={wishlist}
+                        onClick={() =>
+                          setSelectedFilters((prev) => ({ ...prev, wishlist }))
+                        }
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          selectedFilters.wishlist === wishlist
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        }`}
+                      >
+                        {wishlist}
+                      </button>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {/* 검색 버튼 */}
+              <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
+                <button
+                  onClick={() => {
+                    // 필터 적용 로직
+                    setShowFilters(false);
+                  }}
+                  className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors"
                 >
-                  <option value="">전체</option>
-                  <option value="0-200000">20만원 이하</option>
-                  <option value="200000-400000">20-40만원</option>
-                  <option value="400000-600000">40-60만원</option>
-                  <option value="600000+">60만원 이상</option>
-                </select>
-              </div>
-
-              {/* 참여 인원 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  참여 인원
-                </label>
-                <select
-                  value={selectedFilters.participants}
-                  onChange={(e) =>
-                    setSelectedFilters((prev) => ({
-                      ...prev,
-                      participants: e.target.value,
-                    }))
-                  }
-                  className="w-full p-2 border rounded-lg"
-                >
-                  <option value="">전체</option>
-                  <option value="1-2">1-2명</option>
-                  <option value="3-4">3-4명</option>
-                  <option value="5+">5명 이상</option>
-                </select>
-              </div>
-
-              {/* 액티비티 필터 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  액티비티
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {filters.activities.map((activity) => (
-                    <button
-                      key={activity}
-                      onClick={() => handleFilterChange("activities", activity)}
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        selectedFilters.activities.includes(activity)
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {activity}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 이동 수단 필터 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  이동 수단
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {filters.transport.map((transport) => (
-                    <button
-                      key={transport}
-                      onClick={() => handleFilterChange("transport", transport)}
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        selectedFilters.transport.includes(transport)
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {transport}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 편의시설 필터 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  편의시설
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {filters.facilities.map((facility) => (
-                    <button
-                      key={facility}
-                      onClick={() => handleFilterChange("facilities", facility)}
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        selectedFilters.facilities.includes(facility)
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {facility}
-                    </button>
-                  ))}
-                </div>
+                  검색하기
+                </button>
               </div>
             </div>
           </div>
