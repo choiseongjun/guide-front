@@ -3,10 +3,16 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Image from "next/image";
-import { HiPlus, HiOutlineCalendar, HiOutlineUserGroup, HiOutlineMap } from "react-icons/hi";
+import {
+  HiPlus,
+  HiOutlineCalendar,
+  HiOutlineUserGroup,
+  HiOutlineMap,
+} from "react-icons/hi";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HiPlus as HiPlusIcon } from "react-icons/hi2";
+import TripList from "@/components/TripList";
 
 const trips = [
   {
@@ -21,7 +27,13 @@ const trips = [
     departure: "서울",
     time: "09:00",
     reviews: 128,
-    wishlist: 56
+    wishlist: 56,
+    participantsPhotos: [
+      "https://i.pravatar.cc/150?img=1",
+      "https://i.pravatar.cc/150?img=2",
+      "https://i.pravatar.cc/150?img=3",
+      "https://i.pravatar.cc/150?img=4",
+    ],
   },
   {
     id: 2,
@@ -35,7 +47,11 @@ const trips = [
     departure: "인천",
     time: "10:30",
     reviews: 89,
-    wishlist: 42
+    wishlist: 42,
+    participantsPhotos: [
+      "https://i.pravatar.cc/150?img=5",
+      "https://i.pravatar.cc/150?img=6",
+    ],
   },
   {
     id: 3,
@@ -49,7 +65,15 @@ const trips = [
     departure: "수원",
     time: "08:00",
     reviews: 156,
-    wishlist: 78
+    wishlist: 78,
+    participantsPhotos: [
+      "https://i.pravatar.cc/150?img=7",
+      "https://i.pravatar.cc/150?img=8",
+      "https://i.pravatar.cc/150?img=9",
+      "https://i.pravatar.cc/150?img=10",
+      "https://i.pravatar.cc/150?img=11",
+      "https://i.pravatar.cc/150?img=12",
+    ],
   },
 ];
 
@@ -141,7 +165,7 @@ export default function Home() {
   ];
 
   return (
-    <main className="main-page">
+    <main className="min-h-screen bg-gray-50">
       <div className="banner-slider">
         <Slider {...settings}>
           {banners.map((banner, index) => (
@@ -217,51 +241,17 @@ export default function Home() {
         <section className="py-8">
           <div className="max-w-md mx-auto px-4">
             <h2 className="text-2xl font-bold mb-6">추천 여행</h2>
-            <div className="space-y-4">
-              {trips.map((trip) => (
-                <div
-                  key={trip.id}
-                  onClick={() => router.push(`/trip/${trip.id}`)}
-                  className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                >
-                  <div className="relative h-48">
-                    <Image
-                      src={trip.image}
-                      alt={trip.title}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold mb-2">{trip.title}</h3>
-                    <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                      <div className="flex items-center gap-2">
-                        <HiOutlineCalendar className="w-4 h-4" />
-                        <span>{trip.date}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <HiOutlineUserGroup className="w-4 h-4" />
-                        <span>{trip.members}명</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm line-through text-gray-400">
-                          {trip.price.toLocaleString()}원
-                        </span>
-                        <span className="text-lg font-semibold text-blue-600">
-                          {trip.discountPrice.toLocaleString()}원
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 text-gray-500">
-                        <HiOutlineMap className="w-4 h-4" />
-                        <span>{trip.departure}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <TripList
+              trips={trips.map((trip) => ({
+                ...trip,
+                duration: trip.date.split(" - ")[0],
+                time: trip.time,
+                location: trip.departure,
+                participants: `${trip.members}명`,
+                participantsPhotos: trip.participantsPhotos,
+              }))}
+              onTripClick={(tripId) => router.push(`/trip/${tripId}`)}
+            />
           </div>
         </section>
       </div>
