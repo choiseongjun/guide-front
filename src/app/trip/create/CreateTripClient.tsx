@@ -41,6 +41,8 @@ export default function CreateTripClient() {
   const [minParticipants, setMinParticipants] = useState(2);
   const [price, setPrice] = useState("");
   const [isFree, setIsFree] = useState(false);
+  const [providedItems, setProvidedItems] = useState<string[]>([]);
+  const [notProvidedItems, setNotProvidedItems] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [date, setDate] = useState<Value>([null, null]);
   const [images, setImages] = useState<string[]>([]);
@@ -56,6 +58,7 @@ export default function CreateTripClient() {
   const [maxAge, setMaxAge] = useState<number>(100);
   const [providedInput, setProvidedInput] = useState("");
   const [notProvidedInput, setNotProvidedInput] = useState("");
+  const [tagInput, setTagInput] = useState("");
   const [schedules, setSchedules] = useState<
     {
       day: number;
@@ -67,18 +70,6 @@ export default function CreateTripClient() {
     [key: number]: { time: string; content: string };
   }>({});
   const [isScheduleEnabled, setIsScheduleEnabled] = useState(false);
-
-  // 제공/미제공 항목 목록
-  const providedItems = [
-    "숙박",
-    "식사",
-    "교통",
-    "입장권",
-    "가이드",
-    "보험",
-    "장비",
-    "기념품",
-  ];
 
   // 시간 옵션 생성 (30분 간격)
   const timeOptions = Array.from({ length: 48 }, (_, i) => {
@@ -352,6 +343,8 @@ export default function CreateTripClient() {
       minParticipants,
       price: isFree ? 0 : Number(price),
       isFree,
+      providedItems,
+      notProvidedItems,
       tags,
       date,
       images,
@@ -403,35 +396,61 @@ export default function CreateTripClient() {
     setImages(images.filter((_, i) => i !== index));
   };
 
+  // 제공 항목 추가
   const handleAddProvidedItem = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && e.currentTarget.value) {
-      const item = e.currentTarget.value.trim();
-      if (!tags.includes(`제공:${item}`)) {
-        setTags([...tags, `제공:${item}`]);
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (e.currentTarget.value) {
+        const item = e.currentTarget.value.trim();
+        if (!providedItems.includes(item)) {
+          setProvidedItems([...providedItems, item]);
+        }
+        setProvidedInput("");
       }
-      setProvidedInput("");
     }
   };
 
+  // 미제공 항목 추가
   const handleAddNotProvidedItem = (
     e: React.KeyboardEvent<HTMLInputElement>
   ) => {
-    if (e.key === "Enter" && e.currentTarget.value) {
-      const item = e.currentTarget.value.trim();
-      if (!tags.includes(`미제공:${item}`)) {
-        setTags([...tags, `미제공:${item}`]);
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (e.currentTarget.value) {
+        const item = e.currentTarget.value.trim();
+        if (!notProvidedItems.includes(item)) {
+          setNotProvidedItems([...notProvidedItems, item]);
+        }
+        setNotProvidedInput("");
       }
-      setNotProvidedInput("");
     }
   };
 
+  // 태그 추가
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && e.currentTarget.value) {
-      setTags([...tags, e.currentTarget.value]);
-      e.currentTarget.value = "";
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (e.currentTarget.value) {
+        const tag = e.currentTarget.value.trim();
+        if (!tags.includes(tag)) {
+          setTags([...tags, tag]);
+        }
+        setTagInput("");
+      }
     }
   };
 
+  // 제공 항목 삭제
+  const handleRemoveProvidedItem = (index: number) => {
+    setProvidedItems(providedItems.filter((_, i) => i !== index));
+  };
+
+  // 미제공 항목 삭제
+  const handleRemoveNotProvidedItem = (index: number) => {
+    setNotProvidedItems(notProvidedItems.filter((_, i) => i !== index));
+  };
+
+  // 태그 삭제
   const handleRemoveTag = (index: number) => {
     setTags(tags.filter((_, i) => i !== index));
   };
@@ -748,7 +767,7 @@ export default function CreateTripClient() {
               ref={buttonRef}
               type="button"
               onClick={() => setShowCalendar(!showCalendar)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-left focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-left focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
             >
               {Array.isArray(date) && date[0] && date[1]
                 ? `${formatDate(date[0])} - ${formatDate(date[1])}`
@@ -761,12 +780,101 @@ export default function CreateTripClient() {
               ref={calendarRef}
               className="absolute z-50 mt-2 bg-white p-4 rounded-lg shadow-lg border border-gray-200"
             >
+              <style jsx global>{`
+                .react-calendar {
+                  width: 100%;
+                  border: none;
+                  font-family: inherit;
+                }
+                .react-calendar__navigation {
+                  margin-bottom: 1rem;
+                }
+                .react-calendar__navigation button {
+                  min-width: 44px;
+                  background: none;
+                  font-size: 1rem;
+                  font-weight: 500;
+                  color: #374151;
+                }
+                .react-calendar__navigation button:enabled:hover,
+                .react-calendar__navigation button:enabled:focus {
+                  background-color: #f3f4f6;
+                  border-radius: 0.5rem;
+                }
+                .react-calendar__month-view__weekdays {
+                  text-align: center;
+                  text-transform: uppercase;
+                  font-weight: 500;
+                  font-size: 0.75rem;
+                  color: #6b7280;
+                }
+                .react-calendar__month-view__weekdays__weekday {
+                  padding: 0.5rem;
+                }
+                .react-calendar__month-view__weekdays__weekday abbr {
+                  text-decoration: none;
+                }
+                .react-calendar__tile {
+                  padding: 0.75rem 0.5rem;
+                  background: none;
+                  text-align: center;
+                  font-size: 0.875rem;
+                  color: #374151;
+                  border-radius: 0.5rem;
+                }
+                .react-calendar__tile:enabled:hover,
+                .react-calendar__tile:enabled:focus {
+                  background-color: #f3f4f6;
+                }
+                .react-calendar__tile--now {
+                  background-color: #e5e7eb;
+                  color: #374151;
+                }
+                .react-calendar__tile--now:enabled:hover,
+                .react-calendar__tile--now:enabled:focus {
+                  background-color: #d1d5db;
+                }
+                .react-calendar__tile--hasActive {
+                  background-color: #3b82f6;
+                  color: white;
+                }
+                .react-calendar__tile--hasActive:enabled:hover,
+                .react-calendar__tile--hasActive:enabled:focus {
+                  background-color: #2563eb;
+                }
+                .react-calendar__tile--active {
+                  background-color: #3b82f6;
+                  color: white;
+                }
+                .react-calendar__tile--active:enabled:hover,
+                .react-calendar__tile--active:enabled:focus {
+                  background-color: #2563eb;
+                }
+                .react-calendar__tile--range {
+                  background-color: #93c5fd;
+                  color: white;
+                }
+                .react-calendar__tile--rangeStart,
+                .react-calendar__tile--rangeEnd {
+                  background-color: #3b82f6;
+                  color: white;
+                }
+                .react-calendar__tile--rangeStart:enabled:hover,
+                .react-calendar__tile--rangeStart:enabled:focus,
+                .react-calendar__tile--rangeEnd:enabled:hover,
+                .react-calendar__tile--rangeEnd:enabled:focus {
+                  background-color: #2563eb;
+                }
+              `}</style>
               <Calendar
                 onChange={setDate}
                 value={date}
                 selectRange={true}
                 minDate={new Date()}
                 className="border-0"
+                formatDay={(locale, date) =>
+                  date.toLocaleString("en", { day: "numeric" })
+                }
               />
             </div>
           )}
@@ -872,23 +980,21 @@ export default function CreateTripClient() {
                 제공 항목
               </h3>
               <div className="flex flex-wrap gap-2 mb-2">
-                {tags
-                  .filter((tag) => tag.startsWith("제공:"))
-                  .map((tag, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800"
+                {providedItems.map((item, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800"
+                  >
+                    {item}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveProvidedItem(index)}
+                      className="ml-2 text-green-600 hover:text-green-800"
                     >
-                      {tag.replace("제공:", "")}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTag(tags.indexOf(tag))}
-                        className="ml-2 text-green-600 hover:text-green-800"
-                      >
-                        <HiXMark className="w-4 h-4" />
-                      </button>
-                    </span>
-                  ))}
+                      <HiXMark className="w-4 h-4" />
+                    </button>
+                  </span>
+                ))}
               </div>
               <input
                 type="text"
@@ -904,23 +1010,21 @@ export default function CreateTripClient() {
                 미제공 항목
               </h3>
               <div className="flex flex-wrap gap-2 mb-2">
-                {tags
-                  .filter((tag) => tag.startsWith("미제공:"))
-                  .map((tag, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-red-100 text-red-800"
+                {notProvidedItems.map((item, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-red-100 text-red-800"
+                  >
+                    {item}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveNotProvidedItem(index)}
+                      className="ml-2 text-red-600 hover:text-red-800"
                     >
-                      {tag.replace("미제공:", "")}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTag(tags.indexOf(tag))}
-                        className="ml-2 text-red-600 hover:text-red-800"
-                      >
-                        <HiXMark className="w-4 h-4" />
-                      </button>
-                    </span>
-                  ))}
+                      <HiXMark className="w-4 h-4" />
+                    </button>
+                  </span>
+                ))}
               </div>
               <input
                 type="text"
@@ -958,6 +1062,8 @@ export default function CreateTripClient() {
           </div>
           <input
             type="text"
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
             onKeyDown={handleAddTag}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="태그를 입력하고 Enter를 누르세요"
