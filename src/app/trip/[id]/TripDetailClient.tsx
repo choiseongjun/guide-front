@@ -16,6 +16,7 @@ import {
   HiOutlineShare,
   HiOutlineChevronDown,
   HiOutlineChevronUp,
+  HiOutlineChevronRight,
 } from "react-icons/hi2";
 
 // 임시 데이터 (실제로는 API에서 가져올 데이터)
@@ -26,7 +27,7 @@ const tripData = {
     "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&auto=format&fit=crop&q=60",
     "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&auto=format&fit=crop&q=60",
     "https://images.unsplash.com/photo-1596422846543-75c6fc197f11?w=800&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1598887141929-ef608c1dba3c?w=800&auto=format&fit=crop&q=60"
+    "https://images.unsplash.com/photo-1598887141929-ef608c1dba3c?w=800&auto=format&fit=crop&q=60",
   ],
   price: 450000,
   discountPrice: 380000,
@@ -43,7 +44,7 @@ const tripData = {
     "https://i.pravatar.cc/150?img=1",
     "https://i.pravatar.cc/150?img=2",
     "https://i.pravatar.cc/150?img=3",
-    "https://i.pravatar.cc/150?img=4" 
+    "https://i.pravatar.cc/150?img=4",
   ],
   description: `제주도의 아름다운 자연과 함께하는 힐링 여행입니다.
   
@@ -57,12 +58,7 @@ const tripData = {
     {
       day: 1,
       title: "제주도 도착 & 시티투어",
-      activities: [
-        "공항 픽업",
-        "숙소 체크인",
-        "제주시 시티투어",
-        "저녁 식사"
-      ]
+      activities: ["공항 픽업", "숙소 체크인", "제주시 시티투어", "저녁 식사"],
     },
     {
       day: 2,
@@ -71,36 +67,26 @@ const tripData = {
         "아침 식사",
         "올레길 트레킹",
         "해변에서의 자유시간",
-        "저녁 식사"
-      ]
+        "저녁 식사",
+      ],
     },
     {
       day: 3,
       title: "맛집 투어 & 스파",
-      activities: [
-        "아침 식사",
-        "현지 맛집 투어",
-        "스파 & 마사지",
-        "저녁 식사"
-      ]
+      activities: ["아침 식사", "현지 맛집 투어", "스파 & 마사지", "저녁 식사"],
     },
     {
       day: 4,
       title: "마지막 날",
-      activities: [
-        "아침 식사",
-        "쇼핑",
-        "공항 이동",
-        "귀가"
-      ]
-    }
+      activities: ["아침 식사", "쇼핑", "공항 이동", "귀가"],
+    },
   ],
   host: {
     name: "김여행",
     avatar: "https://i.pravatar.cc/150?img=5",
     rating: 4.8,
     reviews: 156,
-    trips: 89
+    trips: 89,
   },
   reviewList: [
     {
@@ -111,11 +97,12 @@ const tripData = {
       },
       rating: 5,
       date: "2024-03-15",
-      content: "정말 좋은 여행이었습니다. 가이드님이 친절하게 설명해주셔서 더욱 즐거웠어요. 다음에도 꼭 참여하고 싶습니다!",
+      content:
+        "정말 좋은 여행이었습니다. 가이드님이 친절하게 설명해주셔서 더욱 즐거웠어요. 다음에도 꼭 참여하고 싶습니다!",
       images: [
         "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&auto=format&fit=crop&q=60",
-        "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&auto=format&fit=crop&q=60"
-      ]
+        "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&auto=format&fit=crop&q=60",
+      ],
     },
     {
       id: 2,
@@ -125,8 +112,9 @@ const tripData = {
       },
       rating: 4,
       date: "2024-03-10",
-      content: "일정이 잘 짜여있어서 편안하게 여행할 수 있었어요. 숙소도 깨끗하고 좋았습니다.",
-      images: []
+      content:
+        "일정이 잘 짜여있어서 편안하게 여행할 수 있었어요. 숙소도 깨끗하고 좋았습니다.",
+      images: [],
     },
     {
       id: 3,
@@ -136,36 +124,43 @@ const tripData = {
       },
       rating: 5,
       date: "2024-03-05",
-      content: "가이드님이 현지에 대해 정말 잘 알고 계셔서 좋았어요. 맛집도 많이 알려주셔서 만족스러웠습니다.",
+      content:
+        "가이드님이 현지에 대해 정말 잘 알고 계셔서 좋았어요. 맛집도 많이 알려주셔서 만족스러웠습니다.",
       images: [
-        "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&auto=format&fit=crop&q=60"
-      ]
-    }
-  ]
+        "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&auto=format&fit=crop&q=60",
+      ],
+    },
+  ],
 };
 
-export default function TripDetailClient({ params }: { params: { id: string } }) {
+export default function TripDetailClient({
+  params,
+}: {
+  params: { id: string };
+}) {
   const router = useRouter();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [showFullSchedule, setShowFullSchedule] = useState(false);
   const [isWishlist, setIsWishlist] = useState(false);
-  const [imagesLoaded, setImagesLoaded] = useState<boolean[]>(Array(tripData.images.length).fill(false));
+  const [imagesLoaded, setImagesLoaded] = useState<boolean[]>(
+    Array(tripData.images.length).fill(false)
+  );
 
   const nextImage = () => {
-    setCurrentImageIndex((prev) => 
+    setCurrentImageIndex((prev) =>
       prev === tripData.images.length - 1 ? 0 : prev + 1
     );
   };
 
   const prevImage = () => {
-    setCurrentImageIndex((prev) => 
+    setCurrentImageIndex((prev) =>
       prev === 0 ? tripData.images.length - 1 : prev - 1
     );
   };
 
   const handleImageLoad = (index: number) => {
-    setImagesLoaded(prev => {
+    setImagesLoaded((prev) => {
       const newState = [...prev];
       newState[index] = true;
       return newState;
@@ -193,7 +188,11 @@ export default function TripDetailClient({ params }: { params: { id: string } })
                 onClick={() => setIsWishlist(!isWishlist)}
                 className="p-2 hover:bg-gray-100 rounded-full"
               >
-                <HiOutlineHeart className={`w-6 h-6 ${isWishlist ? 'text-red-500 fill-current' : ''}`} />
+                <HiOutlineHeart
+                  className={`w-6 h-6 ${
+                    isWishlist ? "text-red-500 fill-current" : ""
+                  }`}
+                />
               </button>
             </div>
           </div>
@@ -206,7 +205,7 @@ export default function TripDetailClient({ params }: { params: { id: string } })
           <div
             key={index}
             className={`absolute inset-0 transition-opacity duration-300 ${
-              index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+              index === currentImageIndex ? "opacity-100" : "opacity-0"
             }`}
           >
             <Image
@@ -247,7 +246,7 @@ export default function TripDetailClient({ params }: { params: { id: string } })
       {/* 여행 정보 */}
       <div className="max-w-md mx-auto p-4">
         <h2 className="text-2xl font-bold mb-2">{tripData.title}</h2>
-        
+
         {/* 기본 정보 */}
         <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
           <div className="flex items-center gap-1">
@@ -309,7 +308,11 @@ export default function TripDetailClient({ params }: { params: { id: string } })
         {/* 여행 설명 */}
         <div className="bg-white rounded-lg p-4 mb-6">
           <h3 className="font-semibold mb-2">여행 소개</h3>
-          <div className={`text-gray-600 ${!showFullDescription && "line-clamp-3"}`}>
+          <div
+            className={`text-gray-600 ${
+              !showFullDescription && "line-clamp-3"
+            }`}
+          >
             {tripData.description}
           </div>
           <button
@@ -332,18 +335,22 @@ export default function TripDetailClient({ params }: { params: { id: string } })
         <div className="bg-white rounded-lg p-4 mb-6">
           <h3 className="font-semibold mb-2">여행 일정</h3>
           <div className="space-y-4">
-            {tripData.schedule.slice(0, showFullSchedule ? undefined : 1).map((day) => (
-              <div key={day.day} className="border-l-2 border-blue-500 pl-4">
-                <h4 className="font-medium mb-2">Day {day.day} - {day.title}</h4>
-                <ul className="space-y-2">
-                  {day.activities.map((activity, index) => (
-                    <li key={index} className="text-gray-600 text-sm">
-                      • {activity}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            {tripData.schedule
+              .slice(0, showFullSchedule ? undefined : 1)
+              .map((day) => (
+                <div key={day.day} className="border-l-2 border-blue-500 pl-4">
+                  <h4 className="font-medium mb-2">
+                    Day {day.day} - {day.title}
+                  </h4>
+                  <ul className="space-y-2">
+                    {day.activities.map((activity, index) => (
+                      <li key={index} className="text-gray-600 text-sm">
+                        • {activity}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
           </div>
           {tripData.schedule.length > 1 && (
             <button
@@ -369,7 +376,10 @@ export default function TripDetailClient({ params }: { params: { id: string } })
           <div className="flex items-center gap-2">
             <div className="flex -space-x-2">
               {tripData.participantsPhotos.map((photo, index) => (
-                <div key={index} className="relative w-8 h-8 rounded-full border-2 border-white overflow-hidden">
+                <div
+                  key={index}
+                  className="relative w-8 h-8 rounded-full border-2 border-white overflow-hidden"
+                >
                   <Image
                     src={photo}
                     alt={`참여자 ${index + 1}`}
@@ -379,7 +389,9 @@ export default function TripDetailClient({ params }: { params: { id: string } })
                 </div>
               ))}
             </div>
-            <span className="text-sm text-gray-500">{tripData.participants}</span>
+            <span className="text-sm text-gray-500">
+              {tripData.participants}
+            </span>
           </div>
         </div>
 
@@ -387,12 +399,21 @@ export default function TripDetailClient({ params }: { params: { id: string } })
         <div className="bg-white rounded-lg p-4 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">리뷰</h3>
-            <span className="text-sm text-gray-500">{tripData.reviewList.length}개의 리뷰</span>
+            <button
+              onClick={() => router.push(`/trip/${params.id}/reviews`)}
+              className="text-blue-500 text-sm flex items-center gap-1"
+            >
+              더보기
+              <HiOutlineChevronRight className="w-4 h-4" />
+            </button>
           </div>
-          
+
           <div className="space-y-6">
-            {tripData.reviewList.map((review) => (
-              <div key={review.id} className="border-b border-gray-100 last:border-0 pb-6 last:pb-0">
+            {tripData.reviewList.slice(0, 3).map((review) => (
+              <div
+                key={review.id}
+                className="border-b border-gray-100 last:border-0 pb-6 last:pb-0"
+              >
                 {/* 리뷰어 정보 */}
                 <div className="flex items-center gap-3 mb-3">
                   <Image
@@ -410,7 +431,9 @@ export default function TripDetailClient({ params }: { params: { id: string } })
                           <HiOutlineStar
                             key={i}
                             className={`w-4 h-4 ${
-                              i < review.rating ? "text-yellow-400 fill-current" : "text-gray-300"
+                              i < review.rating
+                                ? "text-yellow-400 fill-current"
+                                : "text-gray-300"
                             }`}
                           />
                         ))}
@@ -427,7 +450,10 @@ export default function TripDetailClient({ params }: { params: { id: string } })
                 {review.images.length > 0 && (
                   <div className="flex gap-2 overflow-x-auto pb-2">
                     {review.images.map((image, index) => (
-                      <div key={index} className="relative w-24 h-24 flex-shrink-0">
+                      <div
+                        key={index}
+                        className="relative w-24 h-24 flex-shrink-0"
+                      >
                         <Image
                           src={image}
                           alt={`리뷰 이미지 ${index + 1}`}
@@ -447,7 +473,7 @@ export default function TripDetailClient({ params }: { params: { id: string } })
       {/* 플로팅 참여하기 버튼 */}
       <div className="fixed bottom-24 left-1/2 -translate-x-1/2 max-w-md w-full px-4 pointer-events-none">
         <div className="relative w-full">
-          <button 
+          <button
             onClick={() => router.push(`/trip/${params.id}/join`)}
             className="absolute cursor-pointer right-8 bottom-2 w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center justify-center pointer-events-auto"
           >
@@ -457,4 +483,4 @@ export default function TripDetailClient({ params }: { params: { id: string } })
       </div>
     </div>
   );
-} 
+}

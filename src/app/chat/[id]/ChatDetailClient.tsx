@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { HiOutlineArrowLeft, HiOutlinePaperAirplane, HiOutlineUserGroup } from "react-icons/hi2";
+import {
+  HiOutlineArrowLeft,
+  HiOutlinePaperAirplane,
+  HiOutlineUserGroup,
+  HiOutlineArrowRightOnRectangle,
+} from "react-icons/hi2";
 import { HiOutlineX } from "react-icons/hi";
 
 // 임시 채팅 데이터
@@ -19,85 +24,85 @@ const chatData = {
       name: "김여행",
       avatar: "https://i.pravatar.cc/150?img=1",
       isOnline: true,
-      role: "방장"
+      role: "방장",
     },
     {
       id: 2,
       name: "이여행러",
       avatar: "https://i.pravatar.cc/150?img=2",
       isOnline: true,
-      role: "참여자"
+      role: "참여자",
     },
     {
       id: 3,
       name: "박여행가",
       avatar: "https://i.pravatar.cc/150?img=3",
       isOnline: false,
-      role: "참여자"
+      role: "참여자",
     },
     {
       id: 4,
       name: "최여행러",
       avatar: "https://i.pravatar.cc/150?img=4",
       isOnline: true,
-      role: "참여자"
+      role: "참여자",
     },
     {
       id: 5,
       name: "정여행러",
       avatar: "https://i.pravatar.cc/150?img=5",
       isOnline: false,
-      role: "참여자"
+      role: "참여자",
     },
     {
       id: 6,
       name: "강여행러",
       avatar: "https://i.pravatar.cc/150?img=6",
       isOnline: true,
-      role: "참여자"
+      role: "참여자",
     },
     {
       id: 7,
       name: "조여행러",
       avatar: "https://i.pravatar.cc/150?img=7",
       isOnline: true,
-      role: "참여자"
+      role: "참여자",
     },
     {
       id: 8,
       name: "윤여행러",
       avatar: "https://i.pravatar.cc/150?img=8",
       isOnline: false,
-      role: "참여자"
+      role: "참여자",
     },
     {
       id: 9,
       name: "장여행러",
       avatar: "https://i.pravatar.cc/150?img=9",
       isOnline: true,
-      role: "참여자"
+      role: "참여자",
     },
     {
       id: 10,
       name: "임여행러",
       avatar: "https://i.pravatar.cc/150?img=10",
       isOnline: false,
-      role: "참여자"
+      role: "참여자",
     },
     {
       id: 11,
       name: "한여행러",
       avatar: "https://i.pravatar.cc/150?img=11",
       isOnline: true,
-      role: "참여자"
+      role: "참여자",
     },
     {
       id: 12,
       name: "오여행러",
       avatar: "https://i.pravatar.cc/150?img=12",
       isOnline: true,
-      role: "참여자"
-    }
+      role: "참여자",
+    },
   ],
   messages: [
     {
@@ -105,49 +110,59 @@ const chatData = {
       sender: "김여행",
       content: "안녕하세요! 제주도 여행에 대해 문의드립니다.",
       time: "10:00",
-      isMe: false
+      isMe: false,
     },
     {
       id: 2,
       sender: "나",
       content: "네, 안녕하세요! 어떤 점이 궁금하신가요?",
       time: "10:05",
-      isMe: true
+      isMe: true,
     },
     {
       id: 3,
       sender: "김여행",
       content: "숙소는 어디인가요?",
       time: "10:10",
-      isMe: false
+      isMe: false,
     },
     {
       id: 4,
       sender: "나",
       content: "제주시 중심가에 위치한 프리미엄 호텔입니다.",
       time: "10:15",
-      isMe: true
+      isMe: true,
     },
     {
       id: 5,
       sender: "김여행",
       content: "네, 그럼 내일 뵙겠습니다!",
       time: "10:30",
-      isMe: false
-    }
-  ]
+      isMe: false,
+    },
+  ],
 };
 
-export default function ChatDetailClient({ params }: { params: { id: string } }) {
+export default function ChatDetailClient({
+  params,
+}: {
+  params: { id: string };
+}) {
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [showMembers, setShowMembers] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
 
   const handleSendMessage = () => {
     if (message.trim()) {
       // TODO: 메시지 전송 로직 구현
       setMessage("");
     }
+  };
+
+  const handleExit = () => {
+    // TODO: 채팅방 나가기 로직 구현
+    router.push("/chat");
   };
 
   return (
@@ -177,14 +192,22 @@ export default function ChatDetailClient({ params }: { params: { id: string } })
                 </div>
               </div>
             </div>
-            {chatData.isGroup && (
+            <div className="flex items-center gap-2">
+              {chatData.isGroup && (
+                <button
+                  onClick={() => setShowMembers(true)}
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                >
+                  <HiOutlineUserGroup className="w-6 h-6" />
+                </button>
+              )}
               <button
-                onClick={() => setShowMembers(true)}
+                onClick={() => setShowExitModal(true)}
                 className="p-2 hover:bg-gray-100 rounded-full"
               >
-                <HiOutlineUserGroup className="w-6 h-6" />
+                <HiOutlineArrowRightOnRectangle className="w-6 h-6" />
               </button>
-            )}
+            </div>
           </div>
         </div>
       </header>
@@ -235,6 +258,34 @@ export default function ChatDetailClient({ params }: { params: { id: string } })
           </button>
         </div>
       </div>
+
+      {/* 나가기 확인 모달 */}
+      {showExitModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white w-[90%] max-w-sm rounded-2xl p-6">
+            <h3 className="text-lg font-semibold mb-2">채팅방 나가기</h3>
+            <p className="text-gray-600 mb-6">
+              정말로 이 채팅방을 나가시겠습니까?
+              {chatData.isGroup &&
+                " 나가기를 하면 대화 내용이 모두 삭제됩니다."}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowExitModal(false)}
+                className="flex-1 py-2.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleExit}
+                className="flex-1 py-2.5 rounded-lg bg-red-500 text-white hover:bg-red-600"
+              >
+                나가기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 참여자 목록 모달 */}
       {showMembers && (
@@ -288,4 +339,4 @@ export default function ChatDetailClient({ params }: { params: { id: string } })
       )}
     </div>
   );
-} 
+}
