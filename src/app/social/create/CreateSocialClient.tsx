@@ -10,7 +10,7 @@ import Link from "@tiptap/extension-link";
 import Color from "@tiptap/extension-color";
 import TextStyle from "@tiptap/extension-text-style";
 import Highlight from "@tiptap/extension-highlight";
-import { HiXMark, HiOutlinePhoto } from "react-icons/hi2";
+import { HiXMark, HiOutlinePhoto, HiOutlinePhone } from "react-icons/hi2";
 import { motion } from "framer-motion";
 
 interface CreateSocialClientProps {
@@ -39,6 +39,8 @@ export default function CreateSocialClient({
   const [location, setLocation] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [tagInput, setTagInput] = useState("");
+  const [isCustomerServiceModalOpen, setIsCustomerServiceModalOpen] =
+    useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -199,6 +201,54 @@ export default function CreateSocialClient({
             </button>
           </div>
         </div>
+
+        {/* 고객센터 모달 */}
+        {isCustomerServiceModalOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsCustomerServiceModalOpen(false);
+            }}
+          >
+            <div
+              className="bg-white rounded-lg p-6 max-w-sm w-full mx-4"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">고객센터</h2>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsCustomerServiceModalOpen(false);
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <HiXMark className="w-6 h-6" />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-medium text-gray-700">전화 문의</h3>
+                  <p className="text-gray-600">010-9587-0000</p>
+                  <p className="text-sm text-gray-500">
+                    운영시간: 09:00 - 18:00
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-700">이메일 문의</h3>
+                  <p className="text-gray-600">helpdesk@naver.com</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 카테고리 선택 */}
         <div className="px-4 py-3 border-b border-gray-200">

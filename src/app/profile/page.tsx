@@ -13,6 +13,9 @@ import {
   HiOutlineChevronRight,
   HiOutlineHeart,
   HiOutlineUser,
+  HiOutlineCalendar,
+  HiOutlineBookmark,
+  HiOutlineMapPin,
 } from "react-icons/hi2";
 
 // 임시 사용자 데이터
@@ -161,7 +164,7 @@ export default function ProfilePage() {
 
       {/* 트립 레벨 */}
       {isLoggedIn && (
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="mt-4 bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">트립 레벨</h2>
             <span className="text-sm text-gray-500">
@@ -221,37 +224,79 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* 컬렉션 */}
+      {/* 여행 컬렉션 */}
       {isLoggedIn && (
-        <div className="bg-white">
-          <div className="max-w-md mx-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-medium">나의 여행 컬렉션</h2>
-              <button className="text-blue-500 text-sm">더보기</button>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {userData.collections.map((collection) => (
-                <div
-                  key={collection.id}
-                  className="relative rounded-lg overflow-hidden"
-                >
-                  <Image
-                    src={collection.image}
-                    alt={collection.title}
-                    width={200}
-                    height={120}
-                    className="w-full h-24 object-cover"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                    <h3 className="text-white text-sm font-medium">
-                      {collection.title}
-                    </h3>
-                    <p className="text-white/80 text-xs">
-                      {collection.count}개의 여행
+        <div className="mt-4 bg-white">
+          <div className="max-w-md mx-auto px-4 py-4">
+            <h2 className="text-lg font-semibold mb-4">여행 컬렉션</h2>
+            <div className="space-y-3">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
+                onClick={() => router.push("/profile/trips")}
+              >
+                <div className="flex items-center">
+                  <HiOutlineCalendar className="w-6 h-6 text-blue-500 mr-3" />
+                  <div>
+                    <h4 className="font-medium text-gray-800">나의 여행</h4>
+                    <p className="text-sm text-gray-600">
+                      예정된 여행 2개 • 완료된 여행 8개
                     </p>
                   </div>
                 </div>
-              ))}
+                <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
+                onClick={() => router.push("/profile/saved")}
+              >
+                <div className="flex items-center">
+                  <HiOutlineHeart className="w-6 h-6 text-red-500 mr-3" />
+                  <div>
+                    <h4 className="font-medium text-gray-800">저장한 여행지</h4>
+                    <p className="text-sm text-gray-600">
+                      여행지 3개 • 게시글 2개
+                    </p>
+                  </div>
+                </div>
+                <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
+                onClick={() => router.push("/profile/reviews")}
+              >
+                <div className="flex items-center">
+                  <HiOutlineStar className="w-6 h-6 text-yellow-500 mr-3" />
+                  <div>
+                    <h4 className="font-medium text-gray-800">작성한 리뷰</h4>
+                    <p className="text-sm text-gray-600">
+                      여행지 2개 • 숙소 2개
+                    </p>
+                  </div>
+                </div>
+                <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
+                onClick={() => router.push("/profile/bookmarks")}
+              >
+                <div className="flex items-center">
+                  <HiOutlineBookmark className="w-6 h-6 text-green-500 mr-3" />
+                  <div>
+                    <h4 className="font-medium text-gray-800">북마크</h4>
+                    <p className="text-sm text-gray-600">
+                      여행 가이드 2개 • 게시글 2개
+                    </p>
+                  </div>
+                </div>
+                <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
+              </motion.button>
             </div>
           </div>
         </div>

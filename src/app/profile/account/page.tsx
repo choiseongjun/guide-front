@@ -23,6 +23,9 @@ export default function AccountPage() {
   const [gender, setGender] = useState("남성");
   const [nationality, setNationality] = useState("대한민국");
   const [isSaving, setIsSaving] = useState(false);
+  const [introduction, setIntroduction] = useState(
+    "안녕하세요! 여행을 좋아하는 여행러입니다. 새로운 곳을 탐험하고 다양한 문화를 경험하는 것을 좋아합니다."
+  );
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -196,6 +199,21 @@ export default function AccountPage() {
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base tracking-tight placeholder:text-gray-400"
                 placeholder="국적을 입력하세요"
               />
+            </div>
+            <div className="p-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5 tracking-tight">
+                내 소개
+              </label>
+              <textarea
+                value={introduction}
+                onChange={(e) => setIntroduction(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base tracking-tight placeholder:text-gray-400 resize-none"
+                placeholder="자신을 소개해주세요"
+              />
+              <p className="mt-1.5 text-xs text-gray-500 tracking-tight">
+                최대 200자까지 입력 가능합니다
+              </p>
             </div>
           </div>
         </motion.div>
