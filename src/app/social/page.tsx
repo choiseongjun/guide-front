@@ -93,10 +93,93 @@ const posts = [
   },
 ];
 
+// 내 게시글 데이터
+const myPosts = [
+  {
+    id: 101,
+    author: {
+      name: "여행러",
+      avatar:
+        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=60",
+    },
+    content: `도쿄 여행에서 발견한 숨은 맛집들을 소개합니다! 🍜
+
+신주쿠의 작은 골목에서 만난 라멘집은 정말 놀라웠어요.
+특히 돈코츠 라멘의 깊은 맛은 잊을 수 없습니다.
+대기 시간이 좀 길었지만, 그만한 가치가 있었어요.
+
+#도쿄여행 #맛집추천 #신주쿠 #라멘`,
+    images: [
+      "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&auto=format&fit=crop&q=60",
+      "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=400&auto=format&fit=crop&q=60",
+    ],
+    likes: 245,
+    comments: 38,
+    shares: 12,
+    location: "일본 도쿄",
+    timeAgo: "3일 전",
+    category: "food",
+  },
+  {
+    id: 102,
+    author: {
+      name: "여행러",
+      avatar:
+        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=60",
+    },
+    content: `제주도 3박 4일 여행 코스 추천 🌊
+
+1일차: 성산일출봉 - 섭지코지 - 만장굴
+2일차: 우도 - 비자림 - 함덕해수욕장
+3일차: 한라산 등반 - 오설록 티 뮤지엄
+4일차: 서귀포 올레길 - 카페투어
+
+특히 우도의 에메랄드빛 바다는 꼭 가보세요!
+#제주여행 #여행코스 #우도`,
+    images: [
+      "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&auto=format&fit=crop&q=60",
+      "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&auto=format&fit=crop&q=60",
+      "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=400&auto=format&fit=crop&q=60",
+    ],
+    likes: 189,
+    comments: 45,
+    shares: 23,
+    location: "제주도",
+    timeAgo: "1주일 전",
+    category: "tips",
+  },
+  {
+    id: 103,
+    author: {
+      name: "여행러",
+      avatar:
+        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=60",
+    },
+    content: `파리 에펠탑 야경 포인트 추천 🌙
+
+트로카데로 광장에서 바라본 에펠탑의 야경은 정말 장관입니다.
+특히 매시 정각마다 반짝이는 조명쇼는 꼭 봐야 해요!
+사진을 찍기 좋은 시간대는 일몰 직후 30분 정도입니다.
+
+#파리여행 #에펠탑 #야경 #여행사진`,
+    images: [
+      "https://images.unsplash.com/photo-1543349689-9a4d426bee8e?w=400&auto=format&fit=crop&q=60",
+      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&auto=format&fit=crop&q=60",
+    ],
+    likes: 312,
+    comments: 56,
+    shares: 34,
+    location: "프랑스 파리",
+    timeAgo: "2주일 전",
+    category: "review",
+  },
+];
+
 export default function SocialPage() {
   const router = useRouter();
   const [expandedPosts, setExpandedPosts] = useState<number[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<"all" | "my">("all");
 
   const toggleExpand = (postId: number) => {
     setExpandedPosts((prev) =>
@@ -123,10 +206,40 @@ export default function SocialPage() {
       ? posts
       : posts.filter((post) => selectedCategories.includes(post.category));
 
+  const displayedPosts = activeTab === "my" ? myPosts : filteredPosts;
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
+      {/* 탭 메뉴 */}
+      <div className="sticky top-0 bg-white border-b border-gray-200 z-20">
+        <div className="max-w-md mx-auto px-4">
+          <div className="flex gap-4">
+            <button
+              className={`py-4 px-2 font-medium text-sm ${
+                activeTab === "all"
+                  ? "text-blue-500 border-b-2 border-blue-500"
+                  : "text-gray-500"
+              }`}
+              onClick={() => setActiveTab("all")}
+            >
+              전체 피드
+            </button>
+            <button
+              className={`py-4 px-2 font-medium text-sm ${
+                activeTab === "my"
+                  ? "text-blue-500 border-b-2 border-blue-500"
+                  : "text-gray-500"
+              }`}
+              onClick={() => setActiveTab("my")}
+            >
+              내 게시글
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* 카테고리 필터 */}
-      <div className="sticky top-0 bg-white border-b border-gray-200 z-10">
+      <div className="sticky top-[57px] bg-white border-b border-gray-200 z-10">
         <div className="max-w-md mx-auto px-4 py-3">
           <div className="flex flex-wrap gap-2">
             {categories.map((category) => (
@@ -154,7 +267,7 @@ export default function SocialPage() {
         exit={{ opacity: 0 }}
       >
         <AnimatePresence>
-          {filteredPosts.map((post) => (
+          {displayedPosts.map((post) => (
             <motion.article
               key={post.id}
               className="bg-white mb-4 rounded-lg shadow-sm overflow-hidden"
