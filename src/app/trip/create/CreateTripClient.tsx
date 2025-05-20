@@ -258,7 +258,14 @@ export default function CreateTripClient() {
       const reader = new FileReader();
       reader.onloadend = () => {
         const imageUrl = reader.result as string;
-        editor?.chain().focus().setImage({ src: imageUrl }).run();
+        editor
+          ?.chain()
+          .focus()
+          .setImage({ src: imageUrl })
+          .insertContent("\n")
+          .run();
+        // input 초기화
+        e.target.value = "";
       };
       reader.readAsDataURL(file);
     }
@@ -486,7 +493,11 @@ export default function CreateTripClient() {
                     const input = document.createElement("input");
                     input.type = "file";
                     input.accept = "image/*";
-                    input.onchange = (e) => handleEditorImageUpload(e as any);
+                    input.onchange = (e) => {
+                      handleEditorImageUpload(e as any);
+                      // input 제거
+                      input.remove();
+                    };
                     input.click();
                   }}
                   className="p-1.5 rounded hover:bg-white transition-colors text-gray-600"
@@ -508,7 +519,7 @@ export default function CreateTripClient() {
               </div>
               <EditorContent
                 editor={editor}
-                className="px-2 py-3 min-h-[300px] prose max-w-none focus:outline-none"
+                className="px-2 py-3 min-h-[300px] prose max-w-none focus:outline-none [&_.ProseMirror]:outline-none"
               />
             </div>
           </div>
