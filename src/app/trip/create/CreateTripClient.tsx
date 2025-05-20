@@ -258,12 +258,19 @@ export default function CreateTripClient() {
       const reader = new FileReader();
       reader.onloadend = () => {
         const imageUrl = reader.result as string;
+        // 현재 스크롤 위치 저장
+        const scrollPosition = window.scrollY;
+
         editor
           ?.chain()
           .focus()
           .setImage({ src: imageUrl })
           .insertContent("\n")
           .run();
+
+        // 스크롤 위치 복원
+        window.scrollTo(0, scrollPosition);
+
         // input 초기화
         e.target.value = "";
       };
@@ -497,9 +504,15 @@ export default function CreateTripClient() {
                     input.accept = "image/*";
                     input.style.display = "none";
                     document.body.appendChild(input);
+
+                    // 현재 스크롤 위치 저장
+                    const scrollPosition = window.scrollY;
+
                     input.onchange = (e) => {
                       handleEditorImageUpload(e as any);
                       input.remove();
+                      // 스크롤 위치 복원
+                      window.scrollTo(0, scrollPosition);
                     };
                     input.click();
                   }}

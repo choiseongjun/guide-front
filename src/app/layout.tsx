@@ -36,6 +36,19 @@ const chats = [
   { id: 4, unreadCount: 0 },
 ];
 
+const inter = Geist({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Guide",
+  description: "여행 가이드 플랫폼",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+};
+
 export default function MainLayout({
   children,
 }: Readonly<{
@@ -62,8 +75,14 @@ export default function MainLayout({
   const isTravelPage = pathname === "/" || pathname.startsWith("/theme/");
 
   return (
-    <html lang="en">
-      <body>
+    <html lang="ko">
+      <head>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+        />
+      </head>
+      <body className={inter.className}>
         <div className="main-container">
           <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
             <div className="max-w-md mx-auto">
