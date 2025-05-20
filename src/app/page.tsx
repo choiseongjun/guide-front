@@ -152,9 +152,9 @@ export default function Home() {
     },
     {
       id: 7,
-      title: "미스터리 & 어드벤처",
+      title: "파티 & 페스티벌",
       image:
-        "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&auto=format&fit=crop&q=60",
+        "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=400&auto=format&fit=crop&q=60",
     },
     {
       id: 8,
