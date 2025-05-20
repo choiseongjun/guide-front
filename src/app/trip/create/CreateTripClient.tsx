@@ -51,6 +51,41 @@ export default function CreateTripClient() {
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [addressResults, setAddressResults] = useState<any[]>([]);
   const [showAddressResults, setShowAddressResults] = useState(false);
+  const [approvalType, setApprovalType] = useState<"auto" | "manual">("auto");
+  const [minAge, setMinAge] = useState<number>(0);
+  const [maxAge, setMaxAge] = useState<number>(100);
+  const [providedInput, setProvidedInput] = useState("");
+  const [notProvidedInput, setNotProvidedInput] = useState("");
+  const [schedules, setSchedules] = useState<
+    {
+      day: number;
+      title: string;
+      items: { time: string; content: string }[];
+    }[]
+  >([]);
+  const [newScheduleItems, setNewScheduleItems] = useState<{
+    [key: number]: { time: string; content: string };
+  }>({});
+  const [isScheduleEnabled, setIsScheduleEnabled] = useState(false);
+
+  // 제공/미제공 항목 목록
+  const providedItems = [
+    "숙박",
+    "식사",
+    "교통",
+    "입장권",
+    "가이드",
+    "보험",
+    "장비",
+    "기념품",
+  ];
+
+  // 시간 옵션 생성 (30분 간격)
+  const timeOptions = Array.from({ length: 48 }, (_, i) => {
+    const hour = Math.floor(i / 2);
+    const minute = i % 2 === 0 ? "00" : "30";
+    return `${hour.toString().padStart(2, "0")}:${minute}`;
+  });
 
   const editor = useEditor({
     extensions: [
@@ -223,9 +258,91 @@ export default function CreateTripClient() {
     };
   }, []);
 
+  // 일정 추가
+  const handleAddDay = () => {
+    const newDay = schedules.length + 1;
+    setSchedules([...schedules, { day: newDay, title: "", items: [] }]);
+    setNewScheduleItems({
+      ...newScheduleItems,
+      [newDay]: { time: "", content: "" },
+    });
+  };
+
+  // 일정 삭제
+  const handleRemoveDay = (dayIndex: number) => {
+    const newSchedules = schedules.filter((_, index) => index !== dayIndex);
+    setSchedules(newSchedules);
+
+    // 삭제된 일차 이후의 일차 번호 재조정
+    const updatedSchedules = newSchedules.map((schedule, index) => ({
+      ...schedule,
+      day: index + 1,
+    }));
+    setSchedules(updatedSchedules);
+
+    // 입력 필드 상태 업데이트
+    const newInputs = { ...newScheduleItems };
+    delete newInputs[dayIndex + 1];
+    setNewScheduleItems(newInputs);
+  };
+
+  // 일차 제목 수정
+  const handleUpdateDayTitle = (dayIndex: number, title: string) => {
+    const newSchedules = [...schedules];
+    newSchedules[dayIndex].title = title;
+    setSchedules(newSchedules);
+  };
+
+  // 일정 항목 추가
+  const handleAddScheduleItem = (dayIndex: number) => {
+    const day = dayIndex + 1;
+    const currentInput = newScheduleItems[day];
+
+    if (currentInput?.time && currentInput?.content) {
+      const newSchedules = [...schedules];
+      newSchedules[dayIndex].items.push({
+        time: currentInput.time,
+        content: currentInput.content,
+      });
+      setSchedules(newSchedules);
+      // 입력 필드는 초기화하지 않고 유지
+    }
+  };
+
+  // 일정 항목 삭제
+  const handleRemoveScheduleItem = (dayIndex: number, itemIndex: number) => {
+    const newSchedules = [...schedules];
+    newSchedules[dayIndex].items = newSchedules[dayIndex].items.filter(
+      (_, index) => index !== itemIndex
+    );
+    setSchedules(newSchedules);
+  };
+
+  // 입력 필드 값 변경
+  const handleScheduleInputChange = (
+    day: number,
+    field: "time" | "content",
+    value: string
+  ) => {
+    setNewScheduleItems({
+      ...newScheduleItems,
+      [day]: {
+        ...newScheduleItems[day],
+        [field]: value,
+      },
+    });
+  };
+
+  // 입력 필드 초기화
+  const handleClearInput = (day: number) => {
+    setNewScheduleItems({
+      ...newScheduleItems,
+      [day]: { time: "", content: "" },
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 여행 생성 로직 구현
     console.log({
       title,
       description,
@@ -238,6 +355,10 @@ export default function CreateTripClient() {
       tags,
       date,
       images,
+      approvalType,
+      minAge,
+      maxAge,
+      schedules,
     });
   };
 
@@ -280,6 +401,28 @@ export default function CreateTripClient() {
 
   const handleRemoveImage = (index: number) => {
     setImages(images.filter((_, i) => i !== index));
+  };
+
+  const handleAddProvidedItem = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && e.currentTarget.value) {
+      const item = e.currentTarget.value.trim();
+      if (!tags.includes(`제공:${item}`)) {
+        setTags([...tags, `제공:${item}`]);
+      }
+      setProvidedInput("");
+    }
+  };
+
+  const handleAddNotProvidedItem = (
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (e.key === "Enter" && e.currentTarget.value) {
+      const item = e.currentTarget.value.trim();
+      if (!tags.includes(`미제공:${item}`)) {
+        setTags([...tags, `미제공:${item}`]);
+      }
+      setNotProvidedInput("");
+    }
   };
 
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -339,7 +482,7 @@ export default function CreateTripClient() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-md mx-auto p-4 space-y-6">
+      <form onSubmit={handleSubmit} className="max-w-md mx-auto  space-y-6">
         {/* 이미지 업로드 섹션 */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -718,6 +861,79 @@ export default function CreateTripClient() {
           </div>
         </div>
 
+        {/* 제공/미제공 항목 */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            제공/미제공 항목
+          </label>
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-600 mb-2">
+                제공 항목
+              </h3>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {tags
+                  .filter((tag) => tag.startsWith("제공:"))
+                  .map((tag, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800"
+                    >
+                      {tag.replace("제공:", "")}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tags.indexOf(tag))}
+                        className="ml-2 text-green-600 hover:text-green-800"
+                      >
+                        <HiXMark className="w-4 h-4" />
+                      </button>
+                    </span>
+                  ))}
+              </div>
+              <input
+                type="text"
+                value={providedInput}
+                onChange={(e) => setProvidedInput(e.target.value)}
+                onKeyDown={handleAddProvidedItem}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="제공 항목을 입력하고 Enter를 누르세요"
+              />
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600 mb-2">
+                미제공 항목
+              </h3>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {tags
+                  .filter((tag) => tag.startsWith("미제공:"))
+                  .map((tag, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-red-100 text-red-800"
+                    >
+                      {tag.replace("미제공:", "")}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tags.indexOf(tag))}
+                        className="ml-2 text-red-600 hover:text-red-800"
+                      >
+                        <HiXMark className="w-4 h-4" />
+                      </button>
+                    </span>
+                  ))}
+              </div>
+              <input
+                type="text"
+                value={notProvidedInput}
+                onChange={(e) => setNotProvidedInput(e.target.value)}
+                onKeyDown={handleAddNotProvidedItem}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="미제공 항목을 입력하고 Enter를 누르세요"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* 태그 입력 */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -746,6 +962,224 @@ export default function CreateTripClient() {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="태그를 입력하고 Enter를 누르세요"
           />
+        </div>
+
+        {/* 승인 방식 선택 */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            승인 방식
+          </label>
+          <div className="flex gap-4">
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                className="form-radio"
+                name="approvalType"
+                value="auto"
+                checked={approvalType === "auto"}
+                onChange={(e) =>
+                  setApprovalType(e.target.value as "auto" | "manual")
+                }
+              />
+              <span className="ml-2">자동 승인</span>
+            </label>
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                className="form-radio"
+                name="approvalType"
+                value="manual"
+                checked={approvalType === "manual"}
+                onChange={(e) =>
+                  setApprovalType(e.target.value as "auto" | "manual")
+                }
+              />
+              <span className="ml-2">수동 승인</span>
+            </label>
+          </div>
+        </div>
+
+        {/* 나이 제한 입력 */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            나이 제한
+          </label>
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={minAge}
+                onChange={(e) => setMinAge(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="최소 나이"
+              />
+            </div>
+            <span>~</span>
+            <div className="flex-1">
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={maxAge}
+                onChange={(e) => setMaxAge(Number(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="최대 나이"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 일정 관리 */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <label className="block text-sm font-medium text-gray-700">
+              일정 관리
+            </label>
+            <div className="flex items-center gap-4">
+              <label className="inline-flex items-center">
+                <input
+                  type="radio"
+                  className="form-radio"
+                  name="scheduleType"
+                  checked={!isScheduleEnabled}
+                  onChange={() => setIsScheduleEnabled(false)}
+                />
+                <span className="ml-2">미등록</span>
+              </label>
+              <label className="inline-flex items-center">
+                <input
+                  type="radio"
+                  className="form-radio"
+                  name="scheduleType"
+                  checked={isScheduleEnabled}
+                  onChange={() => setIsScheduleEnabled(true)}
+                />
+                <span className="ml-2">등록</span>
+              </label>
+            </div>
+          </div>
+          {isScheduleEnabled && (
+            <div className="space-y-4">
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleAddDay}
+                  className="px-3 py-1 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                >
+                  일차 추가
+                </button>
+              </div>
+              {schedules.map((schedule, dayIndex) => (
+                <div
+                  key={dayIndex}
+                  className="border border-gray-200 rounded-lg p-4"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        Day {schedule.day}
+                      </h3>
+                      <input
+                        type="text"
+                        value={schedule.title}
+                        onChange={(e) =>
+                          handleUpdateDayTitle(dayIndex, e.target.value)
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="일차 제목을 입력하세요 (예: 제주도 도착 & 시티투어)"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveDay(dayIndex)}
+                      className="ml-4 text-red-500 hover:text-red-700"
+                    >
+                      <HiXMark className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {schedule.items.map((item, itemIndex) => (
+                      <div
+                        key={itemIndex}
+                        className="flex items-center justify-between bg-gray-50 p-2 rounded"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-blue-600 font-medium min-w-[60px]">
+                            {item.time}
+                          </span>
+                          <span className="text-gray-700">{item.content}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleRemoveScheduleItem(dayIndex, itemIndex)
+                          }
+                          className="text-gray-500 hover:text-gray-700"
+                        >
+                          <HiXMark className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2 items-center">
+                      <select
+                        value={newScheduleItems[schedule.day]?.time || ""}
+                        onChange={(e) =>
+                          handleScheduleInputChange(
+                            schedule.day,
+                            "time",
+                            e.target.value
+                          )
+                        }
+                        className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">시간 선택</option>
+                        {timeOptions.map((time) => (
+                          <option key={time} value={time}>
+                            {time}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="text"
+                        value={newScheduleItems[schedule.day]?.content || ""}
+                        onChange={(e) =>
+                          handleScheduleInputChange(
+                            schedule.day,
+                            "content",
+                            e.target.value
+                          )
+                        }
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="일정을 입력하세요"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleClearInput(schedule.day)}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                      >
+                        초기화
+                      </button>
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => handleAddScheduleItem(dayIndex)}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                        disabled={
+                          !newScheduleItems[schedule.day]?.time ||
+                          !newScheduleItems[schedule.day]?.content
+                        }
+                      >
+                        일정 추가
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 제출 버튼 */}
