@@ -43,7 +43,12 @@ export default function CreateSocialClient({
   const editor = useEditor({
     extensions: [
       StarterKit,
-      ImageExtension,
+      ImageExtension.configure({
+        HTMLAttributes: {
+          class: "max-w-full h-auto rounded-lg my-4",
+        },
+        allowBase64: true,
+      }),
       Link.configure({
         openOnClick: false,
       }),
@@ -77,29 +82,53 @@ export default function CreateSocialClient({
     }
   };
 
-  const handleEditorImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const imageUrl = reader.result as string;
-        // 현재 스크롤 위치 저장
-        const scrollPosition = window.scrollY;
+  const handleEditorImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (!e.target.files || !e.target.files.length || !editor) return;
 
+    const files = Array.from(e.target.files);
+    console.log("Selected files:", files.length);
+
+    for (const file of files) {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        const imageUrl = reader.result as string;
+
+        // 이미지 삽입
         editor
-          ?.chain()
+          .chain()
           .focus()
-          .setImage({ src: imageUrl })
-          .insertContent("\n")
+          .setImage({
+            src: imageUrl,
+            alt: "Uploaded image",
+            title: "Uploaded image",
+          })
           .run();
 
-        // 스크롤 위치 복원
-        window.scrollTo(0, scrollPosition);
-
-        // input 초기화
-        e.target.value = "";
+        // 이미지 삽입 후 약간의 지연을 두고 커서 이동
+        setTimeout(() => {
+          // 현재 선택 해제
+          editor.commands.blur();
+          // 커서를 문서 끝으로 이동
+          editor.commands.setTextSelection(
+            editor.state.selection.$anchor.pos + 1
+          );
+          // 줄바꿈 추가
+          editor.commands.insertContent("\n\n\n");
+        }, 100);
       };
+
       reader.readAsDataURL(file);
+
+      // 각 이미지 처리 사이에 지연 추가
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+
+    // 모든 이미지 처리 완료 후 input 초기화
+    if (e.target) {
+      e.target.value = "";
     }
   };
 
@@ -307,22 +336,13 @@ export default function CreateSocialClient({
                 <div className="w-px h-6 bg-gray-300 mx-0.5" />
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
+                  onClick={() => {
                     const input = document.createElement("input");
                     input.type = "file";
                     input.accept = "image/*";
-                    input.style.display = "none";
-                    document.body.appendChild(input);
-
-                    // 현재 스크롤 위치 저장
-                    const scrollPosition = window.scrollY;
-
+                    input.multiple = true; // 다중 선택 가능하도록 설정
                     input.onchange = (e) => {
                       handleEditorImageUpload(e as any);
-                      input.remove();
-                      // 스크롤 위치 복원
-                      window.scrollTo(0, scrollPosition);
                     };
                     input.click();
                   }}
@@ -345,7 +365,7 @@ export default function CreateSocialClient({
               </div>
               <EditorContent
                 editor={editor}
-                className="px-2 py-3 min-h-[300px] prose max-w-none focus:outline-none [&_.ProseMirror]:outline-none"
+                className="px-2 py-3 min-h-[300px] max-h-[500px] overflow-y-auto prose max-w-none focus:outline-none [&_.ProseMirror]:outline-none"
               />
             </div>
           </div>
