@@ -3,19 +3,6 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Image from "next/image";
-import {
-  HiPlus,
-  HiOutlineCalendar,
-  HiOutlineUserGroup,
-  HiOutlineMap,
-  HiOutlineTree,
-  HiOutlineBuildingLibrary,
-  HiOutlineCake,
-  HiOutlineShoppingBag,
-  HiOutlineSparkles,
-  HiOutlineHeart,
-  HiOutlinePawPrint,
-} from "react-icons/hi";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HiPlus as HiPlusIcon } from "react-icons/hi2";
