@@ -77,30 +77,15 @@ export default function MainLayout({
           <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
             <div className="max-w-md mx-auto">
               <div className="flex items-center px-4 py-3 relative">
-                <motion.div
-                  className="flex items-center gap-2"
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <div className="relative">
-                    <HiOutlineGlobeAlt className="w-7 h-7 text-blue-500" />
-                    <motion.div
-                      className="absolute -top-1 -right-1"
-                      animate={{
-                        rotate: [0, 15, -15, 0],
-                        scale: [1, 1.2, 1.2, 1],
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        repeatType: "reverse",
-                      }}
-                    >
-                      <HiOutlineStar className="w-4 h-4 text-yellow-400" />
-                    </motion.div>
-                  </div>
-                </motion.div>
+                <Link href="/" className="flex items-center">
+                  <Image
+                    src="/images/logosmallv2.svg"
+                    alt="Guide Logo"
+                    width={30}
+                    height={30}
+                    priority
+                  />
+                </Link>
 
                 <div className="absolute left-1/2 transform -translate-x-1/2">
                   <div className="flex items-center gap-1">
