@@ -8,6 +8,13 @@ import {
   HiOutlineCalendar,
   HiOutlineUserGroup,
   HiOutlineMap,
+  HiOutlineTree,
+  HiOutlineBuildingLibrary,
+  HiOutlineCake,
+  HiOutlineShoppingBag,
+  HiOutlineSparkles,
+  HiOutlineHeart,
+  HiOutlinePawPrint,
 } from "react-icons/hi";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -158,9 +165,9 @@ export default function Home() {
     },
     {
       id: 8,
-      title: "로맨틱 & 프라이빗",
+      title: "펫여행",
       image:
-        "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=400&auto=format&fit=crop&q=60",
+        "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=400&auto=format&fit=crop&q=60",
     },
   ];
 
