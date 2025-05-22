@@ -65,10 +65,65 @@ export default function LoginClient({ params }: LoginClientProps) {
     window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/login/page`;
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
+    try {
+      // 전화번호 형식 정리 (하이픈 제거)
+      const cleanPhone = phone.replace(/-/g, '');
+      
+      console.log('로그인 요청 데이터:', {
+        phone: cleanPhone,
+        password: password
+      });
+
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/api/users/login`, {
+        phoneNumber: cleanPhone,  // phone -> phoneNumber로 변경
+        password: password
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        withCredentials: true  // 쿠키 포함
+      });
+
+      console.log('로그인 응답:', response.data);
+
+      if (response.status === 200) {
+        const { accessToken, refreshToken, user } = response.data;
+        
+        // 토큰 저장
+        localStorage.setItem('at', accessToken);
+        localStorage.setItem('rt', refreshToken);
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        // 메인 페이지로 리다이렉션
+        router.push('/');
+      }
+    } catch (error: any) {
+      console.error('로그인 에러:', error);
+      if (error.response) {
+        // 서버에서 응답이 왔지만 에러인 경우
+        console.error('에러 응답 데이터:', error.response.data);
+        console.error('에러 응답 상태:', error.response.status);
+        console.error('에러 응답 헤더:', error.response.headers);
+        setError(error.response.data.message || '로그인에 실패했습니다.');
+      } else if (error.request) {
+        // 요청은 보냈지만 응답이 없는 경우
+        console.error('요청 에러:', error.request);
+        setError('서버와 통신할 수 없습니다.');
+      } else {
+        // 요청 설정 중 에러가 발생한 경우
+        console.error('에러 메시지:', error.message);
+        setError('로그인 중 오류가 발생했습니다.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   }
-
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -117,7 +172,7 @@ export default function LoginClient({ params }: LoginClientProps) {
           <p className="text-gray-600 mt-2">여러분의 특별한 여행을 함께 만들어요</p>
         </div>
 
-        {/* <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
               전화번호
@@ -158,6 +213,12 @@ export default function LoginClient({ params }: LoginClientProps) {
             </div>
           </div>
 
+          {error && (
+            <div className="text-red-500 text-sm text-center">
+              {error}
+            </div>
+          )}
+
           <div className="flex items-center justify-between text-sm">
             <button
               type="button"
@@ -186,11 +247,12 @@ export default function LoginClient({ params }: LoginClientProps) {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+            disabled={isLoading}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:bg-blue-400"
           >
-            로그인
+            {isLoading ? '로그인 중...' : '로그인'}
           </button>
-        </form> */}
+        </form>
 
         {/* 소셜 로그인 */}
         <div className="mt-8">
