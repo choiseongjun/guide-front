@@ -23,6 +23,7 @@ import {
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import Script from "next/script";
+import axios from "axios";
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
@@ -37,6 +38,9 @@ export default function CreateTripClient() {
   const [highlight, setHighlight] = useState("");
   const [location, setLocation] = useState("");
   const [address, setAddress] = useState("");
+  const [detailAddress, setDetailAddress] = useState("");
+  const [latitude, setLatitude] = useState<number>(0);
+  const [longitude, setLongitude] = useState<number>(0);
   const [maxParticipants, setMaxParticipants] = useState(2);
   const [minParticipants, setMinParticipants] = useState(2);
   const [price, setPrice] = useState("");
@@ -69,7 +73,7 @@ export default function CreateTripClient() {
   const [newScheduleItems, setNewScheduleItems] = useState<{
     [key: number]: { time: string; content: string };
   }>({});
-  const [isScheduleEnabled, setIsScheduleEnabled] = useState(false);
+  const [isScheduleEnabled, setIsScheduleEnabled] = useState(true);
 
   // 시간 옵션 생성 (30분 간격)
   const timeOptions = Array.from({ length: 48 }, (_, i) => {
@@ -332,69 +336,174 @@ export default function CreateTripClient() {
     });
   };
 
+  // 초기값 설정
+  useEffect(() => {
+    setTitle("서울 3박 4일 여행");
+    setHighlight("아름다운 서울의 풍경을 만끽하세요");
+    setDescription("서울의 아름다운 풍경을 둘러보는 3박 4일 여행입니다.");
+    setAddress("서울특별시 동작시");
+    setDetailAddress("애월읍");
+    setLatitude(33.450701);
+    setLongitude(126.570667);
+    setDate([new Date("2024-03-01"), new Date("2024-03-04")]);
+    setMinParticipants(2);
+    setMaxParticipants(10);
+    setIsFree(false);
+    setPrice("500000");
+    setProvidedItems(["숙박", "식사", "교통"]);
+    setNotProvidedItems(["항공권", "개인경비"]);
+    setApprovalType("manual");
+    setMinAge(20);
+    setMaxAge(60);
+    setIsScheduleEnabled(true);
+    setTags(["제주도", "3박4일", "일출", "시티투어"]);
+    
+    // 일정 초기값 설정
+    setSchedules([
+      {
+        day: 1,
+        title: "제주도 도착 및 시티투어",
+        items: [
+          { time: "14:00", content: "제주도 도착 후 시티투어를 진행합니다." }
+        ]
+      },
+      {
+        day: 2,
+        title: "성산일출봉 관광",
+        items: [
+          { time: "09:00", content: "성산일출봉에서 아름다운 일출을 감상합니다." }
+        ]
+      }
+    ]);
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({
+    
+    const formData = {
       title,
+      highlight,
       description,
-      location,
       address,
-      maxParticipants,
+      detailAddress,
+      latitude,
+      longitude,
+      startDate: Array.isArray(date) && date[0] ? date[0].toISOString().split('T')[0] : '',
+      endDate: Array.isArray(date) && date[1] ? date[1].toISOString().split('T')[0] : '',
       minParticipants,
+      maxParticipants,
+      isPaid: !isFree,
       price: isFree ? 0 : Number(price),
-      isFree,
-      providedItems,
-      notProvidedItems,
-      tags,
-      date,
-      images,
-      approvalType,
+      providedItems: providedItems.join(','),
+      notProvidedItems: notProvidedItems.join(','),
+      requiresApproval: approvalType === 'manual',
       minAge,
       maxAge,
-      schedules,
-    });
+      hasSchedule: isScheduleEnabled,
+      schedules: schedules.map(schedule => ({
+        dayNumber: schedule.day,
+        title: schedule.title,
+        time: schedule.items[0]?.time || '00:00',  // LocalTime 형식으로 변환
+        description: schedule.items[0]?.content || ''
+      })),
+      tags: tags.map(tag => ({
+        name: tag  // TravelTag 엔티티 구조에 맞춤
+      }))
+    };
+
+    console.log('Form Data:', formData);
+    // TODO: API 호출 추가
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
-    const newImages: string[] = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          newImages.push(e.target.result as string);
-          if (newImages.length === files.length) {
-            setImages((prev) => [...prev, ...newImages]);
+      
+      // 파일 크기 체크 (예: 5MB)
+      if (file.size > 30 * 1024 * 1024) {
+        alert('파일 크기는 5MB를 초과할 수 없습니다.');
+        continue;
+      }
+
+      // 파일 타입 체크
+      if (!file.type.startsWith('image/')) {
+        alert('이미지 파일만 업로드 가능합니다.');
+        continue;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('pathType', 'trip'); // 여행 이미지용 pathType
+
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/s3/upload`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
           }
-        }
-      };
-      reader.readAsDataURL(file);
+        );
+
+        const { fileUrl } = response.data;
+        setImages(prev => [...prev, fileUrl]);
+      } catch (error) {
+        console.error('이미지 업로드 실패:', error);
+        alert('이미지 업로드에 실패했습니다.');
+      }
+    }
+
+    // input 초기화
+    if (e.target) {
+      e.target.value = '';
     }
   };
 
-  const handleEditorImageUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleEditorImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files.length || !editor) return;
 
     const files = Array.from(e.target.files);
-    console.log("Selected files:", files.length);
 
     for (const file of files) {
-      const reader = new FileReader();
+      // 파일 크기 체크 (예: 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('파일 크기는 5MB를 초과할 수 없습니다.');
+        continue;
+      }
 
-      reader.onload = () => {
-        const imageUrl = reader.result as string;
+      // 파일 타입 체크
+      if (!file.type.startsWith('image/')) {
+        alert('이미지 파일만 업로드 가능합니다.');
+        continue;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('pathType', 'trip'); // 여행 이미지용 pathType
+
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/s3/upload`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        );
+
+        const { fileUrl } = response.data;
 
         // 이미지 삽입
         editor
           .chain()
           .focus()
           .setImage({
-            src: imageUrl,
+            src: fileUrl,
             alt: "Uploaded image",
             title: "Uploaded image",
           })
@@ -402,26 +511,19 @@ export default function CreateTripClient() {
 
         // 이미지 삽입 후 약간의 지연을 두고 커서 이동
         setTimeout(() => {
-          // 현재 선택 해제
           editor.commands.blur();
-          // 커서를 문서 끝으로 이동
-          editor.commands.setTextSelection(
-            editor.state.selection.$anchor.pos + 1
-          );
-          // 줄바꿈 추가
+          editor.commands.setTextSelection(editor.state.selection.$anchor.pos + 1);
           editor.commands.insertContent("\n\n\n");
         }, 100);
-      };
-
-      reader.readAsDataURL(file);
-
-      // 각 이미지 처리 사이에 지연 추가
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      } catch (error) {
+        console.error('이미지 업로드 실패:', error);
+        alert('이미지 업로드에 실패했습니다.');
+      }
     }
 
-    // 모든 이미지 처리 완료 후 input 초기화
+    // input 초기화
     if (e.target) {
-      e.target.value = "";
+      e.target.value = '';
     }
   };
 
@@ -745,8 +847,8 @@ export default function CreateTripClient() {
             <div className="flex gap-2">
               <input
                 type="text"
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && searchAddress()}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="주소를 검색하세요"
@@ -759,6 +861,13 @@ export default function CreateTripClient() {
                 검색
               </button>
             </div>
+            <input
+              type="text"
+              value={detailAddress}
+              onChange={(e) => setDetailAddress(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mt-2"
+              placeholder="상세주소를 입력하세요"
+            />
             {showAddressResults && addressResults.length > 0 && (
               <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto">
                 {addressResults.map((result, index) => (
@@ -779,14 +888,14 @@ export default function CreateTripClient() {
                 ))}
               </div>
             )}
-            <div ref={mapRef} className="w-full h-64 rounded-lg" />
+            {/* <div ref={mapRef} className="w-full h-64 rounded-lg" />
             <input
               type="text"
               value={location}
               readOnly
               className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
               placeholder="지도를 통해 위치를 선택하세요"
-            />
+            /> */}
           </div>
         </div>
 
