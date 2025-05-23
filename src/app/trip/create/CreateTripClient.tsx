@@ -24,6 +24,9 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import Script from "next/script";
 import axios from "axios";
+import imageCompression from 'browser-image-compression';
+import { uploadToS3 } from '@/utils/s3Upload';
+import { log } from "node:console";
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
@@ -93,7 +96,10 @@ export default function CreateTripClient() {
       TextStyle,
       Highlight,
     ],
-    content: description,
+    content: '',
+    onCreate: ({ editor }) => {
+      editor.commands.setContent("서울의 아름다운 풍경을 둘러보는 3박 4일 여행입니다.디테일내용입니다.");
+    },
     onUpdate: ({ editor }) => {
       setDescription(editor.getHTML());
     },
@@ -340,7 +346,7 @@ export default function CreateTripClient() {
   useEffect(() => {
     setTitle("서울 3박 4일 여행");
     setHighlight("아름다운 서울의 풍경을 만끽하세요");
-    setDescription("서울의 아름다운 풍경을 둘러보는 3박 4일 여행입니다.");
+    setDescription("서울의 아름다운 풍경을 둘러보는 3박 4일 여행입니다.디테일내용입니다.");
     setAddress("서울특별시 동작시");
     setDetailAddress("애월읍");
     setLatitude(33.450701);
@@ -377,7 +383,7 @@ export default function CreateTripClient() {
     ]);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const formData = {
@@ -403,16 +409,67 @@ export default function CreateTripClient() {
       schedules: schedules.map(schedule => ({
         dayNumber: schedule.day,
         title: schedule.title,
-        time: schedule.items[0]?.time || '00:00',  // LocalTime 형식으로 변환
+        time: schedule.items[0]?.time || '00:00',
         description: schedule.items[0]?.content || ''
       })),
       tags: tags.map(tag => ({
-        name: tag  // TravelTag 엔티티 구조에 맞춤
+        name: tag
+      })),
+      images: images.map((url, index) => ({
+        imageUrl: url,
+        displayOrder: index
       }))
     };
 
-    console.log('Form Data:', formData);
-    // TODO: API 호출 추가
+    console.log("formData==",formData);
+    
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('at')}`
+          }
+        }
+      );
+      console.log("response==",response);
+      
+ 
+      if (response.data.status === 200) {
+        alert('여행이 성공적으로 생성되었습니다.');
+        router.push('/'); // 메인 페이지로 이동
+      }
+    } catch (error: any) {
+      console.error('여행 생성 실패:', error);
+      if (error.response) {
+        // 서버에서 응답이 왔지만 에러인 경우
+        alert(error.response.data.message || '여행 생성에 실패했습니다.');
+      } else if (error.request) {
+        // 요청은 보냈지만 응답이 없는 경우
+        alert('서버와 통신할 수 없습니다.');
+      } else {
+        // 요청 설정 중 에러가 발생한 경우
+        alert('여행 생성 중 오류가 발생했습니다.');
+      }
+    }
+  };
+
+  const compressImage = async (file: File) => {
+    const options = {
+      maxSizeMB: 1,
+      maxWidthOrHeight: 1920,
+      useWebWorker: true
+    };
+
+    try {
+      const compressedFile = await imageCompression(file, options);
+      return compressedFile;
+    } catch (error) {
+      console.error('이미지 압축 실패:', error);
+      return file;
+    }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -422,38 +479,16 @@ export default function CreateTripClient() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       
-      // 파일 크기 체크 (예: 5MB)
-      if (file.size > 30 * 1024 * 1024) {
-        alert('파일 크기는 5MB를 초과할 수 없습니다.');
-        continue;
-      }
+      const result = await uploadToS3(file, {
+        pathType: 'trip',
+        maxSizeMB: 30,
+        allowedTypes: ['image/']
+      });
 
-      // 파일 타입 체크
-      if (!file.type.startsWith('image/')) {
-        alert('이미지 파일만 업로드 가능합니다.');
-        continue;
-      }
-
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('pathType', 'trip'); // 여행 이미지용 pathType
-
-        const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/s3/upload`,
-          formData,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          }
-        );
-
-        const { fileUrl } = response.data;
-        setImages(prev => [...prev, fileUrl]);
-      } catch (error) {
-        console.error('이미지 업로드 실패:', error);
-        alert('이미지 업로드에 실패했습니다.');
+      if (result.success) {
+        setImages(prev => [...prev, result.fileUrl]);
+      } else {
+        alert(result.error || '이미지 업로드에 실패했습니다.');
       }
     }
 
@@ -469,41 +504,19 @@ export default function CreateTripClient() {
     const files = Array.from(e.target.files);
 
     for (const file of files) {
-      // 파일 크기 체크 (예: 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('파일 크기는 5MB를 초과할 수 없습니다.');
-        continue;
-      }
+      const result = await uploadToS3(file, {
+        pathType: 'trip',
+        maxSizeMB: 30,
+        allowedTypes: ['image/']
+      });
 
-      // 파일 타입 체크
-      if (!file.type.startsWith('image/')) {
-        alert('이미지 파일만 업로드 가능합니다.');
-        continue;
-      }
-
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('pathType', 'trip'); // 여행 이미지용 pathType
-
-        const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/s3/upload`,
-          formData,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          }
-        );
-
-        const { fileUrl } = response.data;
-
+      if (result.success) {
         // 이미지 삽입
         editor
           .chain()
           .focus()
           .setImage({
-            src: fileUrl,
+            src: result.fileUrl,
             alt: "Uploaded image",
             title: "Uploaded image",
           })
@@ -515,9 +528,8 @@ export default function CreateTripClient() {
           editor.commands.setTextSelection(editor.state.selection.$anchor.pos + 1);
           editor.commands.insertContent("\n\n\n");
         }, 100);
-      } catch (error) {
-        console.error('이미지 업로드 실패:', error);
-        alert('이미지 업로드에 실패했습니다.');
+      } else {
+        alert(result.error || '이미지 업로드에 실패했습니다.');
       }
     }
 
