@@ -31,6 +31,50 @@ import { log } from "node:console";
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
 
+// 여행 카테고리 데이터
+const travelCategories = [
+  {
+    id: 1,
+    title: "힐링 & 웰니스",
+    description: "스트레스 해소와 휴식을 위한 여행",
+  },
+  {
+    id: 2,
+    title: "미식 & 음식 투어",
+    description: "현지 맛집을 찾아 떠나는 미식 여행",
+  },
+  {
+    id: 3,
+    title: "사진 & 영상 투어",
+    description: "아름다운 순간을 기록하는 여행",
+  },
+  {
+    id: 4,
+    title: "액티비티 & 모험",
+    description: "다양한 활동을 즐기는 모험 여행",
+  },
+  {
+    id: 5,
+    title: "예술 & 문화",
+    description: "현지 문화와 예술을 경험하는 여행",
+  },
+  {
+    id: 6,
+    title: "캠핑",
+    description: "자연 속에서 즐기는 캠핑 여행",
+  },
+  {
+    id: 7,
+    title: "파티 & 페스티벌",
+    description: "특별한 축제와 파티를 즐기는 여행",
+  },
+  {
+    id: 8,
+    title: "로맨틱 & 프라이빗",
+    description: "특별한 순간을 위한 프라이빗 여행",
+  },
+];
+
 export default function CreateTripClient() {
   const router = useRouter();
   const calendarRef = useRef<HTMLDivElement>(null);
@@ -102,6 +146,7 @@ export default function CreateTripClient() {
     tags: [],
     images: [],
   });
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
   // 시간 옵션 생성 (30분 간격)
   const timeOptions = Array.from({ length: 48 }, (_, i) => {
@@ -453,7 +498,8 @@ export default function CreateTripClient() {
       images: images.map((url, index) => ({
         imageUrl: url,
         displayOrder: index
-      }))
+      })),
+      categoryId: selectedCategory
     };
 
     console.log("formData==",formData);
@@ -733,6 +779,26 @@ export default function CreateTripClient() {
             placeholder="여행 제목을 입력하세요"
             required
           />
+        </div>
+
+        {/* 여행 카테고리 선택 */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            여행 카테고리
+          </label>
+          <select
+            value={selectedCategory || ""}
+            onChange={(e) => setSelectedCategory(Number(e.target.value))}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            required
+          >
+            <option value="">카테고리를 선택하세요</option>
+            {travelCategories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.title}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* 하이라이트 입력 */}

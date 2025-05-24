@@ -26,6 +26,8 @@ const categories = [
   { id: "tips", name: "여행 팁" },
   { id: "companion", name: "동행 구함" },
   { id: "question", name: "여행 질문" },
+  { id: "recommend", name: "지역 명소 추천" },
+
 ];
 
 export default function CreateSocialClient({

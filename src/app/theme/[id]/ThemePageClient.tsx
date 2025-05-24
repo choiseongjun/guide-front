@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import {
   HiOutlineArrowLeft,
@@ -107,6 +107,9 @@ export default function ThemePageClient({
   const [sortBy, setSortBy] = useState<SortOption>("date");
   const [trips, setTrips] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const observerTarget = useRef<HTMLDivElement>(null);
   const [selectedFilters, setSelectedFilters] = useState<SelectedFilters>({
     activities: [],
     transport: [],
@@ -120,15 +123,16 @@ export default function ThemePageClient({
     wishlist: "",
   });
 
-  const fetchTravels = async () => {
+  const fetchTravels = async (pageNum: number = 0) => {
     try {
       setLoading(true);
       const response = await instance.get<TravelResponse>(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels`,
         {
           params: {
-            page: 0,
-            size: 10
+            page: pageNum,
+            size: 10,
+            categoryId: params.id
           }
         }
       );
@@ -160,8 +164,13 @@ export default function ThemePageClient({
             endDate: travel.endDate,
           };
         });
-        console.log("Mapped trips:", mappedTrips);
-        setTrips(mappedTrips);
+
+        // 첫 페이지면 새로 설정, 아니면 기존 데이터에 추가
+        setTrips(prev => pageNum === 0 ? mappedTrips : [...prev, ...mappedTrips]);
+        
+        // 더 불러올 데이터가 있는지 확인
+        setHasMore(response.data.data.content.length === 10);
+        setPage(pageNum);
       }
     } catch (error) {
       console.error('여행 목록 조회 실패:', error);
@@ -170,9 +179,39 @@ export default function ThemePageClient({
     }
   };
 
+  // Intersection Observer 설정
   useEffect(() => {
-    fetchTravels();
-  }, []);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          fetchTravels(page + 1);
+        }
+      },
+      {
+        root: null,
+        rootMargin: "20px",
+        threshold: 0.1,
+      }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [page, hasMore, loading]);
+
+  // 초기 데이터 로드
+  useEffect(() => {
+    setPage(0);
+    setTrips([]);
+    setHasMore(true);
+    fetchTravels(0);
+  }, [params.id]);
 
   // 현재 경로가 여행 관련 페이지인지 확인
   useEffect(() => {
@@ -515,6 +554,12 @@ export default function ThemePageClient({
             trips={trips}
             onTripClick={(tripId) => router.push(`/trip/${tripId}`)}
           />
+          {/* 무한 스크롤 감지 요소 */}
+          <div ref={observerTarget} className="h-10 flex items-center justify-center">
+            {loading && (
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+            )}
+          </div>
         </div>
       </main>
     </div>
