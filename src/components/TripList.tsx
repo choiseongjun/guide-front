@@ -4,8 +4,9 @@ import {
   HiOutlineClock,
   HiOutlineMapPin,
   HiOutlineUserGroup,
-  HiOutlineStar,
   HiOutlineHeart,
+  HiOutlineChatBubbleLeft,
+  HiOutlineStar,
   HiOutlineMap,
 } from "react-icons/hi2";
 
@@ -95,6 +96,14 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
 
             {/* 여행 정보 */}
             <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
+            <div className="flex items-center gap-1">
+                <HiOutlineCalendar className="w-4 h-4" />
+                <span>{trip.startDate}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <HiOutlineCalendar className="w-4 h-4" />
+                <span>{trip.endDate}</span>
+              </div>
               <div className="flex items-center gap-1">
                 <HiOutlineCalendar className="w-4 h-4" />
                 <span>{trip.duration}</span>
@@ -130,9 +139,11 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
                   </>
                 )}
               </div>
-              <div className="flex items-center gap-3 text-sm text-gray-500">
+              
+            </div>
+            <div className="flex items-center gap-3 text-sm text-gray-500 justify-end">
                 <div className="flex items-center gap-1">
-                  <HiOutlineStar className="w-4 h-4" />
+                  <HiOutlineChatBubbleLeft className="w-4 h-4" />
                   <span>{trip.reviews}</span>
                 </div>
                 <div className="flex items-center gap-1">
@@ -140,7 +151,6 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
                   <span>{trip.wishlist}</span>
                 </div>
               </div>
-            </div>
           </div>
         </div>
       ))}
