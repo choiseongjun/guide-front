@@ -6,6 +6,7 @@ import {
   HiOutlineUserGroup,
   HiOutlineStar,
   HiOutlineHeart,
+  HiOutlineMap,
 } from "react-icons/hi2";
 
 interface Trip {
@@ -22,6 +23,9 @@ interface Trip {
   wishlist: number;
   participantsPhotos?: string[];
   transport?: string;
+  highlight?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 interface TripListProps {
@@ -49,7 +53,19 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
             />
           </div>
           <div className="p-4">
-            <h3 className="text-lg font-semibold mb-2">{trip.title}</h3>
+            <h3 className="text-lg font-semibold mb-1">{trip.title}</h3>
+            
+            {/* 하이라이트 */}
+            {trip.highlight && (
+              <p className="text-sm text-gray-700 mb-2 font-medium italic">{trip.highlight}</p>
+            )}
+
+            {/* 여행 기간 */}
+            {trip.startDate && trip.endDate && (
+              <div className="text-sm text-gray-600 mb-3">
+                {new Date(trip.startDate).toLocaleDateString()} ~ {new Date(trip.endDate).toLocaleDateString()}
+              </div>
+            )}
 
             {/* 기본 정보 */}
             <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
@@ -62,8 +78,8 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
                 <span>{trip.time}</span>
               </div>
               <div className="flex items-center gap-1">
-                <HiOutlineMapPin className="w-4 h-4" />
-                <span>{trip.location}</span>
+                <HiOutlineMap className="w-4 h-4" />
+                <span>{trip.transport}</span>
               </div>
             </div>
 
@@ -106,17 +122,25 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
             {/* 가격 정보 */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-sm line-through text-gray-400">
-                  {trip.price.toLocaleString()}원
-                </span>
-                <span className="text-lg font-semibold text-blue-600">
-                  {trip.discountPrice.toLocaleString()}원
-                </span>
+                {trip.discountPrice && trip.discountPrice >0 ? (
+                  <>
+                    <span className="text-sm line-through text-gray-400">
+                      {trip.price?.toLocaleString() || '0'}원
+                    </span>
+                    <span className="text-lg font-semibold text-blue-600">
+                      {trip.discountPrice?.toLocaleString() || '0'}원
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-lg font-semibold">
+                    {trip.price?.toLocaleString() || '0'}원
+                  </span>
+                )}
               </div>
-              {trip.transport && (
+              {trip.location && (
                 <div className="flex items-center gap-1 text-gray-500">
                   <HiOutlineMapPin className="w-4 h-4" />
-                  <span>{trip.transport}</span>
+                  <span>{trip.location}</span>
                 </div>
               )}
             </div>

@@ -66,6 +66,7 @@ export default function CreateTripClient() {
   const [providedInput, setProvidedInput] = useState("");
   const [notProvidedInput, setNotProvidedInput] = useState("");
   const [tagInput, setTagInput] = useState("");
+  const [discountRate, setDiscountRate] = useState<number>(0);
   const [schedules, setSchedules] = useState<
     {
       day: number;
@@ -77,6 +78,30 @@ export default function CreateTripClient() {
     [key: number]: { time: string; content: string };
   }>({});
   const [isScheduleEnabled, setIsScheduleEnabled] = useState(true);
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    address: "",
+    detailAddress: "",
+    latitude: 0,
+    longitude: 0,
+    startDate: "",
+    endDate: "",
+    minParticipants: 2,
+    maxParticipants: 10,
+    isPaid: false,
+    price: 0,
+    discountRate: 0,
+    providedItems: "",
+    notProvidedItems: "",
+    requiresApproval: false,
+    minAge: 0,
+    maxAge: 100,
+    hasSchedule: false,
+    schedules: [],
+    tags: [],
+    images: [],
+  });
 
   // 시간 옵션 생성 (30분 간격)
   const timeOptions = Array.from({ length: 48 }, (_, i) => {
@@ -363,6 +388,7 @@ export default function CreateTripClient() {
     setMaxAge(60);
     setIsScheduleEnabled(true);
     setTags(["제주도", "3박4일", "일출", "시티투어"]);
+    setDiscountRate(10)
     
     // 일정 초기값 설정
     setSchedules([
@@ -383,6 +409,14 @@ export default function CreateTripClient() {
     ]);
   }, []);
 
+  // 할인율 10%로 설정
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      discountRate: 10
+    }));
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -400,6 +434,7 @@ export default function CreateTripClient() {
       maxParticipants,
       isPaid: !isFree,
       price: isFree ? 0 : Number(price),
+      discountRate,
       providedItems: providedItems.join(','),
       notProvidedItems: notProvidedItems.join(','),
       requiresApproval: approvalType === 'manual',
