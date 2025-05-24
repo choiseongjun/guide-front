@@ -15,6 +15,10 @@ const loadingCompleteEvent = new Event('loadingComplete');
 // 요청 인터셉터
 instance.interceptors.request.use(
   (config) => {
+    // 로딩 상태 시작
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(loadingEvent);
+    }
     // 브라우저 환경에서만 localStorage 접근
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('at');
@@ -25,6 +29,10 @@ instance.interceptors.request.use(
     return config;
   },
   (error) => {
+    // 로딩 상태 종료
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(loadingCompleteEvent);
+    }
     return Promise.reject(error);
   }
 );
@@ -32,9 +40,17 @@ instance.interceptors.request.use(
 // 응답 인터셉터
 instance.interceptors.response.use(
   (response) => {
+    // 로딩 상태 종료
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(loadingCompleteEvent);
+    }
     return response;
   },
   async (error) => {
+    // 로딩 상태 종료
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(loadingCompleteEvent);
+    }
     const originalRequest = error.config;
 
     // 토큰 만료로 인한 401 에러 처리
@@ -62,7 +78,7 @@ instance.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return instance(originalRequest);
         }
-      } catch (refreshError) {
+      } catch (refreshError: any) {
         // 리프레시 토큰도 만료된 경우에만 로그아웃
         if (typeof window !== 'undefined' && refreshError.response?.status === 401) {
           localStorage.removeItem('at');

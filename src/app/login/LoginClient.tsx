@@ -79,7 +79,7 @@ export default function LoginClient({ params }: LoginClientProps) {
         password: password
       });
 
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/api/users/login`, {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/users/login`, {
         phoneNumber: cleanPhone,  // phone -> phoneNumber로 변경
         password: password
       }, {

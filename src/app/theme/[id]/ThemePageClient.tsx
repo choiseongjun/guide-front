@@ -169,26 +169,15 @@ export default function ThemePageClient({
 
       if (response.data.status === 200) {
         const mappedTrips = response.data.data.content.map(travel => ({
-          id: travel.id,
-          title: travel.title,
+          ...travel,
           image: travel.images.length > 0 ? travel.images[0].imageUrl : "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&auto=format&fit=crop&q=60",
           price: travel.discountedPrice > 0 ? travel.discountedPrice : travel.price,
           originalPrice: travel.price,
-          discountRate: travel.discountRate,
           duration: `${Math.ceil((new Date(travel.endDate).getTime() - new Date(travel.startDate).getTime()) / (1000 * 60 * 60 * 24))}일`,
-          activity: travel.tags[0]?.name || "기타",
-          participants: `${travel.minParticipants}~${travel.maxParticipants}명`,
-          transport: "대중교통",
-          facilities: travel.providedItems.split(",").filter(Boolean),
-          date: travel.startDate,
           time: travel.schedules[0]?.time || "",
           location: travel.address.split(" ")[0],
           reviews: travel.reviews?.length || 0,
           wishlist: travel.likes?.length || 0,
-          participantsPhotos: travel.participants?.slice(0, 4).map(p => p.profileImage) || [],
-          highlight: travel.highlight,
-          startDate: travel.startDate,
-          endDate: travel.endDate,
           user: {
             id: travel.user.id,
             nickname: travel.user.nickname,

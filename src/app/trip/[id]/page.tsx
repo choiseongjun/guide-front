@@ -15,6 +15,7 @@ import {
   HiOutlineChevronRight,
 } from "react-icons/hi2";
 import instance from "@/app/api/axios";
+import { useUser } from "@/hooks/useUser";
 
 interface Trip {
   id: number;
@@ -53,10 +54,20 @@ interface Trip {
     id: number;
     name: string;
   }[];
+  participants?: {
+    id: number;
+    status: string;
+    user: {
+      id: number;
+      nickname: string;
+      profileImageUrl: string | null;
+    };
+  }[];
 }
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const { user, isLoading: userLoading } = useUser();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const resolvedParams = use(params);
@@ -88,9 +99,19 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     }
   };
 
-  if (!trip) {
-    return <div>Loading...</div>;
+  const handleParticipateClick = () => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    router.push(`/trip/${resolvedParams.id}/participate`);
+  };
+
+  if (userLoading || !trip) {
+    return null;
   }
+
+  const isCreator = user?.id === trip.user.id;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -257,21 +278,58 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         </div>
 
         {/* 플로팅 참가하기 버튼 */}
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 max-w-md w-full px-4">
-          <div className="flex justify-end">
-            <button className="w-14 h-14 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors shadow-lg">
-              <HiOutlineUserGroup className="w-6 h-6" />
-            </button>
+        {!isCreator && (
+          <div className="fixed bottom-20 left-1/2 -translate-x-1/2 max-w-md w-full px-4">
+            <div className="flex justify-end">
+              <button 
+                onClick={handleParticipateClick}
+                className="w-14 h-14 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors shadow-lg"
+              >
+                <HiOutlineUserGroup className="w-6 h-6" />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 하단 여백 추가 */}
         {/* <div className="h-24"></div> */}
 
         {/* 여행 설명 */}
-        <div className="bg-white p-4">
-          <h2 className="text-xl font-bold mb-4">여행 설명</h2>
+        <div className="bg-white p-4 mb-4">
+          <h2 className="text-lg font-semibold mb-2">여행 설명</h2>
           <p className="text-gray-600 whitespace-pre-line">{trip.description}</p>
+        </div>
+
+        {/* 참여자 정보 */}
+        <div className="bg-white p-4 mb-4">
+          <h2 className="text-lg font-semibold mb-2">참여자</h2>
+          <div className="flex items-center gap-2">
+            <div className="flex -space-x-2">
+              {trip.participants && trip.participants
+                .filter(participant => participant.status === 'APPROVED')
+                .map((participant, index) => (
+                  <div
+                    key={participant.id}
+                    className="relative w-10 h-10 rounded-full border-2 border-white overflow-hidden"
+                    style={{ zIndex: trip.participants!.filter(p => p.status === 'APPROVED').length - index }}
+                  >
+                    <Image
+                      src={participant.user.profileImageUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60"}
+                      alt={participant.user.nickname}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                ))}
+            </div>
+            <div className="text-sm text-gray-600">
+              <span className="font-medium">
+                {trip.participants?.filter(p => p.status === 'APPROVED').length || 0}명
+              </span>
+              <span className="mx-1">/</span>
+              <span>{trip.maxParticipants}명</span>
+            </div>
+          </div>
         </div>
 
         {/* 제공/미제공 항목 */}
