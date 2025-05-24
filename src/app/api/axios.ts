@@ -5,6 +5,10 @@ const instance = axios.create({
   timeout: 5000,
 });
 
+// 로딩 상태를 관리할 이벤트
+const loadingEvent = new Event('loading');
+const loadingCompleteEvent = new Event('loadingComplete');
+
 // 토큰 갱신 함수
 const refreshAccessToken = async () => {
   try { 
@@ -53,6 +57,9 @@ setInterval(checkAndRefreshToken, 4 * 60 * 1000);
 // 요청 인터셉터
 instance.interceptors.request.use(
   async (config) => {
+    // 로딩 시작 이벤트 발생
+    window.dispatchEvent(loadingEvent);
+    
     await checkAndRefreshToken(); // 요청 전 토큰 체크
     const token = localStorage.getItem('at');
     if (token) {
@@ -61,14 +68,23 @@ instance.interceptors.request.use(
     return config;
   },
   (error) => {
+    // 로딩 종료 이벤트 발생
+    window.dispatchEvent(loadingCompleteEvent);
     return Promise.reject(error);
   }
 );
 
 // 응답 인터셉터
 instance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // 로딩 종료 이벤트 발생
+    window.dispatchEvent(loadingCompleteEvent);
+    return response;
+  },
   async (error) => {
+    // 로딩 종료 이벤트 발생
+    window.dispatchEvent(loadingCompleteEvent);
+    
     const originalRequest = error.config;
 
     // 토큰 만료 에러이고, 재시도하지 않은 요청인 경우

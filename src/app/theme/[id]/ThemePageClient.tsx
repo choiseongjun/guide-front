@@ -17,7 +17,7 @@ import {
 } from "react-icons/hi2";
 import { useRouter, usePathname } from "next/navigation";
 import TripList from "@/components/TripList";
-import axios from "axios";
+import instance from "@/app/api/axios";
 import { log } from "console";
 
 interface Travel {
@@ -123,7 +123,7 @@ export default function ThemePageClient({
   const fetchTravels = async () => {
     try {
       setLoading(true);
-      const response = await axios.get<TravelResponse>(
+      const response = await instance.get<TravelResponse>(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels`,
         {
           params: {

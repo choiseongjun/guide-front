@@ -17,8 +17,10 @@ import {
   HiOutlineBookmark,
   HiOutlineMapPin,
   HiOutlineFire,
+  HiOutlineClock,
+  HiOutlineCreditCard,
 } from "react-icons/hi2";
-import axios from "axios";
+import instance from "@/app/api/axios";
 
 // 임시 사용자 데이터
 const userData = {
@@ -99,6 +101,7 @@ const settingsMenu = [
   },
 ];
 
+
 export default function ProfilePage() {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState("profile");
@@ -113,7 +116,7 @@ export default function ProfilePage() {
       const refreshToken = localStorage.getItem('rt');
       
       // 카카오 로그아웃 API 호출
-      await axios.post('http://localhost:8080/api/auth/kakao/logout', null, {
+      await instance.post('/api/auth/kakao/logout', null, {
         headers: {
           'Refresh-Token': refreshToken
         }
@@ -357,6 +360,40 @@ export default function ProfilePage() {
                     <h4 className="font-medium text-gray-800">북마크</h4>
                     <p className="text-sm text-gray-600">
                       여행 가이드 2개 • 게시글 2개
+                    </p>
+                  </div>
+                </div>
+                <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
+                onClick={() => router.push("/profile/payment")}
+              >
+                <div className="flex items-center">
+                  <HiOutlineCreditCard className="w-6 h-6 text-blue-500 mr-3" />
+                  <div>
+                    <h4 className="font-medium text-gray-800">결제 내역</h4>
+                    <p className="text-sm text-gray-600">
+                      결제 완료 3건 • 환불 완료 1건
+                    </p>
+                  </div>
+                </div>
+                <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
+              </motion.button> 
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
+                onClick={() => router.push("/profile/settlement")}
+              >
+                <div className="flex items-center">
+                  <HiOutlineCreditCard className="w-6 h-6 text-blue-500 mr-3" />
+                  <div>
+                    <h4 className="font-medium text-gray-800">정산 내역</h4>
+                    <p className="text-sm text-gray-600">
+                      정산 대기 2건 • 정산 완료 5건
                     </p>
                   </div>
                 </div>

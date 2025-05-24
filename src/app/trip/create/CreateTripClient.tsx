@@ -23,7 +23,7 @@ import {
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import Script from "next/script";
-import axios from "axios";
+import instance from "@/app/api/axios";
 import imageCompression from 'browser-image-compression';
 import { uploadToS3 } from '@/utils/s3Upload';
 import { log } from "node:console";
@@ -459,19 +459,17 @@ export default function CreateTripClient() {
     console.log("formData==",formData);
     
     try {
-      const response = await axios.post(
+      const response = await instance.post(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels`,
         formData,
         {
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('at')}`
+            'Content-Type': 'application/json'
           }
         }
       );
       console.log("response==",response);
       
- 
       if (response.data.status === 200) {
         alert('여행이 성공적으로 생성되었습니다.');
         router.push('/'); // 메인 페이지로 이동
