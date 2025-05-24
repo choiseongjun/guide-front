@@ -63,7 +63,7 @@ export default function SocialPage() {
       });
 
       if (response.status === 200) {
-        const newPosts = response.data.content;
+        const newPosts = response.data.data.content;
         setPosts(prev => pageNum === 0 ? newPosts : [...prev, ...newPosts]);
         setHasMore(newPosts.length === 10);
         setPage(pageNum);

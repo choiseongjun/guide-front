@@ -2,68 +2,70 @@
 import Image from "next/image";
 import { HiOutlineHeart, HiOutlineChatBubbleLeftRight, HiOutlineShare, HiOutlineArrowLeft, HiOutlinePhoto, HiOutlineCamera, HiOutlinePaperAirplane, HiOutlineXMark } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import instance from "@/app/api/axios";
 
-// 실제로는 API에서 데이터를 가져와야 하지만, 예시를 위해 하드코딩
-const post = {
-  id: 2,
-  author: {
-    name: "여행작가",
-    avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=400&auto=format&fit=crop&q=60",
-  },
-  content: `부산 해운대에서의 일몰이 너무 아름다웠어요 🌅 
+interface Post {
+  id: number;
+  content: string;
+  category: string;
+  imageUrls: string[];
+  userId: number;
+  userNickname: string | null;
+  userProfileImage: string | null;
+  likeCount: number;
+  commentCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
-해운대 해수욕장에서 바라본 일몰은 정말 장관이었습니다. 
-바다 위로 지는 태양이 하늘을 붉게 물들이고, 
-그 위로 떠있는 구름들이 마치 불꽃처럼 타오르는 듯 했어요.
+const categories = [
+  { id: "TRAVEL_REVIEW", name: "여행후기" },
+  { id: "RESTAURANT_RECOMMENDATION", name: "맛집 추천" },
+  { id: "ACCOMMODATION_RECOMMENDATION", name: "숙소 추천" },
+  { id: "TRAVEL_TIP", name: "여행 팁" },
+  { id: "TRAVEL_COMPANION", name: "동행 구함" },
+  { id: "TRAVEL_QUESTION", name: "여행 질문" },
+];
 
-특히 오늘은 날씨가 좋아서 더욱 아름다웠는데, 
-해변에 앉아서 바라보는 일몰은 정말 힐링이 되더라고요.
-주변 사람들도 다들 카메라를 들고 이 순간을 담으려고 했답니다.
-
-#부산여행 #해운대 #일몰 #힐링여행 #여행스타그램`,
-  images: [
-    "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&auto=format&fit=crop&q=60",
-  ],
-  likes: 256,
-  comments: 42,
-  shares: 15,
-  location: "부산 해운대구",
-  timeAgo: "5시간 전",
-  commentsList: [
-    {
-      id: 1,
-      author: {
-        name: "여행러",
-        avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=60",
-      },
-      content: "정말 아름다운 일몰이네요! 다음에 가면 꼭 이 장소에서 일몰을 봐야겠어요 😍",
-      timeAgo: "3시간 전",
-      likes: 12,
-    },
-    {
-      id: 2,
-      author: {
-        name: "사진작가",
-        avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&auto=format&fit=crop&q=60",
-      },
-      content: "사진이 정말 잘 나왔네요! 카메라 설정을 공유해주실 수 있나요?",
-      timeAgo: "2시간 전",
-      likes: 8,
-    },
-  ],
-};
-
-export default function PostDetailPage() {
+export default function SocialDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const [post, setPost] = useState<Post | null>(null);
+  const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    const fetchPost = async () => {
+      try {
+        const response = await instance.get(`/api/social/posts/${params.id}`);
+        if (response.status === 200) {
+          setPost(response.data);
+        }
+      } catch (error) {
+        console.error('게시글 조회 실패:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPost();
+  }, [params.id]);
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return '방금 전';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}분 전`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}시간 전`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}일 전`;
+    return date.toLocaleDateString();
+  };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -96,12 +98,30 @@ export default function PostDetailPage() {
   };
 
   const handlePrevImage = () => {
-    setCurrentImageIndex((prev) => (prev === 0 ? post.images.length - 1 : prev - 1));
+    if (!post) return;
+    setCurrentImageIndex((prev) => (prev === 0 ? post.imageUrls.length - 1 : prev - 1));
   };
 
   const handleNextImage = () => {
-    setCurrentImageIndex((prev) => (prev === post.images.length - 1 ? 0 : prev + 1));
+    if (!post) return;
+    setCurrentImageIndex((prev) => (prev === post.imageUrls.length - 1 ? 0 : prev + 1));
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (!post) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-500">게시글을 찾을 수 없습니다.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-32">
@@ -115,7 +135,7 @@ export default function PostDetailPage() {
             >
               <HiOutlineArrowLeft className="w-6 h-6" />
             </button>
-            <h1 className="text-xl font-bold ml-4">소셜</h1>
+            <h1 className="text-xl font-bold ml-4">게시글</h1>
           </div>
         </div>
       </header>
@@ -127,16 +147,30 @@ export default function PostDetailPage() {
           <div className="p-4">
             {/* 작성자 정보 */}
             <div className="flex items-center gap-3 mb-4">
-              <Image
-                src={post.author.avatar}
-                alt={post.author.name}
-                width={40}
-                height={40}
-                className="rounded-full"
-              />
+              <div className="relative w-10 h-10 rounded-full overflow-hidden bg-black">
+                {post.userProfileImage ? (
+                  <Image
+                    src={post.userProfileImage}
+                    alt={post.userNickname || "사용자"}
+                    width={40}
+                    height={40}
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-white text-xs">
+                    {post.userNickname?.[0] || "?"}
+                  </div>
+                )}
+              </div>
               <div>
-                <div className="font-medium">{post.author.name}</div>
-                <div className="text-sm text-gray-500">{post.timeAgo}</div>
+                <div className="font-medium">{post.userNickname || "익명 사용자"}</div>
+                <div className="text-sm text-gray-500">
+                  {formatTimeAgo(post.createdAt)} •{" "}
+                  <span className="text-blue-500">
+                    {categories.find((c) => c.id === post.category)?.name}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -146,90 +180,21 @@ export default function PostDetailPage() {
             </div>
 
             {/* 이미지 그리드 */}
-            {post.images.length > 0 && (
+            {post.imageUrls && post.imageUrls.length > 0 && (
               <div className="mb-4">
-                {post.images.length === 1 ? (
-                  <div 
-                    className="relative aspect-[4/3] rounded-lg overflow-hidden cursor-pointer"
-                    onClick={() => handleImageClick(0)}
-                  >
-                    <Image
-                      src={post.images[0]}
-                      alt="Post image"
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                ) : post.images.length === 2 ? (
-                  <div className="grid grid-cols-2 gap-1">
-                    {post.images.map((image, index) => (
-                      <div 
-                        key={index} 
-                        className="relative aspect-square rounded-lg overflow-hidden cursor-pointer"
-                        onClick={() => handleImageClick(index)}
-                      >
-                        <Image
-                          src={image}
-                          alt={`Post image ${index + 1}`}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : post.images.length === 3 ? (
-                  <div className="grid grid-cols-2 gap-1">
-                    <div 
-                      className="relative aspect-square rounded-lg overflow-hidden cursor-pointer"
-                      onClick={() => handleImageClick(0)}
-                    >
+                <div className="grid grid-cols-2 gap-1">
+                  {post.imageUrls.map((image, index) => (
+                    <div key={index} className="relative aspect-square">
                       <Image
-                        src={post.images[0]}
-                        alt="Post image 1"
+                        src={image}
+                        alt={`Post image ${index + 1}`}
                         fill
                         className="object-cover"
+                        unoptimized
                       />
                     </div>
-                    <div className="grid grid-rows-2 gap-1">
-                      {post.images.slice(1).map((image, index) => (
-                        <div 
-                          key={index} 
-                          className="relative aspect-square rounded-lg overflow-hidden cursor-pointer"
-                          onClick={() => handleImageClick(index + 1)}
-                        >
-                          <Image
-                            src={image}
-                            alt={`Post image ${index + 2}`}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-1">
-                    {post.images.slice(0, 4).map((image, index) => (
-                      <div 
-                        key={index} 
-                        className="relative aspect-square rounded-lg overflow-hidden cursor-pointer"
-                        onClick={() => handleImageClick(index)}
-                      >
-                        <Image
-                          src={image}
-                          alt={`Post image ${index + 1}`}
-                          fill
-                          className="object-cover"
-                        />
-                        {index === 3 && post.images.length > 4 && (
-                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                            <span className="text-white text-xl font-bold">+{post.images.length - 4}</span>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
             )}
 
@@ -237,11 +202,11 @@ export default function PostDetailPage() {
             <div className="flex items-center gap-4 text-sm text-gray-500">
               <div className="flex items-center gap-1">
                 <HiOutlineHeart className="w-5 h-5" />
-                <span>{post.likes}</span>
+                <span>{post.likeCount}</span>
               </div>
               <div className="flex items-center gap-1">
                 <HiOutlineChatBubbleLeftRight className="w-5 h-5" />
-                <span>{post.comments}</span>
+                <span>{post.commentCount}</span>
               </div>
             </div>
           </div>
@@ -266,35 +231,9 @@ export default function PostDetailPage() {
         {/* 댓글 섹션 */}
         <div className="bg-white">
           <div className="p-4">
-            <h2 className="font-medium mb-4">댓글 {post.comments}개</h2>
+            <h2 className="font-medium mb-4">댓글 {post.commentCount}개</h2>
             <div className="space-y-6">
-              {post.commentsList.map((comment) => (
-                <div key={comment.id} className="flex gap-3">
-                  <div className="flex-shrink-0">
-                    <Image
-                      src={comment.author.avatar}
-                      alt={comment.author.name}
-                      width={36}
-                      height={36}
-                      className="rounded-full"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-sm">{comment.author.name}</span>
-                      <span className="text-xs text-gray-500">{comment.timeAgo}</span>
-                    </div>
-                    <p className="text-sm text-gray-800 break-words">{comment.content}</p>
-                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                      <button className="flex items-center gap-1 hover:text-blue-500">
-                        <HiOutlineHeart className="w-4 h-4" />
-                        <span>{comment.likes}</span>
-                      </button>
-                      <button className="hover:text-blue-500">답글</button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+              {/* 댓글 데이터를 여기에 추가해야 합니다. */}
             </div>
           </div>
         </div>
@@ -321,7 +260,7 @@ export default function PostDetailPage() {
               {/* 이미지 */}
               <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-black">
                 <Image
-                  src={post.images[currentImageIndex]}
+                  src={post.imageUrls[currentImageIndex]}
                   alt={`Post image ${currentImageIndex + 1}`}
                   fill
                   className="object-contain"
@@ -329,7 +268,7 @@ export default function PostDetailPage() {
               </div>
 
               {/* 이전/다음 버튼 */}
-              {post.images.length > 1 && (
+              {post.imageUrls.length > 1 && (
                 <>
                   <button
                     onClick={handlePrevImage}
@@ -351,9 +290,9 @@ export default function PostDetailPage() {
               )}
 
               {/* 이미지 인디케이터 */}
-              {post.images.length > 1 && (
+              {post.imageUrls.length > 1 && (
                 <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 flex gap-2">
-                  {post.images.map((_, index) => (
+                  {post.imageUrls.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentImageIndex(index)}
