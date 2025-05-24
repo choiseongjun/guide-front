@@ -63,7 +63,7 @@ export default function Home() {
         const response = await instance.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels`, {
           params: {
             page: 0,
-            size: 10
+            size: 5
           }
         });
 

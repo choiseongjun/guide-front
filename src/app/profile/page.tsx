@@ -19,6 +19,7 @@ import {
   HiOutlineFire,
   HiOutlineClock,
   HiOutlineCreditCard,
+  HiOutlineUserGroup,
 } from "react-icons/hi2";
 import instance from "@/app/api/axios";
 
@@ -101,6 +102,33 @@ const settingsMenu = [
   },
 ];
 
+const menuItems = [
+  {
+    title: "나의 여행",
+    icon: <HiOutlineCalendar className="w-6 h-6" />,
+    href: "/profile/trips",
+  },
+  {
+    title: "참여 신청 관리",
+    icon: <HiOutlineUserGroup className="w-6 h-6" />,
+    href: "/profile/trips/requests",
+  },
+  {
+    title: "찜한 여행",
+    icon: <HiOutlineHeart className="w-6 h-6" />,
+    href: "/profile/wishlist",
+  },
+  {
+    title: "리뷰 관리",
+    icon: <HiOutlineStar className="w-6 h-6" />,
+    href: "/profile/reviews",
+  },
+  {
+    title: "설정",
+    icon: <HiOutlineCog6Tooth className="w-6 h-6" />,
+    href: "/profile/settings",
+  },
+];
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -309,6 +337,23 @@ export default function ProfilePage() {
                     <h4 className="font-medium text-gray-800">나의 여행</h4>
                     <p className="text-sm text-gray-600">
                       예정된 여행 2개 • 완료된 여행 8개
+                    </p>
+                  </div>
+                </div>
+                <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
+                onClick={() => router.push("/profile/trips/requests")}
+              >
+                <div className="flex items-center">
+                  <HiOutlineUserGroup className="w-6 h-6 text-purple-500 mr-3" />
+                  <div>
+                    <h4 className="font-medium text-gray-800">참여 신청 관리</h4>
+                    <p className="text-sm text-gray-600">
+                      대기중인 신청 3건 • 승인된 신청 5건
                     </p>
                   </div>
                 </div>
