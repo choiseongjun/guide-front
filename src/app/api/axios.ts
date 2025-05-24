@@ -63,8 +63,8 @@ instance.interceptors.response.use(
           return instance(originalRequest);
         }
       } catch (refreshError) {
-        // 리프레시 토큰도 만료된 경우
-        if (typeof window !== 'undefined') {
+        // 리프레시 토큰도 만료된 경우에만 로그아웃
+        if (typeof window !== 'undefined' && error.response?.status === 401) {
           localStorage.removeItem('at');
           localStorage.removeItem('rt');
           window.location.href = '/login';

@@ -20,13 +20,13 @@ interface CreateSocialClientProps {
 }
 
 const categories = [
-  { id: "review", name: "여행 후기" },
-  { id: "food", name: "맛집 추천" },
-  { id: "accommodation", name: "숙소 추천" },
-  { id: "tips", name: "여행 팁" },
-  { id: "companion", name: "동행 구함" },
-  { id: "question", name: "여행 질문" },
-  { id: "recommend", name: "지역 명소 추천" },
+  { key:1,id: "review", name: "여행 후기" },
+  { key:2,id: "food", name: "맛집 추천" },
+  { key:3,id: "accommodation", name: "숙소 추천" },
+  { key:4,id: "tips", name: "여행 팁" },
+  { key:5,id: "companion", name: "동행 구함" },
+  { key:6,id: "question", name: "여행 질문" },
+  { key:7,id: "recommend", name: "지역 명소 추천" },
 
 ];
 
