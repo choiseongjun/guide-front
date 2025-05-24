@@ -64,7 +64,7 @@ instance.interceptors.response.use(
         }
       } catch (refreshError) {
         // 리프레시 토큰도 만료된 경우에만 로그아웃
-        if (typeof window !== 'undefined' && error.response?.status === 401) {
+        if (typeof window !== 'undefined' && refreshError.response?.status === 401) {
           localStorage.removeItem('at');
           localStorage.removeItem('rt');
           window.location.href = '/login';
@@ -83,36 +83,37 @@ const checkAndRefreshToken = async () => {
   if (typeof window === 'undefined') return;
 
   const token = localStorage.getItem('at');
-  if (!token) return;
+  const refreshToken = localStorage.getItem('rt');
+  
+  if (!token || !refreshToken) return;
 
   try {
-    const response = await axios.post(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/auth/refresh`,
-      { refreshToken: localStorage.getItem('rt') }
-    );
+    // 토큰 갱신 요청 시 instance 사용
+    const response = await instance.post('/api/v1/auth/refresh', { refreshToken });
 
-    const { accessToken, refreshToken } = response.data;
-    localStorage.setItem('at', accessToken);
-    localStorage.setItem('rt', refreshToken);
+    if (response.data && response.data.accessToken) {
+      const { accessToken, refreshToken: newRefreshToken } = response.data;
+      localStorage.setItem('at', accessToken);
+      localStorage.setItem('rt', newRefreshToken);
+    }
   } catch (error) {
+    // 토큰 갱신 실패 시에도 즉시 로그아웃하지 않음
     console.error('Token refresh failed:', error);
-    localStorage.removeItem('at');
-    localStorage.removeItem('rt');
-    window.location.href = '/login';
   }
 };
 
 // 클라이언트 사이드에서만 토큰 갱신 체크 초기화
 if (typeof window !== 'undefined') {
-  // 초기 체크
-  checkAndRefreshToken();
+  let intervalId: NodeJS.Timeout | null = null;
   
-  // 4분마다 체크
-  const intervalId = setInterval(checkAndRefreshToken, 4 * 60 * 1000);
+  // 15분마다 체크 (10분에서 15분으로 변경)
+  intervalId = setInterval(checkAndRefreshToken, 15 * 60 * 1000);
   
   // 페이지 언마운트 시 인터벌 정리
   window.addEventListener('beforeunload', () => {
-    clearInterval(intervalId);
+    if (intervalId) {
+      clearInterval(intervalId);
+    }
   });
 }
 

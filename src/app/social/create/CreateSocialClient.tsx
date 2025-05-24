@@ -20,7 +20,7 @@ interface CreateSocialClientProps {
 }
 
 const categories = [
-  { key:1,id: "review", name: "여행 후기" },
+  { key:1,id: "review", name: "여행후기" },
   { key:2,id: "food", name: "맛집 추천" },
   { key:3,id: "accommodation", name: "숙소 추천" },
   { key:4,id: "tips", name: "여행 팁" },
