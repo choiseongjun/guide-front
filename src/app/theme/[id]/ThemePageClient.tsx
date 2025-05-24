@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import {
   HiOutlineArrowLeft,
@@ -35,7 +35,8 @@ interface Travel {
   maxParticipants: number;
   isPaid: boolean;
   price: number;
-  discountPrice: number;
+  discountRate: number;
+  discountedPrice: number;
   providedItems: string;
   notProvidedItems: string;
   requiresApproval: boolean;
@@ -54,11 +55,25 @@ interface Travel {
     name: string;
   }[];
   images: {
+    id: number;
     imageUrl: string;
+    displayOrder: number;
+    originalFileName: string;
+    storedFileName: string;
+    fileSize: number;
   }[];
+  reviews?: { id: number }[];
+  likes?: { id: number }[];
+  participants?: { profileImage: string }[];
   createdBy: string;
   updatedBy: string;
   links: any[];
+  user: {
+    id: number;
+    email: string | null;
+    nickname: string;
+    profileImageUrl: string;
+  };
 }
 
 interface TravelResponse {
@@ -123,7 +138,22 @@ export default function ThemePageClient({
     wishlist: "",
   });
 
-  const fetchTravels = async (pageNum: number = 0) => {
+  // 카테고리 ID가 변경될 때 상태 초기화
+  useEffect(() => {
+    // 모든 상태 초기화
+    setPage(0);
+    setTrips([]);
+    setHasMore(true);
+    setLoading(false);
+    
+    // 새로운 데이터 로드
+    fetchTravels(0);
+  }, [params.id]);
+
+  // fetchTravels 함수를 useCallback으로 메모이제이션
+  const fetchTravels = useCallback(async (pageNum: number = 0) => {
+    if (loading) return;  // 이미 로딩 중이면 중복 호출 방지
+
     try {
       setLoading(true);
       const response = await instance.get<TravelResponse>(
@@ -138,80 +168,76 @@ export default function ThemePageClient({
       );
 
       if (response.data.status === 200) {
-        console.log("API Response:", response.data.data.content);
-        
-        const mappedTrips = response.data.data.content.map(travel => {
-          console.log("Travel item:", travel);
-          return {
-            id: travel.id,
-            title: travel.title,
-            image: travel.images.length > 0 ? travel.images[0].imageUrl : "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&auto=format&fit=crop&q=60",
-            price: travel.price,
-            discountPrice: travel.discountPrice,
-            duration: `${Math.ceil((new Date(travel.endDate).getTime() - new Date(travel.startDate).getTime()) / (1000 * 60 * 60 * 24))}일`,
-            activity: travel.tags[0]?.name || "기타",
-            participants: `${travel.minParticipants}-${travel.maxParticipants}명`,
-            transport: "대중교통", // 임시 데이터
-            facilities: travel.providedItems.split(",").filter(Boolean),
-            date: travel.startDate,
-            time: travel.schedules[0]?.time || "",
-            location: travel.address.split(" ")[0],
-            reviews: 0, // 임시 데이터
-            wishlist: 15, // 임시 데이터
-            participantsPhotos: Array(4).fill(null).map((_, i) => `https://i.pravatar.cc/150?img=${i + 1}`), // 임시 데이터
-            highlight: travel.highlight,
-            startDate: travel.startDate,
-            endDate: travel.endDate,
-          };
-        });
+        const mappedTrips = response.data.data.content.map(travel => ({
+          id: travel.id,
+          title: travel.title,
+          image: travel.images.length > 0 ? travel.images[0].imageUrl : "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&auto=format&fit=crop&q=60",
+          price: travel.discountedPrice > 0 ? travel.discountedPrice : travel.price,
+          originalPrice: travel.price,
+          discountRate: travel.discountRate,
+          duration: `${Math.ceil((new Date(travel.endDate).getTime() - new Date(travel.startDate).getTime()) / (1000 * 60 * 60 * 24))}일`,
+          activity: travel.tags[0]?.name || "기타",
+          participants: `${travel.minParticipants}~${travel.maxParticipants}명`,
+          transport: "대중교통",
+          facilities: travel.providedItems.split(",").filter(Boolean),
+          date: travel.startDate,
+          time: travel.schedules[0]?.time || "",
+          location: travel.address.split(" ")[0],
+          reviews: travel.reviews?.length || 0,
+          wishlist: travel.likes?.length || 0,
+          participantsPhotos: travel.participants?.slice(0, 4).map(p => p.profileImage) || [],
+          highlight: travel.highlight,
+          startDate: travel.startDate,
+          endDate: travel.endDate,
+          user: {
+            id: travel.user.id,
+            nickname: travel.user.nickname,
+            profileImage: travel.user.profileImageUrl
+          }
+        }));
 
-        // 첫 페이지면 새로 설정, 아니면 기존 데이터에 추가
         setTrips(prev => pageNum === 0 ? mappedTrips : [...prev, ...mappedTrips]);
-        
-        // 더 불러올 데이터가 있는지 확인
         setHasMore(response.data.data.content.length === 10);
         setPage(pageNum);
       }
     } catch (error) {
       console.error('여행 목록 조회 실패:', error);
+      setHasMore(false);  // 에러 발생 시 더 이상 로드하지 않도록 설정
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id, loading]);
 
   // Intersection Observer 설정
   useEffect(() => {
+    let isFetching = false;  // API 호출 중복 방지를 위한 플래그
+
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading) {
-          fetchTravels(page + 1);
+      async (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading && !isFetching) {
+          isFetching = true;
+          await fetchTravels(page + 1);
+          isFetching = false;
         }
       },
       {
         root: null,
-        rootMargin: "20px",
+        rootMargin: "100px",  // 더 일찍 로딩 시작
         threshold: 0.1,
       }
     );
 
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
     }
 
     return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current);
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
       }
     };
-  }, [page, hasMore, loading]);
-
-  // 초기 데이터 로드
-  useEffect(() => {
-    setPage(0);
-    setTrips([]);
-    setHasMore(true);
-    fetchTravels(0);
-  }, [params.id]);
+  }, [page, hasMore, loading, fetchTravels]);
 
   // 현재 경로가 여행 관련 페이지인지 확인
   useEffect(() => {

@@ -26,6 +26,14 @@ interface Trip {
   highlight?: string;
   startDate?: string;
   endDate?: string;
+  discountRate: number;
+  originalPrice: number;
+  facilities: string[];
+  user: {
+    id: number;
+    nickname: string;
+    profileImage: string;
+  };
 }
 
 interface TripListProps {
@@ -34,6 +42,13 @@ interface TripListProps {
 }
 
 export default function TripList({ trips, onTripClick }: TripListProps) {
+  const getProfileImage = (url: string | null) => {
+    if (!url) {
+      return "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60";
+    }
+    return url;
+  };
+
   return (
     <div className="space-y-4">
       {trips.map((trip) => (
@@ -53,22 +68,33 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
             />
           </div>
           <div className="p-4">
-            <h3 className="text-lg font-semibold mb-1">{trip.title}</h3>
-            
+            {/* 가이드 프로필 */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                <Image
+                  src={getProfileImage(trip.user.profileImage)}
+                  alt={trip.user.nickname}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <span className="text-sm font-medium text-gray-700">
+                {trip.user.nickname}
+              </span>
+            </div>
+
+            {/* 여행 제목 */}
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {trip.title}
+            </h3>
+
             {/* 하이라이트 */}
             {trip.highlight && (
-              <p className="text-sm text-gray-700 mb-2 font-medium italic">{trip.highlight}</p>
+              <p className="text-sm text-gray-600 mb-3">{trip.highlight}</p>
             )}
 
-            {/* 여행 기간 */}
-            {trip.startDate && trip.endDate && (
-              <div className="text-sm text-gray-600 mb-3">
-                {new Date(trip.startDate).toLocaleDateString()} ~ {new Date(trip.endDate).toLocaleDateString()}
-              </div>
-            )}
-
-            {/* 기본 정보 */}
-            <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+            {/* 여행 정보 */}
+            <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
               <div className="flex items-center gap-1">
                 <HiOutlineCalendar className="w-4 h-4" />
                 <span>{trip.duration}</span>
@@ -78,71 +104,42 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
                 <span>{trip.time}</span>
               </div>
               <div className="flex items-center gap-1">
-                <HiOutlineMap className="w-4 h-4" />
-                <span>{trip.transport}</span>
-              </div>
-            </div>
-
-            {/* 참여자 프로필 사진 */}
-            {trip.participantsPhotos && (
-              <div className="flex items-center gap-2 mb-3">
-                <div className="flex -space-x-2">
-                  {trip.participantsPhotos.map((photo, index) => (
-                    <div
-                      key={index}
-                      className="relative w-8 h-8 rounded-full border-2 border-white overflow-hidden"
-                    >
-                      <Image
-                        src={photo}
-                        alt={`참여자 ${index + 1}`}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  ))}
-                </div>
-                <span className="text-sm text-gray-500">
-                  {trip.participants}
-                </span>
-              </div>
-            )}
-
-            {/* 리뷰와 찜 */}
-            <div className="flex items-center gap-4 mb-3">
-              <div className="flex items-center gap-1">
-                <HiOutlineStar className="w-4 h-4 text-yellow-400" />
-                <span>리뷰 {trip.reviews}개</span>
+                <HiOutlineMapPin className="w-4 h-4" />
+                <span>{trip.location}</span>
               </div>
               <div className="flex items-center gap-1">
-                <HiOutlineHeart className="w-4 h-4 text-red-400" />
-                <span>찜 {trip.wishlist}명</span>
+                <HiOutlineUserGroup className="w-4 h-4" />
+                <span>{trip.participants}</span>
               </div>
             </div>
 
             {/* 가격 정보 */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {trip.discountPrice && trip.discountPrice >0 ? (
+              <div className="flex items-baseline gap-2">
+                <span className="text-lg font-bold text-blue-600">
+                  {trip.price.toLocaleString()}원
+                </span>
+                {trip.discountRate > 0 && (
                   <>
-                    <span className="text-sm line-through text-gray-400">
-                      {trip.price?.toLocaleString() || '0'}원
+                    <span className="text-sm text-gray-500 line-through">
+                      {trip.originalPrice.toLocaleString()}원
                     </span>
-                    <span className="text-lg font-semibold text-blue-600">
-                      {trip.discountPrice?.toLocaleString() || '0'}원
+                    <span className="text-sm text-red-500">
+                      {trip.discountRate}% 할인
                     </span>
                   </>
-                ) : (
-                  <span className="text-lg font-semibold">
-                    {trip.price?.toLocaleString() || '0'}원
-                  </span>
                 )}
               </div>
-              {trip.location && (
-                <div className="flex items-center gap-1 text-gray-500">
-                  <HiOutlineMapPin className="w-4 h-4" />
-                  <span>{trip.location}</span>
+              <div className="flex items-center gap-3 text-sm text-gray-500">
+                <div className="flex items-center gap-1">
+                  <HiOutlineStar className="w-4 h-4" />
+                  <span>{trip.reviews}</span>
                 </div>
-              )}
+                <div className="flex items-center gap-1">
+                  <HiOutlineHeart className="w-4 h-4" />
+                  <span>{trip.wishlist}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -486,12 +486,14 @@ export default function CreateTripClient() {
       minAge,
       maxAge,
       hasSchedule: isScheduleEnabled,
-      schedules: schedules.map(schedule => ({
-        dayNumber: schedule.day,
-        title: schedule.title,
-        time: schedule.items[0]?.time || '00:00',
-        description: schedule.items[0]?.content || ''
-      })),
+      schedules: schedules.flatMap(schedule => 
+        schedule.items.map(item => ({
+          dayNumber: schedule.day,
+          title: schedule.title,
+          time: item.time,
+          description: item.content
+        }))
+      ),
       tags: tags.map(tag => ({
         name: tag
       })),

@@ -241,7 +241,7 @@ export default function Home() {
         <section className="py-8">
           <div className="max-w-md mx-auto px-4">
             <h2 className="text-2xl font-bold mb-6">추천 여행</h2>
-            <TripList
+            {/* <TripList
               trips={trips.map((trip) => ({
                 ...trip,
                 duration: trip.date.split(" - ")[0],
@@ -251,7 +251,7 @@ export default function Home() {
                 participantsPhotos: trip.participantsPhotos,
               }))}
               onTripClick={(tripId) => router.push(`/trip/${tripId}`)}
-            />
+            /> */}
           </div>
         </section>
       </div>
