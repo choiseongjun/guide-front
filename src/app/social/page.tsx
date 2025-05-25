@@ -39,7 +39,7 @@ export default function SocialPage() {
   const router = useRouter();
   const [expandedPosts, setExpandedPosts] = useState<number[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<"all" | "my">("all");
+  const [activeTab, setActiveTab] = useState<"all" | "my">("my");
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
@@ -49,7 +49,8 @@ export default function SocialPage() {
 
   const fetchPosts = async (pageNum: number = 0) => {
     try {
-      setLoading(true);
+      
+      
       setServerError(false);
       const endpoint = activeTab === 'my' ? '/api/social/posts/user/me' : '/api/social/posts';
       
@@ -61,6 +62,7 @@ export default function SocialPage() {
           category: selectedCategories.length > 0 ? selectedCategories.join(',') : undefined
         }
       });
+      console.log(response.data)
 
       if (response.status === 200) {
         const newPosts = response.data.data.content;
@@ -71,8 +73,6 @@ export default function SocialPage() {
     } catch (error) {
       console.error('게시글 조회 실패:', error);
       setServerError(true);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -104,9 +104,10 @@ export default function SocialPage() {
 
   // 초기 데이터 로드 및 카테고리/탭 변경 시 데이터 리셋
   useEffect(() => {
-    setPage(0);
+    
     setPosts([]);
     setHasMore(true);
+    setPage(0);
     fetchPosts(0);
   }, [selectedCategories, activeTab]);
 
