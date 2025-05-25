@@ -13,9 +13,24 @@ import {
   HiOutlineStar,
   HiOutlineChevronLeft,
   HiOutlineChevronRight,
+  HiOutlineCheck,
+  HiOutlineXMark,
+  HiOutlineXCircle,
 } from "react-icons/hi2";
 import instance from "@/app/api/axios";
 import { useUser } from "@/hooks/useUser";
+
+interface Participant {
+  id: number;
+  status: string;
+  message?: string;
+  createdAt: string;
+  user: {
+    id: number;
+    nickname: string;
+    profileImageUrl: string | null;
+  };
+}
 
 interface Trip {
   id: number;
@@ -54,15 +69,9 @@ interface Trip {
     id: number;
     name: string;
   }[];
-  participants?: {
-    id: number;
-    status: string;
-    user: {
-      id: number;
-      nickname: string;
-      profileImageUrl: string | null;
-    };
-  }[];
+  participants: Participant[];
+  reviews: any[];
+  likes: any[];
 }
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -71,6 +80,10 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [trip, setTrip] = useState<Trip | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const resolvedParams = use(params);
+  const [loading, setLoading] = useState(true);
+  const [isCreator, setIsCreator] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedParticipantId, setSelectedParticipantId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchTrip = async () => {
@@ -78,9 +91,12 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         const response = await instance.get(`/api/v1/travels/${resolvedParams.id}`);
         if (response.data.status === 200) {
           setTrip(response.data.data);
+          setIsCreator(user?.id === response.data.data.user.id);
         }
       } catch (error) {
         console.error("여행 상세 정보 조회 실패:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -107,11 +123,82 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     router.push(`/trip/${resolvedParams.id}/participate`);
   };
 
-  if (userLoading || !trip) {
+  const handleApprove = async (participantId: number) => {
+    try {
+      const response = await instance.put(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels/${resolvedParams.id}/participants/${participantId}/approve`
+      );
+      if (response.data.status === 200) {
+        // 상태 업데이트
+        setTrip(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            participants: prev.participants.map(p => 
+              p.id === participantId ? { ...p, status: 'APPROVED' } : p
+            )
+          };
+        });
+      }
+    } catch (error) {
+      console.error('참여자 승인 실패:', error);
+      alert('참여자 승인에 실패했습니다.');
+    }
+  };
+
+  const handleReject = async (participantId: number) => {
+    try {
+      const response = await instance.put(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels/${resolvedParams.id}/participants/${participantId}/reject`
+      );
+      if (response.data.status === 200) {
+        // 상태 업데이트
+        setTrip(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            participants: prev.participants.map(p => 
+              p.id === participantId ? { ...p, status: 'REJECTED' } : p
+            )
+          };
+        });
+      }
+    } catch (error) {
+      console.error('참여자 거절 실패:', error);
+      alert('참여자 거절에 실패했습니다.');
+    }
+  };
+
+  const handleCancelClick = (participantId: number) => {
+    setSelectedParticipantId(participantId);
+    setShowCancelModal(true);
+  };
+
+  const handleCancelConfirm = async () => {
+    try {
+      const response = await instance.delete(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels/${resolvedParams.id}/participants/cancel`
+      );
+      if (response.data.status === 200) {
+        // 상태 업데이트
+        setTrip(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            participants: prev.participants.filter(p => p.user.id !== user?.id)
+          };
+        });
+        setShowCancelModal(false);
+      }
+    } catch (error) {
+      console.error('참여 취소 실패:', error);
+      alert('참여 취소에 실패했습니다.');
+    }
+  };
+
+  if (userLoading || !trip || loading) {
     return null;
   }
-
-  const isCreator = user?.id === trip.user.id;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -281,12 +368,26 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         {!isCreator && (
           <div className="fixed bottom-20 left-1/2 -translate-x-1/2 max-w-md w-full px-4">
             <div className="flex justify-end">
-              <button 
-                onClick={handleParticipateClick}
-                className="w-14 h-14 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors shadow-lg"
-              >
-                <HiOutlineUserGroup className="w-6 h-6" />
-              </button>
+              {user && trip.participants.some(p => p.user.id === user.id && (p.status === 'APPROVED' || p.status === 'PENDING')) ? (
+                <button 
+                  onClick={() => {
+                    const participant = trip.participants.find(p => p.user.id === user.id);
+                    if (participant) {
+                      handleCancelClick(participant.id);
+                    }
+                  }}
+                  className="w-14 h-14 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg"
+                >
+                  <HiOutlineXCircle className="w-6 h-6" />
+                </button>
+              ) : (
+                <button 
+                  onClick={handleParticipateClick}
+                  className="w-14 h-14 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors shadow-lg"
+                >
+                  <HiOutlineUserGroup className="w-6 h-6" />
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -301,7 +402,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         </div>
 
         {/* 참여자 정보 */}
-        <div className="bg-white p-4 mb-4">
+        {/* <div className="bg-white p-4 mb-4">
           <h2 className="text-lg font-semibold mb-2">참여자</h2>
           <div className="flex items-center gap-2">
             <div className="flex -space-x-2">
@@ -329,6 +430,133 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               <span className="mx-1">/</span>
               <span>{trip.maxParticipants}명</span>
             </div>
+          </div>
+        </div> */}
+
+        {/* 취소 확인 모달 */}
+        {showCancelModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
+              <h3 className="text-lg font-semibold mb-4">참여 취소</h3>
+              <p className="text-gray-600 mb-6">정말로 참여를 취소하시겠습니까?</p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowCancelModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  아니오
+                </button>
+                <button
+                  onClick={handleCancelConfirm}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  네, 취소합니다
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 참여자 목록 */}
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold mb-4">참여자 목록</h3>
+          <div className="space-y-4">
+            {trip.participants
+              .filter((p) => p.status === "APPROVED")
+              .map((participant) => (
+                <div
+                  key={participant.id}
+                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                >
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                    <Image
+                      src={
+                        participant.user.profileImageUrl ||
+                        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60"
+                      }
+                      alt={participant.user.nickname}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-medium">{participant.user.nickname}</h4>
+                    <p className="text-sm text-gray-500">
+                      {new Date(participant.createdAt).toLocaleDateString()} 참여
+                    </p>
+                  </div>
+                  {user?.id === participant.user.id && (
+                    <button
+                      onClick={() => handleCancelClick(participant.id)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                    >
+                      <HiOutlineXCircle className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+          </div>
+        </div>
+
+        {/* 대기자 목록 */}
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold mb-4">대기자 목록</h3>
+          <div className="space-y-4">
+            {trip.participants
+              .filter((p) => p.status === "PENDING")
+              .map((participant) => (
+                <div
+                  key={participant.id}
+                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                >
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                    <Image
+                      src={
+                        participant.user.profileImageUrl ||
+                        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60"
+                      }
+                      alt={participant.user.nickname}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-medium">{participant.user.nickname}</h4>
+                    <p className="text-sm text-gray-500">
+                      {new Date(participant.createdAt).toLocaleDateString()} 신청
+                    </p>
+                    {participant.message && (
+                      <p className="text-sm text-gray-600 mt-1">{participant.message}</p>
+                    )}
+                  </div>
+                  {user?.id === participant.user.id ? (
+                    <button
+                      onClick={() => handleCancelClick(participant.id)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                    >
+                      <HiOutlineXCircle className="w-5 h-5" />
+                    </button>
+                  ) : isCreator && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleApprove(participant.id)}
+                        className="p-2 text-green-500 hover:bg-green-50 rounded-full transition-colors"
+                      >
+                        <HiOutlineCheck className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleReject(participant.id)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                      >
+                        <HiOutlineXMark className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            {trip.participants.filter((p) => p.status === "PENDING").length === 0 && (
+              <p className="text-center text-gray-500 py-4">대기중인 신청이 없습니다.</p>
+            )}
           </div>
         </div>
 

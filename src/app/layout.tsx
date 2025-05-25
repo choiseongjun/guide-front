@@ -7,7 +7,7 @@ import ServerStatusProvider from "./ServerStatusProvider";
 const inter = Geist({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "여행메이트",
+  title: "트래블윗미",
   description: "나만의 여행 가이드를 찾아보세요",
 };
 

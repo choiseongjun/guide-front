@@ -20,6 +20,7 @@ import {
   HiOutlineClock,
   HiOutlineCreditCard,
   HiOutlineUserGroup,
+  HiOutlineBanknotes,
 } from "react-icons/hi2";
 import instance from "@/app/api/axios";
 
@@ -434,7 +435,7 @@ export default function ProfilePage() {
                 onClick={() => router.push("/profile/settlement")}
               >
                 <div className="flex items-center">
-                  <HiOutlineCreditCard className="w-6 h-6 text-blue-500 mr-3" />
+                  <HiOutlineBanknotes className="w-6 h-6 text-green-500 mr-3" />
                   <div>
                     <h4 className="font-medium text-gray-800">정산 내역</h4>
                     <p className="text-sm text-gray-600">
