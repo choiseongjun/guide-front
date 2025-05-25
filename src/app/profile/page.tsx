@@ -23,6 +23,7 @@ import {
   HiOutlineBanknotes,
 } from "react-icons/hi2";
 import instance from "@/app/api/axios";
+import Link from "next/link";
 
 // 임시 사용자 데이터
 const userData = {
@@ -450,6 +451,7 @@ export default function ProfilePage() {
         </div>
       )}
 
+     
       {/* 설정 메뉴 */}
       <div className="mt-4 bg-white">
         <div className="max-w-md mx-auto">
@@ -460,6 +462,8 @@ export default function ProfilePage() {
                 onClick={() => {
                   if (section.id === "account") {
                     router.push("/profile/account");
+                  } else if (section.id === "notifications") {
+                    router.push("/profile/notification");
                   } else {
                     setActiveSection(section.id);
                   }
