@@ -118,14 +118,14 @@ export default function Home() {
       id: 2,
       title: "부산 여행",
       image:
-        "https://images.unsplash.com/photo-1596422846543-75c6fc197f11?w=800&auto=format&fit=crop&q=60",
+        "https://travelwithme-dev-file.s3.ap-northeast-2.amazonaws.com/banner/1065_4776_439.jpg",
       description: "바다와 함께하는 부산 여행",
     },
     {
       id: 3,
       title: "강원도 여행",
       image:
-        "https://images.unsplash.com/photo-1598887141929-ef608c1dba3c?w=800&auto=format&fit=crop&q=60",
+        "https://travelwithme-dev-file.s3.ap-northeast-2.amazonaws.com/banner/512_1879_1827.jpg",
       description: "자연과 함께하는 강원도 여행",
     },
   ];
