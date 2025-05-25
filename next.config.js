@@ -4,14 +4,9 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'i.pravatar.cc',
-      },
-      {
-        protocol: 'https',
-        hostname: 'picsum.photos',
+        hostname: '**',
       },
     ],
-    domains: ['images.unsplash.com', 'i.pravatar.cc', 'picsum.photos', 'travelwithme-dev-file.s3.ap-northeast-2.amazonaws.com', 'img1.kakaocdn.net', 't1.kakaocdn.net'],
   },
   env: {
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:8080',

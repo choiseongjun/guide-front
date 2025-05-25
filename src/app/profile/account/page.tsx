@@ -1,96 +1,177 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  HiOutlineArrowLeft,
-  HiOutlinePencil,
-  HiOutlineCamera,
-  HiOutlineLockClosed,
-} from "react-icons/hi2";
-import { motion } from "framer-motion";
+import Image from "next/image";
+import { HiOutlineArrowLeft, HiOutlineCamera } from "react-icons/hi2";
+import instance from "@/app/api/axios";
+import { useUser } from "@/hooks/useUser";
 
-export default function AccountPage() {
+interface ProfileData {
+  nickname: string;
+  email: string;
+  phoneNumber: string;
+  introduction: string;
+  profileImageUrl: string | null;
+  birthDate: string;
+  gender: string;
+  nationality: string;
+}
+
+export default function ProfileEditPage() {
   const router = useRouter();
-  const [profileImage, setProfileImage] = useState(
-    "/images/default-profile.svg"
-  );
-  const [nickname, setNickname] = useState("여행러");
-  const [email, setEmail] = useState("traveler@example.com");
-  const [phone, setPhone] = useState("010-1234-5678");
-  const [birthDate] = useState("1990-01-01");
-  const [gender, setGender] = useState("남성");
-  const [nationality, setNationality] = useState("대한민국");
-  const [isSaving, setIsSaving] = useState(false);
-  const [introduction, setIntroduction] = useState(
-    "안녕하세요! 여행을 좋아하는 여행러입니다. 새로운 곳을 탐험하고 다양한 문화를 경험하는 것을 좋아합니다."
-  );
+  const { user, isLoading: userLoading } = useUser();
+  const [profileData, setProfileData] = useState<ProfileData>({
+    nickname: "",
+    email: "",
+    phoneNumber: "",
+    introduction: "",
+    profileImageUrl: null,
+    birthDate: "",
+    gender: "",
+    nationality: "",
+  });
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await instance.get("/api/v1/users/me");
+        if (response.data.status === 200) {
+          const data = response.data.data;
+          setProfileData({
+            nickname: data.nickname || "",
+            email: data.email || "",
+            phoneNumber: data.phoneNumber || "",
+            introduction: data.introduction || "",
+            profileImageUrl: data.profileImageUrl || null,
+            birthDate: data.birthDate || "",
+            gender: data.gender || "",
+            nationality: data.nationality || "",
+          });
+        }
+      } catch (error) {
+        console.error("프로필 정보 조회 실패:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("pathType", "profile");
+
+    try {
+      const response = await instance.post("/api/v1/s3/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+        console.log(response);
+      if (response.status === 200) {
+        const imageUrl = response.data.fileUrl;
+        setProfileData(prev => ({
+          ...prev,
+          profileImageUrl: imageUrl
+        }));
+
+        // await instance.put("/api/v1/users/me/profile", {
+        //   ...profileData,
+        //   profileImageUrl: imageUrl
+        // });
+      }
+    } catch (error) {
+      console.error("이미지 업로드 실패:", error);
+      alert("이미지 업로드에 실패했습니다.");
     }
   };
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    // TODO: 저장 로직 구현
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // 임시 딜레이
-    setIsSaving(false);
-    router.back();
+  // 전화번호 포맷팅 함수 추가
+  const formatPhoneNumber = (phoneNumber: string) => {
+    if (!phoneNumber) return "";
+    const cleaned = phoneNumber.replace(/-/g, "");
+    if (cleaned.length === 11) {
+      return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7)}`;
+    }
+    return phoneNumber;
   };
 
+  // 전화번호에서 하이픈 제거하는 함수
+  const removeHyphens = (phoneNumber: string) => {
+    return phoneNumber.replace(/-/g, "");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await instance.put("/api/v1/users/me/profile", {
+        nickname: profileData.nickname,
+        email: profileData.email,
+        phoneNumber: profileData.phoneNumber,
+        introduction: profileData.introduction,
+        profileImageUrl: profileData.profileImageUrl
+      });
+
+      if (response.data.status === 200) {
+        alert("프로필이 수정되었습니다.");
+        router.push("/profile");
+      }
+    } catch (error) {
+      console.error("프로필 수정 실패:", error);
+      alert("프로필 수정에 실패했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (userLoading || loading) {
+    return null;
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-md mx-auto px-4 py-4">
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
+        <div className="max-w-md mx-auto px-4 py-3">
           <div className="flex items-center">
-            <motion.button
-              whileTap={{ scale: 0.95 }}
+            <button
               onClick={() => router.back()}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-full"
             >
-              <HiOutlineArrowLeft className="w-6 h-6 text-gray-600" />
-            </motion.button>
-            <h1 className="text-lg font-medium ml-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tight">
-              계정 설정
-            </h1>
+              <HiOutlineArrowLeft className="w-6 h-6" />
+            </button>
+            <h1 className="text-xl font-bold ml-4">프로필 수정</h1>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="max-w-md mx-auto px-4 py-6 space-y-6">
-        {/* 프로필 이미지 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl shadow-sm p-6"
-        >
+      {/* 메인 컨텐츠 */}
+      <main className="max-w-md mx-auto p-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* 프로필 이미지 */}
           <div className="flex flex-col items-center">
-            <div className="relative group">
-              <div className="w-32 h-32 rounded-full overflow-hidden shadow-lg bg-gray-100">
-                <Image
-                  src={profileImage}
-                  alt="프로필 이미지"
-                  width={128}
-                  height={128}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = "/images/default-profile.svg";
-                  }}
-                />
-              </div>
+            <div className="relative w-24 h-24 rounded-full overflow-hidden bg-gray-100">
+              <Image
+                src={profileData.profileImageUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60"}
+                alt="프로필 이미지"
+                fill
+                className="object-cover"
+              />
               <label
                 htmlFor="profile-image"
-                className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity"
               >
                 <HiOutlineCamera className="w-8 h-8 text-white" />
               </label>
@@ -102,143 +183,126 @@ export default function AccountPage() {
                 onChange={handleImageChange}
               />
             </div>
-            <h2 className="mt-4 text-base font-medium text-gray-800 tracking-tight">
-              프로필 이미지
-            </h2>
-            <p className="text-sm text-gray-500 mt-1 tracking-tight">
-              클릭하여 이미지 변경
-            </p>
+            <p className="text-sm text-gray-500 mt-2">프로필 이미지 변경</p>
           </div>
-        </motion.div>
 
-        {/* 계정 정보 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white rounded-2xl shadow-sm overflow-hidden"
-        >
-          <div className="divide-y divide-gray-100">
-            <div className="p-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5 tracking-tight">
-                닉네임
-              </label>
-              <input
-                type="text"
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base tracking-tight placeholder:text-gray-400"
-                placeholder="닉네임을 입력하세요"
-              />
-            </div>
-            <div className="p-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5 tracking-tight">
-                이메일
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base tracking-tight placeholder:text-gray-400"
-                placeholder="이메일을 입력하세요"
-              />
-            </div>
-            <div className="p-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5 tracking-tight">
-                전화번호
-              </label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base tracking-tight placeholder:text-gray-400"
-                placeholder="전화번호를 입력하세요"
-              />
-            </div>
-            <div className="p-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5 tracking-tight">
-                생년월일
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={birthDate}
-                  readOnly
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-base tracking-tight text-gray-600"
-                />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
-                  <HiOutlineLockClosed className="w-5 h-5" />
-                </div>
-              </div>
-              <p className="mt-1.5 text-xs text-gray-500 tracking-tight">
-                생년월일은 변경할 수 없습니다
-              </p>
-            </div>
-            <div className="p-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5 tracking-tight">
-                성별
-              </label>
-              <select
-                value={gender}
-                onChange={(e) => setGender(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base tracking-tight"
-              >
-                <option value="남성">남성</option>
-                <option value="여성">여성</option>
-                <option value="기타">기타</option>
-              </select>
-            </div>
-            <div className="p-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5 tracking-tight">
-                국적
-              </label>
-              <input
-                type="text"
-                value={nationality}
-                onChange={(e) => setNationality(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base tracking-tight placeholder:text-gray-400"
-                placeholder="국적을 입력하세요"
-              />
-            </div>
-            <div className="p-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5 tracking-tight">
-                내 소개
-              </label>
-              <textarea
-                value={introduction}
-                onChange={(e) => setIntroduction(e.target.value)}
-                rows={3}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base tracking-tight placeholder:text-gray-400 resize-none"
-                placeholder="자신을 소개해주세요"
-              />
-              <p className="mt-1.5 text-xs text-gray-500 tracking-tight">
-                최대 200자까지 입력 가능합니다
-              </p>
-            </div>
+          {/* 닉네임 */}
+          <div>
+            <label htmlFor="nickname" className="block text-sm font-medium text-gray-700 mb-1">
+              닉네임
+            </label>
+            <input
+              type="text"
+              id="nickname"
+              value={profileData.nickname}
+              onChange={(e) => setProfileData(prev => ({ ...prev, nickname: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
           </div>
-        </motion.div>
 
-        {/* 저장 버튼 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="pt-4"
-        >
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            onClick={handleSave}
-            disabled={isSaving}
-            className={`w-full py-4 rounded-xl text-white font-medium text-base tracking-tight transition-all ${
-              isSaving
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 shadow-lg hover:shadow-xl"
-            }`}
+          {/* 이메일 */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              이메일
+            </label>
+            <input
+              type="email"
+              id="email"
+              value={profileData.email}
+              onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          {/* 전화번호 */}
+          <div>
+            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+              전화번호
+            </label>
+            <input
+              type="tel"
+              id="phoneNumber"
+              value={formatPhoneNumber(profileData.phoneNumber)}
+              onChange={(e) => setProfileData(prev => ({ 
+                ...prev, 
+                phoneNumber: removeHyphens(e.target.value)
+              }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+              placeholder="01012345678"
+            />
+          </div>
+
+          {/* 생년월일 (읽기 전용) */}
+          <div>
+            <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700 mb-1">
+              생년월일
+            </label>
+            <input
+              type="text"
+              id="birthDate"
+              value={profileData.birthDate}
+              readOnly
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">생년월일은 변경할 수 없습니다</p>
+          </div>
+
+          {/* 성별 (읽기 전용) */}
+          <div>
+            <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">
+              성별
+            </label>
+            <input
+              type="text"
+              id="gender"
+              value={profileData.gender === 'MALE' ? '남자' : profileData.gender === 'FEMALE' ? '여자' : profileData.gender}
+              readOnly
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+            />
+          </div>
+
+          {/* 국적 (읽기 전용) */}
+          <div>
+            <label htmlFor="nationality" className="block text-sm font-medium text-gray-700 mb-1">
+              국적
+            </label>
+            <input
+              type="text"
+              id="nationality"
+              value={profileData.nationality}
+              readOnly
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+            />
+          </div>
+
+          {/* 자기소개 */}
+          <div>
+            <label htmlFor="introduction" className="block text-sm font-medium text-gray-700 mb-1">
+              자기소개
+            </label>
+            <textarea
+              id="introduction"
+              value={profileData.introduction || ""}
+              onChange={(e) => setProfileData(prev => ({ ...prev, introduction: e.target.value }))}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="자기소개를 입력해주세요"
+            />
+          </div>
+
+          {/* 저장 버튼 */}
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-blue-300"
           >
-            {isSaving ? "저장 중..." : "저장하기"}
-          </motion.button>
-        </motion.div>
-      </div>
+            {isSubmitting ? "저장 중..." : "저장하기"}
+          </button>
+        </form>
+      </main>
     </div>
   );
 }
