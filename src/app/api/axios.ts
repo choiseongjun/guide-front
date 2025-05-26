@@ -51,6 +51,19 @@ instance.interceptors.response.use(
     if (typeof window !== 'undefined') {
       window.dispatchEvent(loadingCompleteEvent);
     }
+
+    // 네트워크 에러 처리
+    if (error.message === 'Network Error') {
+      // 네트워크 에러 이벤트 발생
+      if (typeof window !== 'undefined') {
+        const networkErrorEvent = new CustomEvent('networkError', {
+          detail: { message: '서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요.' }
+        });
+        window.dispatchEvent(networkErrorEvent);
+      }
+      return Promise.reject(error);
+    }
+
     const originalRequest = error.config;
 
     // 토큰 만료로 인한 401 에러 처리
@@ -86,6 +99,26 @@ instance.interceptors.response.use(
           window.location.href = '/login';
         }
         return Promise.reject(refreshError);
+      }
+    }
+
+    // 기타 에러 처리
+    if (error.response) {
+      // 서버에서 응답이 왔지만 에러인 경우
+      const errorMessage = error.response.data?.message || '서버 오류가 발생했습니다.';
+      if (typeof window !== 'undefined') {
+        const serverErrorEvent = new CustomEvent('serverError', {
+          detail: { message: errorMessage }
+        });
+        window.dispatchEvent(serverErrorEvent);
+      }
+    } else {
+      // 서버에서 응답이 없는 경우
+      if (typeof window !== 'undefined') {
+        const serverErrorEvent = new CustomEvent('serverError', {
+          detail: { message: '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.' }
+        });
+        window.dispatchEvent(serverErrorEvent);
       }
     }
 

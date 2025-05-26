@@ -9,6 +9,10 @@ import {
   HiOutlineStar,
   HiOutlineMap,
 } from "react-icons/hi2";
+import { useState, useEffect } from "react";
+import instance from "@/app/api/axios";
+import { useUser } from "@/hooks/useUser";
+import { useRouter } from "next/navigation";
 
 interface Trip {
   id: number;
@@ -54,6 +58,15 @@ interface Trip {
     imageUrl: string;
     displayOrder: number;
   }[];
+  likes: {
+    id: number;
+    user: {
+      id: number;
+      nickname: string;
+      profileImageUrl: string | null;
+    };
+    createdAt: string;
+  }[];
 }
 
 interface TripListProps {
@@ -62,6 +75,25 @@ interface TripListProps {
 }
 
 export default function TripList({ trips, onTripClick }: TripListProps) {
+  const router = useRouter();
+  const { user } = useUser();
+  const [wishlistStatus, setWishlistStatus] = useState<{ [key: number]: boolean }>({});
+  const [wishlistCounts, setWishlistCounts] = useState<{ [key: number]: number }>({});
+
+  useEffect(() => {
+    // 초기 좋아요 상태와 카운트 설정
+    const initialWishlistStatus: { [key: number]: boolean } = {};
+    const initialWishlistCounts: { [key: number]: number } = {};
+    
+    trips.forEach(trip => {
+      initialWishlistStatus[trip.id] = trip.likes?.some((like: any) => like.user.id === user?.id) || false;
+      initialWishlistCounts[trip.id] = trip.likes?.length || 0;
+    });
+    
+    setWishlistStatus(initialWishlistStatus);
+    setWishlistCounts(initialWishlistCounts);
+  }, [trips, user?.id]);
+
   const getProfileImage = (url: string | null) => {
     if (!url) {
       return "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60";
@@ -76,6 +108,40 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
     const pendingCount = participantsArray.filter(p => p.status === 'PENDING').length;
     const approvedCount = participantsArray.filter(p => p.status === 'APPROVED').length;
     return { pendingCount, approvedCount };
+  };
+
+  const handleWishlistClick = async (e: React.MouseEvent, tripId: number) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      if (wishlistStatus[tripId]) {
+        // 찜하기 취소
+        await instance.delete(`/api/v1/travels/${tripId}/like`);
+        setWishlistCounts(prev => ({
+          ...prev,
+          [tripId]: Math.max(0, prev[tripId] - 1)
+        }));
+      } else {
+        // 찜하기 추가
+        await instance.post(`/api/v1/travels/${tripId}/like`);
+        setWishlistCounts(prev => ({
+          ...prev,
+          [tripId]: prev[tripId] + 1
+        }));
+      }
+      setWishlistStatus(prev => ({
+        ...prev,
+        [tripId]: !prev[tripId]
+      }));
+    } catch (error) {
+      console.error('찜하기 처리 실패:', error);
+      alert('찜하기 처리에 실패했습니다.');
+    }
   };
 
   console.log('trips==',trips)
@@ -104,6 +170,17 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
                 priority
                 className="object-cover"
               />
+              {/* 찜하기 버튼 */}
+              <button
+                onClick={(e) => handleWishlistClick(e, trip.id)}
+                className="absolute top-2 right-2 p-2 bg-white bg-opacity-80 rounded-full hover:bg-opacity-100 transition-all"
+              >
+                <HiOutlineHeart 
+                  className={`w-6 h-6 ${
+                    wishlistStatus[trip.id] ? 'text-red-500 fill-red-500' : 'text-gray-600'
+                  }`} 
+                />
+              </button>
             </div>
             <div className="p-4">
               {/* 가이드 프로필 */}
@@ -235,14 +312,14 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-3 text-sm text-gray-500 justify-end">
+              <div className="flex items-center gap-3 text-sm text-gray-500 justify-end mt-2">
                 <div className="flex items-center gap-1">
                   <HiOutlineChatBubbleLeft className="w-4 h-4" />
                   <span>{trip.reviews}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <HiOutlineHeart className="w-4 h-4" />
-                  <span>{trip.wishlist}</span>
+                  <HiOutlineHeart className={`w-4 h-4 ${wishlistStatus[trip.id] ? 'text-red-500 fill-current' : ''}`} />
+                  <span>{wishlistCounts[trip.id] || 0}</span>
                 </div>
               </div>
             </div>

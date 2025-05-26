@@ -54,12 +54,14 @@ interface Travel {
 export default function Home() {
   const router = useRouter();
   const [recommendedTrips, setRecommendedTrips] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchRecommendedTrips = async () => {
       try {
         setLoading(true);
+        setError(null);
         const response = await instance.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels`, {
           params: {
             page: 0,
@@ -86,8 +88,13 @@ export default function Home() {
           }));
           setRecommendedTrips(mappedTrips);
         }
-      } catch (error) {
-        console.error('추천 여행 목록 조회 실패:', error);
+      } catch (error: any) {
+        console.error('추천 여행 조회 실패:', error);
+        if (error.message === 'Network Error') {
+          setError('서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요.');
+        } else {
+          setError('데이터를 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요.');
+        }
       } finally {
         setLoading(false);
       }
@@ -254,20 +261,42 @@ export default function Home() {
         </button>
       </div>
 
-      <section className="py-8">
-        <div className="max-w-md mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-6">추천 여행</h2>
-          {loading ? (
-            <div className="flex justify-center items-center h-40">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-            </div>
-          ) : (
-            <TripList
-              trips={recommendedTrips}
-              onTripClick={(tripId) => router.push(`/trip/${tripId}`)}
-            />
-          )}
+      <section className="max-w-md mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold">추천 여행</h2>
+          <Link
+            href="/trip"
+            className="text-sm text-blue-500 hover:text-blue-600"
+          >
+            더보기
+          </Link>
         </div>
+
+        {error ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+            <p className="text-red-600">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-2 text-sm text-red-600 hover:text-red-700 underline"
+            >
+              새로고침
+            </button>
+          </div>
+        ) : loading ? (
+          <div className="flex justify-center items-center h-40">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {recommendedTrips.map((trip) => (
+              <TripList
+                key={trip.id}
+                trips={[trip]}
+                onTripClick={(tripId) => router.push(`/trip/${tripId}`)}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       <button

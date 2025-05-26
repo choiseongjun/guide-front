@@ -20,7 +20,9 @@ import {
   HiOutlinePencil,
   HiOutlinePhoto,
   HiOutlineTrash,
+  HiOutlineShare,
 } from "react-icons/hi2";
+import { HiOutlineChatBubbleLeft } from "react-icons/hi2";
 import instance from "@/app/api/axios";
 import { useUser } from "@/hooks/useUser";
 import { getImageUrl } from "@/app/common/imgUtils";
@@ -151,14 +153,20 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [editingReview, setEditingReview] = useState<Review | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [reviewToDelete, setReviewToDelete] = useState<number | null>(null);
+  const [isWishlist, setIsWishlist] = useState(false);
+  const [wishlistCount, setWishlistCount] = useState(0);
 
   useEffect(() => {
     const fetchTrip = async () => {
       try {
         const response = await instance.get(`/api/v1/travels/${resolvedParams.id}`);
         if (response.data.status === 200) {
-          setTrip(response.data.data);
-          setIsCreator(user?.id === response.data.data.user.id);
+          const tripData = response.data.data;
+          setTrip(tripData);
+          setIsCreator(user?.id === tripData.user.id);
+          // 좋아요 상태와 카운트 초기화
+          setIsWishlist(tripData.likes?.some((like: any) => like.user.id === user?.id) || false);
+          setWishlistCount(tripData.likes?.length || 0);
         }
       } catch (error) {
         console.error("여행 상세 정보 조회 실패:", error);
@@ -168,7 +176,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     };
 
     fetchTrip();
-  }, [resolvedParams.id]);
+  }, [resolvedParams.id, user?.id]);
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -403,6 +411,31 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     return date.toLocaleDateString();
   };
 
+  const handleWishlistClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      if (isWishlist) {
+        // 찜하기 취소
+        await instance.delete(`/api/v1/travels/${resolvedParams.id}/like`);
+        setWishlistCount(prev => Math.max(0, prev - 1));
+      } else {
+        // 찜하기 추가
+        await instance.post(`/api/v1/travels/${resolvedParams.id}/like`);
+        setWishlistCount(prev => prev + 1);
+      }
+      setIsWishlist(!isWishlist);
+    } catch (error) {
+      console.error('찜하기 처리 실패:', error);
+      alert('찜하기 처리에 실패했습니다.');
+    }
+  };
+
   if (userLoading || !trip || loading) {
     return null;
   }
@@ -420,6 +453,26 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               <HiOutlineArrowLeft className="w-6 h-6" />
             </button>
             <h1 className="text-xl font-bold ml-4">여행 상세</h1>
+            <div className="ml-auto flex items-center gap-2">
+              <button className="p-2 hover:bg-gray-100 rounded-full">
+                <HiOutlineShare className="w-6 h-6" />
+              </button>
+              <button
+                onClick={handleWishlistClick}
+                className="p-2 hover:bg-gray-100 rounded-full relative"
+              >
+                <HiOutlineHeart
+                  className={`w-6 h-6 ${
+                    isWishlist ? "text-red-500 fill-current" : "text-gray-600"
+                  }`}
+                />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                    {wishlistCount}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </header>
