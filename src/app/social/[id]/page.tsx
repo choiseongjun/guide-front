@@ -29,7 +29,14 @@ const categories = [
   { id: "TRAVEL_QUESTION", name: "여행 질문" },
 ];
 
-export default function SocialDetailPage({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: Promise<{
+    id: string;
+  }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default function SocialPage({ params }: PageProps) {
   const router = useRouter();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,7 +48,8 @@ export default function SocialDetailPage({ params }: { params: { id: string } })
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const response = await instance.get(`/api/social/posts/${params.id}`);
+        const resolvedParams = await params;
+        const response = await instance.get(`/api/social/posts/${resolvedParams.id}`);
         if (response.status === 200) {
           setPost(response.data);
         }
@@ -53,7 +61,7 @@ export default function SocialDetailPage({ params }: { params: { id: string } })
     };
 
     fetchPost();
-  }, [params.id]);
+  }, [params]);
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);

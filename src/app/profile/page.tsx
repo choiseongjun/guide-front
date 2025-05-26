@@ -24,6 +24,7 @@ import {
 } from "react-icons/hi2";
 import instance from "@/app/api/axios";
 import Link from "next/link";
+import { useUser } from "@/hooks/useUser";
 
 // 임시 사용자 데이터
 const userData = {
@@ -134,6 +135,7 @@ const menuItems = [
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { user } = useUser();
   const [activeSection, setActiveSection] = useState("profile");
   const [isLoggedIn, setIsLoggedIn] = useState(userData.isLoggedIn);
 
@@ -191,52 +193,81 @@ export default function ProfilePage() {
     }
   };
 
+  const getGenderText = (gender: string | undefined) => {
+    if (!gender) return "남성";
+    return gender === "MALE" ? "남성" : "여성";
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
+      {/* 프로필 헤더 */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-md mx-auto px-4 py-6">
+          <div className="flex items-center gap-4">
+            <div className="relative w-20 h-20 rounded-full overflow-hidden bg-gray-100">
+              {user?.profileImageUrl ? (
+                <Image
+                  src={user.profileImageUrl}
+                  alt={user.nickname}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl">
+                  {user?.nickname?.[0] || "?"}
+                </div>
+              )}
+            </div>
+            <div className="flex-1">
+              <h2 className="text-xl font-bold">{user?.nickname || "여행러"}</h2>
+              <p className="text-sm text-gray-500">{(user as any)?.introduction || ""}</p>
+            </div>
+            <button
+              onClick={() => router.push("/profile/account")}
+              className="p-2 text-gray-500 hover:text-blue-500 transition-colors"
+            >
+              <HiOutlinePencil className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* 프로필 섹션 */}
       <div className="bg-white">
         <div className="max-w-md mx-auto px-4 py-6">
           <div className="flex items-center gap-4">
-            <div className="relative">
-              <Image
-                src={userData.profileImage}
-                alt="프로필 이미지"
-                width={80}
-                height={80}
-                className="rounded-full"
-              />
-            </div>
             <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold">{userData.nickname}</h1>
+              {/* <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold">{user?.nickname || "여행러"}</h1>
                 <div className="flex items-center space-x-1 bg-gradient-to-r from-orange-400 to-red-500 text-white px-2 py-1 rounded-full text-sm">
                   <HiOutlineFire className="w-4 h-4" />
                   <span>36.5°C</span>
                 </div>
-              </div>
-              <p className="text-gray-600 text-sm mt-1">
-                {userData.introduction}
-              </p>
+              </div> */}
+              {/* <p className="text-gray-600 text-sm mt-1">
+                {user?.introduction || ""}
+              </p> */}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
                 <div className="flex items-center gap-1 text-sm text-gray-500">
                   <HiOutlineUser className="w-4 h-4" />
-                  <span>{userData.gender}</span>
+                  <span>{getGenderText(user?.gender)}</span>
                 </div>
                 <div className="flex items-center gap-1 text-sm text-gray-500">
                   <HiOutlineCalendar className="w-4 h-4" />
-                  <span>{userData.age}세</span>
+                  <span>{user?.age || 32}세</span>
                 </div>
                 <div className="flex items-center gap-1 text-sm text-gray-500">
                   <HiOutlineMapPin className="w-4 h-4" />
-                  <span>{userData.nationality}</span>
+                  <span>{user?.nationality || "대한민국"}</span>
                 </div>
                 <div
                   className={`flex items-center gap-1 text-sm ${getLevelColor(
-                    calculateTripLevel(userData.tripLevel).level
+                    calculateTripLevel(user?.tripLevel || 0).level
                   )}`}
                 >
                   <HiOutlineStar className="w-4 h-4" />
-                  <span>{calculateTripLevel(userData.tripLevel).title}</span>
+                  <span>{calculateTripLevel(user?.tripLevel || 0).title}</span>
                 </div>
               </div>
             </div>
@@ -245,15 +276,15 @@ export default function ProfilePage() {
           {/* 통계 */}
           <div className="grid grid-cols-3 gap-4 mt-6">
             <div className="text-center">
-              <div className="font-bold">{userData.followers}</div>
+              <div className="font-bold">{user?.followers || 0}</div>
               <div className="text-sm text-gray-500">팔로워</div>
             </div>
             <div className="text-center">
-              <div className="font-bold">{userData.following}</div>
+              <div className="font-bold">{user?.following || 0}</div>
               <div className="text-sm text-gray-500">팔로잉</div>
             </div>
             <div className="text-center">
-              <div className="font-bold">{userData.reviews}</div>
+              <div className="font-bold">{user?.reviews || 0}</div>
               <div className="text-sm text-gray-500">리뷰</div>
             </div>
           </div>
@@ -451,7 +482,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-     
       {/* 설정 메뉴 */}
       <div className="mt-4 bg-white">
         <div className="max-w-md mx-auto">

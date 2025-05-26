@@ -3,7 +3,7 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "./ClientLayout";
 import ServerStatusProvider from "./ServerStatusProvider";
-
+ 
 const inter = Geist({ subsets: ["latin"] });
 
 export const metadata: Metadata = {

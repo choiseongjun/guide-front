@@ -9,6 +9,14 @@ interface User {
   role: string;
   createdAt: string;
   updatedAt: string;
+  age:number;
+  nationality:string;
+  tripLevel:number;
+  followers:number;
+  following:number;
+  reviews:number;
+  gender:string;
+
 }
 
 let cachedUser: User | null = null;
