@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "./ClientLayout";
 import ServerStatusProvider from "./ServerStatusProvider";
+import Footer from "@/components/Footer";
  
 const inter = Geist({ subsets: ["latin"] });
 
@@ -26,7 +27,10 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ServerStatusProvider>
-          <ClientLayout>{children}</ClientLayout>
+          <ClientLayout>
+            {children}
+            <Footer />
+          </ClientLayout>
         </ServerStatusProvider>
       </body>
     </html>
