@@ -104,7 +104,7 @@ export default function ClientLayout({
 
               <div className="flex items-center gap-1 ml-auto">
                 <Link
-                  href="/wishlist"
+                  href="/profile/saved"
                   className="text-gray-600 hover:text-blue-500 transition-colors"
                 >
                   <HiOutlineHeart className="w-6 h-6" />
@@ -147,7 +147,7 @@ export default function ClientLayout({
                   <span className="text-xs mt-1">여행</span>
                 </Link>
                 <Link
-                  href="/social"
+                  href="/social?tab=all"
                   className={`flex flex-col items-center flex-1 ${
                     pathname === "/social" ? "text-blue-500" : "text-gray-600"
                   }`}

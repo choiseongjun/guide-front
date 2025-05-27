@@ -7,7 +7,7 @@ import {
   HiOutlineShare,
   HiPlus,
 } from "react-icons/hi2";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import instance from "@/app/api/axios";
@@ -35,17 +35,49 @@ const categories = [
   { id: "6", name: "여행 질문" },
 ]; 
 
+type SortOption = "latest" | "popular" | "comments";
+type FilterState = {
+  location: string[];
+  duration: string[];
+  price: string[];
+  theme: string[];
+};
+
 export default function SocialPage() {
   const router = useRouter();
-  const [expandedPosts, setExpandedPosts] = useState<number[]>([]);
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'all');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<"all" | "my">("my");
+  const [showFilter, setShowFilter] = useState(false);
+  const [showSort, setShowSort] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>("latest");
+  const [selectedFilters, setSelectedFilters] = useState<FilterState>({
+    location: [],
+    duration: [],
+    price: [],
+    theme: [],
+  });
+  const [expandedPosts, setExpandedPosts] = useState<number[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [serverError, setServerError] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
+
+  // URL 쿼리 파라미터가 변경될 때 탭 상태 업데이트
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  // 탭 변경 시 URL 업데이트
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    router.push(`/social?tab=${tab}`);
+  };
 
   const fetchPosts = async (pageNum: number = 0) => {
     try {
@@ -184,7 +216,7 @@ export default function SocialPage() {
                   ? "text-blue-500 border-b-2 border-blue-500"
                   : "text-gray-500"
               }`}
-              onClick={() => setActiveTab("all")}
+              onClick={() => handleTabChange("all")}
             >
               전체 피드
             </button>
@@ -194,7 +226,7 @@ export default function SocialPage() {
                   ? "text-blue-500 border-b-2 border-blue-500"
                   : "text-gray-500"
               }`}
-              onClick={() => setActiveTab("my")}
+              onClick={() => handleTabChange("my")}
             >
               내 게시글
             </button>

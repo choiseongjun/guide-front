@@ -144,13 +144,27 @@ export default function ProfilePage() {
   };
 
   const certification = async () => {
+    // 모바일 환경 체크
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (!isMobile) {
+      // PC 환경일 경우 모바일로 리디렉션
+      const currentUrl = window.location.href;
+      const mobileUrl = `https://m.tripwithme.com${window.location.pathname}${window.location.search}`;
+      
+      // 모바일 URL로 리디렉션
+      window.location.href = mobileUrl;
+      return;
+    }
+
+    // 모바일 환경에서 본인인증 진행
     const response:any = await PortOne.requestIdentityVerification({
-      // 고객사 storeId로 변경해주세요.
       storeId: "store-0d664ae7-e67d-4bb7-b891-2a9003c6b9bb",
       identityVerificationId: `identity-verification-${crypto.randomUUID()}`,
-      // 연동 정보 메뉴의 채널 관리 탭에서 확인 가능합니다.
       channelKey: "channel-key-e997c286-fdb5-4239-9583-991a7bbf5cee",
+      redirectUrl: `${window.location.origin}/profile/certification/complete`,
     });
+
     if (response.code !== undefined) {
       return alert(response.message);
     }
