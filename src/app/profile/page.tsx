@@ -25,7 +25,7 @@ import {
 import instance from "@/app/api/axios";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
-
+import PortOne from "@portone/browser-sdk/v2"
 // 임시 사용자 데이터
 const userData = {
   isLoggedIn: true,
@@ -143,6 +143,20 @@ export default function ProfilePage() {
     router.push("/login");
   };
 
+  const certification = async () => {
+    const response:any = await PortOne.requestIdentityVerification({
+      // 고객사 storeId로 변경해주세요.
+      storeId: "store-0d664ae7-e67d-4bb7-b891-2a9003c6b9bb",
+      identityVerificationId: `identity-verification-${crypto.randomUUID()}`,
+      // 연동 정보 메뉴의 채널 관리 탭에서 확인 가능합니다.
+      channelKey: "channel-key-e997c286-fdb5-4239-9583-991a7bbf5cee",
+    });
+    if (response.code !== undefined) {
+      return alert(response.message);
+    }
+    console.log(response);
+  }
+
   const handleLogout = async () => {
     try {
       const refreshToken = localStorage.getItem('rt');
@@ -220,15 +234,26 @@ export default function ProfilePage() {
               )}
             </div>
             <div className="flex-1">
-              <h2 className="text-xl font-bold">{user?.nickname || "여행러"}</h2>
-              <p className="text-sm text-gray-500">{(user as any)?.introduction || ""}</p>
+              <div className="flex flex-col">
+              <button
+                  onClick={() => router.push("/profile/account")}
+                  className="self-start mt-2 p-1 text-gray-500 hover:text-blue-500 transition-colors flex justify-start w-full"
+                >
+                  <HiOutlinePencil className="w-4 h-4" />
+                </button>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-bold">{user?.nickname || "여행러"}</h2>
+                  <div className="flex items-center gap-1">
+                    <div className="bg-blue-500 rounded-full p-1">
+                      <HiOutlineShieldCheck className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs text-gray-500">본인인증완료</span>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">{(user as any)?.introduction || ""}</p>
+                <button onClick={certification}>본인인증 하기</button>
+              </div>
             </div>
-            <button
-              onClick={() => router.push("/profile/account")}
-              className="p-2 text-gray-500 hover:text-blue-500 transition-colors"
-            >
-              <HiOutlinePencil className="w-5 h-5" />
-            </button>
           </div>
         </div>
       </div>

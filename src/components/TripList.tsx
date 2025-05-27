@@ -67,6 +67,7 @@ interface Trip {
     };
     createdAt: string;
   }[];
+  liked: boolean;
 }
 
 interface TripListProps {
@@ -80,19 +81,55 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
   const [wishlistStatus, setWishlistStatus] = useState<{ [key: number]: boolean }>({});
   const [wishlistCounts, setWishlistCounts] = useState<{ [key: number]: number }>({});
 
+  // 초기 상태 설정
   useEffect(() => {
-    // 초기 좋아요 상태와 카운트 설정
+    console.log('trips data:', trips);
     const initialWishlistStatus: { [key: number]: boolean } = {};
     const initialWishlistCounts: { [key: number]: number } = {};
     
     trips.forEach(trip => {
-      initialWishlistStatus[trip.id] = trip.likes?.some((like: any) => like.user.id === user?.id) || false;
+      console.log(`Trip ${trip.id} liked:`, trip.liked);
+      initialWishlistStatus[trip.id] = trip.liked;
       initialWishlistCounts[trip.id] = trip.likes?.length || 0;
     });
-    
+
+    console.log('Initial wishlist status:', initialWishlistStatus);
     setWishlistStatus(initialWishlistStatus);
     setWishlistCounts(initialWishlistCounts);
   }, [trips, user?.id]);
+
+  const handleWishlistClick = async (e: React.MouseEvent, tripId: number) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      if (wishlistStatus[tripId]) {
+        await instance.delete(`/api/v1/travels/${tripId}/like`);
+        setWishlistCounts(prev => ({
+          ...prev,
+          [tripId]: Math.max(0, prev[tripId] - 1)
+        }));
+      } else {
+        await instance.post(`/api/v1/travels/${tripId}/like`);
+        setWishlistCounts(prev => ({
+          ...prev,
+          [tripId]: prev[tripId] + 1
+        }));
+      }
+
+      setWishlistStatus(prev => ({
+        ...prev,
+        [tripId]: !prev[tripId]
+      }));
+    } catch (error) {
+      console.error('찜하기 처리 실패:', error);
+      alert('찜하기 처리에 실패했습니다.');
+    }
+  };
 
   const getProfileImage = (url: string | null) => {
     if (!url) {
@@ -108,40 +145,6 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
     const pendingCount = participantsArray.filter(p => p.status === 'PENDING').length;
     const approvedCount = participantsArray.filter(p => p.status === 'APPROVED').length;
     return { pendingCount, approvedCount };
-  };
-
-  const handleWishlistClick = async (e: React.MouseEvent, tripId: number) => {
-    e.stopPropagation();
-    
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-
-    try {
-      if (wishlistStatus[tripId]) {
-        // 찜하기 취소
-        await instance.delete(`/api/v1/travels/${tripId}/like`);
-        setWishlistCounts(prev => ({
-          ...prev,
-          [tripId]: Math.max(0, prev[tripId] - 1)
-        }));
-      } else {
-        // 찜하기 추가
-        await instance.post(`/api/v1/travels/${tripId}/like`);
-        setWishlistCounts(prev => ({
-          ...prev,
-          [tripId]: prev[tripId] + 1
-        }));
-      }
-      setWishlistStatus(prev => ({
-        ...prev,
-        [tripId]: !prev[tripId]
-      }));
-    } catch (error) {
-      console.error('찜하기 처리 실패:', error);
-      alert('찜하기 처리에 실패했습니다.');
-    }
   };
 
   console.log('trips==',trips)

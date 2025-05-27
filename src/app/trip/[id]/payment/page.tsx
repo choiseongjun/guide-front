@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { HiOutlineArrowLeft, HiOutlineCalendar, HiOutlineClock, HiOutlineMapPin, HiOutlineUserGroup } from "react-icons/hi2";
 import instance from "@/app/api/axios";
+import PortOne from "@portone/browser-sdk/v2"
 
 interface Trip {
   id: number;
@@ -53,9 +54,32 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
     fetchTrip();
   }, [resolvedParams.id]);
 
-  const handlePayment = () => {
-    // TODO: 결제 로직 구현
+  function randomId() {
+    return [...crypto.getRandomValues(new Uint32Array(2))]
+      .map((word) => word.toString(16).padStart(8, "0"))
+      .join("")
+  }
+  const handlePayment = async () => {
+    if (!trip) return;
+    
+    const orderName = trip.title;
+    const totalAmount = finalPrice;
+    
     console.log('결제 진행:', paymentMethod);
+    const payment = await PortOne.requestPayment({
+      storeId: process.env.NEXT_PUBLIC_PG_STORE_ID,
+      channelKey: process.env.NEXT_PUBLIC_PG_PAY_CHANNEL_ID,
+      paymentId: randomId(),
+      orderName: orderName,
+      totalAmount: totalAmount,
+      currency: "KRW" as const, 
+      payMethod: "CARD",
+      redirectUrl: `${window.location.origin}/payment/redirect?tripId=${trip.id}`,
+      customData: {
+        tripId: trip.id
+      }
+    });
+    console.log('결제 결과:', payment);
   };
 
   if (!trip) {
@@ -114,7 +138,7 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
 
         {/* 여행 설명 */}
         <div className="bg-white rounded-lg p-4 mb-6">
-          <h3 className="text-lg font-semibold mb-4">여행 소개</h3>
+          <h3 className="text-lg font-semibold mb-4">여행 소개{trip.id}</h3>
           <p className="text-gray-600 whitespace-pre-line">{trip.description}</p>
         </div>
 

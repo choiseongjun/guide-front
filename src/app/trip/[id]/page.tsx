@@ -164,8 +164,19 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
           const tripData = response.data.data;
           setTrip(tripData);
           setIsCreator(user?.id === tripData.user.id);
-          // 좋아요 상태와 카운트 초기화
-          setIsWishlist(tripData.likes?.some((like: any) => like.user.id === user?.id) || false);
+          
+          // 좋아요 상태 확인 API 호출
+          if (user) {
+            try {
+              const likeResponse = await instance.get(`/api/v1/travels/${resolvedParams.id}/like`);
+              // API 응답에서 실제 좋아요 상태 확인
+              setIsWishlist(likeResponse.data.data || false);
+            } catch (error) {
+              setIsWishlist(false);
+            }
+          } else {
+            setIsWishlist(false);
+          }
           setWishlistCount(tripData.likes?.length || 0);
         }
       } catch (error) {
