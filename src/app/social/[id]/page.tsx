@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { HiOutlineHeart, HiOutlineChatBubbleLeftRight, HiOutlineShare, HiOutlineArrowLeft, HiOutlinePhoto, HiOutlineCamera, HiOutlinePaperAirplane, HiOutlineXMark, HiOutlinePencil, HiOutlineTrash } from "react-icons/hi2";
+import { HiOutlineHeart, HiOutlineChatBubbleLeftRight, HiOutlineShare, HiOutlineArrowLeft, HiOutlinePhoto, HiOutlineCamera, HiOutlinePaperAirplane, HiOutlineXMark, HiOutlinePencil, HiOutlineTrash, HiHeart } from "react-icons/hi2";
 import { FaExclamationTriangle } from "react-icons/fa";
 import { MdEmergency, MdReportProblem } from "react-icons/md";
 import { GiPoliceCar, GiPoliceBadge, GiSiren } from "react-icons/gi";
@@ -91,6 +91,9 @@ export default function SocialPage({ params }: PageProps) {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportCommentId, setReportCommentId] = useState<number | null>(null);
   const [reportReason, setReportReason] = useState("");
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [isLikeLoading, setIsLikeLoading] = useState(false);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -253,10 +256,11 @@ export default function SocialPage({ params }: PageProps) {
         setComment("");
         // 모든 이미지 미리보기 URL 해제
         selectedImages.forEach(img => URL.revokeObjectURL(img.preview));
+        setIsLiked(true)
         setSelectedImages([]);
         fetchComments();
         // 댓글 목록 새로고침
-        router.refresh();
+        // router.refresh();
       }
     } catch (error) {
       console.error("댓글 작성 실패:", error);
@@ -435,6 +439,90 @@ export default function SocialPage({ params }: PageProps) {
     }
   };
 
+  // 좋아요 토글
+  const handleLikeToggle = async () => {
+    if (isLikeLoading) return;
+    
+    try {
+      setIsLikeLoading(true);
+      // UI 즉시 업데이트
+      const newLikeStatus = !isLiked;
+      setIsLiked(newLikeStatus);
+      setLikeCount(prev => newLikeStatus ? prev + 1 : prev - 1);
+
+      const resolvedParams = await params;
+      const response = await instance.post(`/api/v1/social/posts/${resolvedParams.id}/like`);
+      console.log('좋아요 토글 응답:', response);
+      
+      if (response.status === 200) {
+        // 서버 응답으로 최종 상태 동기화
+        const serverLikeStatus = typeof response.data === 'object' ? response.data.data : response.data;
+        console.log('서버 좋아요 상태:', serverLikeStatus);
+        
+        // 서버 상태와 다르다면 다시 동기화
+        if (Boolean(serverLikeStatus) !== newLikeStatus) {
+          setIsLiked(Boolean(serverLikeStatus));
+          // 좋아요 수 다시 가져오기
+          const countResponse = await instance.get(`/api/v1/social/posts/${resolvedParams.id}/like/count`);
+          if (countResponse.status === 200) {
+            const count = typeof countResponse.data === 'object' ? countResponse.data.data : countResponse.data;
+            setLikeCount(Number(count));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('좋아요 토글 실패:', error);
+      // 에러 발생 시 원래 상태로 복구
+      setIsLiked(!isLiked);
+      setLikeCount(prev => isLiked ? prev + 1 : prev - 1);
+    } finally {
+      setIsLikeLoading(false);
+    }
+  };
+
+  // 좋아요 상태 확인
+  const checkLikeStatus = async () => {
+    try {
+      const resolvedParams = await params;
+      const response = await instance.get(`/api/v1/social/posts/${resolvedParams.id}/like`);
+      console.log('좋아요 상태 응답:', response);
+      if (response.status === 200) {
+        const likeStatus = typeof response.data === 'object' ? response.data.data : response.data;
+        console.log('좋아요 상태:', likeStatus);
+        setIsLiked(Boolean(likeStatus));
+      }
+    } catch (error) {
+      console.error('좋아요 상태 확인 실패:', error);
+    }
+  };
+
+  // 좋아요 수 가져오기
+  const fetchLikeCount = async () => {
+    try {
+      const resolvedParams = await params;
+      const response = await instance.get(`/api/v1/social/posts/${resolvedParams.id}/like/count`);
+      console.log('좋아요 수 응답:', response);
+      if (response.status === 200) {
+        const count = typeof response.data === 'object' ? response.data.data : response.data;
+        console.log('좋아요 수:', count);
+        setLikeCount(Number(count));
+      }
+    } catch (error) {
+      console.error('좋아요 수 조회 실패:', error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      await Promise.all([
+        checkLikeStatus(),
+        fetchLikeCount()
+      ]);
+    };
+
+    fetchInitialData();
+  }, [params]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -537,10 +625,18 @@ export default function SocialPage({ params }: PageProps) {
 
             {/* 통계 */}
             <div className="flex items-center gap-4 text-sm text-gray-500">
-              <div className="flex items-center gap-1">
-                <HiOutlineHeart className="w-5 h-5" />
-                <span>{post.likeCount}</span>
-              </div>
+              <button 
+                onClick={handleLikeToggle}
+                disabled={isLikeLoading}
+                className={`flex items-center gap-1 ${isLiked ? 'text-red-500' : 'text-gray-500'} hover:text-red-500 transition-colors`}
+              >
+                {isLiked ? (
+                  <HiHeart className="w-5 h-5" />
+                ) : (
+                  <HiOutlineHeart className="w-5 h-5" />
+                )}
+                <span>{likeCount}</span>
+              </button>
               <div className="flex items-center gap-1">
                 <HiOutlineChatBubbleLeftRight className="w-5 h-5" />
                 <span>{replyTotalCnt}</span>
@@ -550,8 +646,16 @@ export default function SocialPage({ params }: PageProps) {
 
           {/* 액션 버튼 */}
           <div className="flex border-t border-gray-200">
-            <button className="flex-1 py-3 flex items-center justify-center gap-2 text-gray-600 hover:bg-gray-50">
-              <HiOutlineHeart className="w-6 h-6" />
+            <button 
+              onClick={handleLikeToggle}
+              disabled={isLikeLoading}
+              className={`flex-1 py-3 flex items-center justify-center gap-2 ${isLiked ? 'text-red-500' : 'text-gray-600'} hover:text-red-500 transition-colors`}
+            >
+              {isLiked ? (
+                <HiHeart className="w-6 h-6" />
+              ) : (
+                <HiOutlineHeart className="w-6 h-6" />
+              )}
               <span>좋아요</span>
             </button>
             <button className="flex-1 py-3 flex items-center justify-center gap-2 text-gray-600 hover:bg-gray-50">
