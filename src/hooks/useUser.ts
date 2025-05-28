@@ -27,33 +27,67 @@ export function useUser() {
   const [user, setUser] = useState<User | null>(cachedUser);
   const [loading, setLoading] = useState(!cachedUser);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      // 이미 캐시된 데이터가 있거나 로딩 중이면 중복 요청 방지
-      if (cachedUser || isLoading) {
-        setLoading(false);
-        return;
-      }
+  const fetchUser = async () => {
+    // 이미 로딩 중이면 중복 요청 방지
+    if (isLoading) {
+      return;
+    }
 
-      try {
-        isLoading = true;
-        setLoading(true);
-        const response = await instance.get('/api/v1/users/me');
-        
-        if (response.data.status === 200) {
-          cachedUser = response.data.data;
-          setUser(cachedUser);
-        }
-      } catch (err) {
-        error = err as Error;
-        console.error('사용자 정보 조회 실패:', err);
-      } finally {
-        isLoading = false;
-        setLoading(false);
+    try {
+      isLoading = true;
+      setLoading(true);
+      const response = await instance.get('/api/v1/users/me');
+      
+      if (response.data.status === 200) {
+        cachedUser = response.data.data;
+        setUser(cachedUser);
+      }
+    } catch (err) {
+      error = err as Error;
+      console.error('사용자 정보 조회 실패:', err);
+      // 에러 발생 시 캐시된 사용자 정보 초기화
+      cachedUser = null;
+      setUser(null);
+    } finally {
+      isLoading = false;
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // 초기 로드 시에만 실행
+    if (!cachedUser) {
+      fetchUser();
+    }
+  }, []);
+
+  // 토큰 변경 감지를 위한 이벤트 리스너
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'token' && !e.newValue) {
+        // 토큰이 삭제되었을 때 (로그아웃)
+        cachedUser = null;
+        setUser(null);
+      } else if (e.key === 'token' && e.newValue) {
+        // 토큰이 새로 설정되었을 때 (로그인)
+        fetchUser();
       }
     };
 
-    fetchUser();
+    // 로컬 스토리지 변경 감지
+    window.addEventListener('storage', handleStorageChange);
+
+    // 현재 토큰 확인
+    const token = localStorage.getItem('token');
+    if (!token && cachedUser) {
+      // 토큰이 없는데 캐시된 사용자 정보가 있는 경우
+      cachedUser = null;
+      setUser(null);
+    }
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const clearUserCache = () => {
@@ -65,6 +99,7 @@ export function useUser() {
     user,
     isLoading: loading,
     error,
-    clearUserCache
+    clearUserCache,
+    refreshUser: fetchUser
   };
 } 

@@ -1,11 +1,15 @@
 "use client";
 import Image from "next/image";
-import { HiOutlineHeart, HiOutlineChatBubbleLeftRight, HiOutlineShare, HiOutlineArrowLeft, HiOutlinePhoto, HiOutlineCamera, HiOutlinePaperAirplane, HiOutlineXMark } from "react-icons/hi2";
+import { HiOutlineHeart, HiOutlineChatBubbleLeftRight, HiOutlineShare, HiOutlineArrowLeft, HiOutlinePhoto, HiOutlineCamera, HiOutlinePaperAirplane, HiOutlineXMark, HiOutlinePencil, HiOutlineTrash } from "react-icons/hi2";
+import { FaExclamationTriangle } from "react-icons/fa";
+import { MdEmergency, MdReportProblem } from "react-icons/md";
+import { GiPoliceCar, GiPoliceBadge, GiSiren } from "react-icons/gi";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import instance from "@/app/api/axios";
 import { getImageUrl } from "@/app/common/imgUtils";
+import { useUser } from "../../../hooks/useUser";
 
 interface Post {
   id: number;
@@ -64,6 +68,7 @@ interface PageProps {
 
 export default function SocialPage({ params }: PageProps) {
   const router = useRouter();
+  const { user: me } = useUser();
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,6 +80,17 @@ export default function SocialPage({ params }: PageProps) {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [replyTotalCnt,setReplyTotalCnt] = useState(0);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editImages, setEditImages] = useState<{ preview: string; url: string | null }[]>([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteCommentId, setDeleteCommentId] = useState<number | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportCommentId, setReportCommentId] = useState<number | null>(null);
+  const [reportReason, setReportReason] = useState("");
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -121,10 +137,14 @@ export default function SocialPage({ params }: PageProps) {
     }
   };
   useEffect(() => {
-   
-
     fetchComments();
   }, [params, page]);
+
+  useEffect(() => {
+    console.log('comments===',comments);
+
+    console.log('me===',me)
+  },[]);
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -252,6 +272,169 @@ export default function SocialPage({ params }: PageProps) {
     }
   };
 
+  const showSuccessToast = (message: string) => {
+    setToastMessage(message);
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+    }, 2000);
+  };
+
+  const handleEditComment = async (commentId: number) => {
+    if (!editContent.trim() && editImages.length === 0) {
+      alert("댓글 내용을 입력하거나 이미지를 첨부해주세요.");
+      return;
+    }
+
+    try {
+      const uploadedUrls = editImages.map(img => img.url).filter((url): url is string => url !== null);
+      
+      const response = await instance.put(`/api/v1/social/replies/${commentId}`, {
+        content: editContent.trim(),
+        imageUrls: uploadedUrls
+      });
+
+      if (response.status === 200) {
+        // 수정 성공 후 모달 닫기
+        setEditingCommentId(null);
+        setEditContent("");
+        setEditImages([]);
+        setShowEditModal(false);
+        
+        // 댓글 목록 새로고침
+        const resolvedParams = await params;
+        const listResponse = await instance.get(`/api/v1/social/replies/${resolvedParams.id}`, {
+          params: {
+            page: 0,
+            size: 10
+          }
+        });
+        
+        if (listResponse.status === 200) {
+          setComments(listResponse.data.data.replies.content);
+          setReplyTotalCnt(listResponse.data.data.totalCount);
+          setPage(0); // 페이지 초기화
+          showSuccessToast("댓글이 수정되었습니다.");
+        }
+      }
+    } catch (error) {
+      console.error('댓글 수정 실패:', error);
+      alert('댓글 수정에 실패했습니다.');
+    }
+  };
+
+  const handleEditImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    // 최대 5개까지만 업로드 가능
+    if (editImages.length + files.length > 5) {
+      alert("이미지는 최대 5개까지만 첨부할 수 있습니다.");
+      return;
+    }
+
+    for (const file of Array.from(files)) {
+      // 미리보기를 위한 임시 URL 생성
+      const previewUrl = URL.createObjectURL(file);
+      
+      // 새로운 이미지 객체 추가
+      setEditImages(prev => [...prev, { preview: previewUrl, url: null }]);
+
+      // S3 업로드
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('pathType', 'social_reply');
+
+      try {
+        const uploadResponse = await instance.post('/api/v1/s3/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        
+        if (uploadResponse.status === 200) {
+          // 업로드된 URL로 상태 업데이트
+          setEditImages(prev => 
+            prev.map(img => 
+              img.preview === previewUrl 
+                ? { ...img, url: uploadResponse.data.fileUrl }
+                : img
+            )
+          );
+        }
+      } catch (error) {
+        console.error('이미지 업로드 실패:', error);
+        alert('이미지 업로드에 실패했습니다.');
+        // 실패한 이미지 제거
+        setEditImages(prev => prev.filter(img => img.preview !== previewUrl));
+        URL.revokeObjectURL(previewUrl);
+      }
+    }
+  };
+
+  const handleRemoveEditImage = (previewUrl: string) => {
+    setEditImages(prev => {
+      const removedImage = prev.find(img => img.preview === previewUrl);
+      if (removedImage) {
+        URL.revokeObjectURL(removedImage.preview);
+      }
+      return prev.filter(img => img.preview !== previewUrl);
+    });
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    try {
+      const response = await instance.delete(`/api/v1/social/replies/${commentId}`);
+
+      if (response.status === 200) {
+        // 삭제 성공 후 모달 닫기
+        setShowDeleteModal(false);
+        setDeleteCommentId(null);
+        
+        // 댓글 목록 새로고침
+        const resolvedParams = await params;
+        const listResponse = await instance.get(`/api/v1/social/replies/${resolvedParams.id}`, {
+          params: {
+            page: 0,
+            size: 10
+          }
+        });
+        
+        if (listResponse.status === 200) {
+          setComments(listResponse.data.data.replies.content);
+          setReplyTotalCnt(listResponse.data.data.totalCount);
+          setPage(0); // 페이지 초기화
+        }
+      }
+    } catch (error) {
+      console.error('댓글 삭제 실패:', error);
+      alert('댓글 삭제에 실패했습니다.');
+    }
+  };
+
+  const handleReportComment = async () => {
+    if (!reportReason.trim()) {
+      alert("신고 사유를 입력해주세요.");
+      return;
+    }
+
+    try {
+      const response = await instance.post(`/api/v1/social/replies/${reportCommentId}/report`, {
+        reason: reportReason.trim()
+      });
+
+      if (response.status === 200) {
+        setShowReportModal(false);
+        setReportCommentId(null);
+        setReportReason("");
+        showSuccessToast("신고가 접수되었습니다.");
+      }
+    } catch (error) {
+      console.error('댓글 신고 실패:', error);
+      alert('신고 처리 중 오류가 발생했습니다.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -308,7 +491,7 @@ export default function SocialPage({ params }: PageProps) {
                   </div>
                 )}
               </div>
-              <div>
+              <div className="flex-1">
                 <div className="font-medium">{post.userNickname || "익명 사용자"}</div>
                 <div className="text-sm text-gray-500">
                   {formatTimeAgo(post.createdAt)} •{" "}
@@ -317,6 +500,15 @@ export default function SocialPage({ params }: PageProps) {
                   </span>
                 </div>
               </div>
+              <button
+                onClick={() => {
+                  setReportCommentId(post.id);
+                  setShowReportModal(true);
+                }}
+                className="text-gray-400 hover:text-red-500 transition-colors"
+              >
+                <GiSiren className="w-6 h-6" />
+              </button>
             </div>
 
             {/* 게시글 내용 */}
@@ -351,7 +543,7 @@ export default function SocialPage({ params }: PageProps) {
               </div>
               <div className="flex items-center gap-1">
                 <HiOutlineChatBubbleLeftRight className="w-5 h-5" />
-                <span>{post.commentCount}</span>
+                <span>{replyTotalCnt}</span>
               </div>
             </div>
           </div>
@@ -397,6 +589,48 @@ export default function SocialPage({ params }: PageProps) {
                         <span className="text-xs text-gray-500">
                           {formatTimeAgo(comment.createdAt)}
                         </span>
+                      </div>
+                      <div className="flex items-center justify-end gap-3 mt-2">
+                        {me && me.id === comment.userId && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setEditingCommentId(comment.id);
+                                setEditContent(comment.content);
+                                if (comment.imageUrls && comment.imageUrls.length > 0) {
+                                  setEditImages(comment.imageUrls.map(url => ({
+                                    preview: getImageUrl(url),
+                                    url: url
+                                  })));
+                                } else {
+                                  setEditImages([]);
+                                }
+                                setShowEditModal(true);
+                              }}
+                              className="text-gray-500 hover:text-blue-500 transition-colors"
+                            >
+                              <HiOutlinePencil className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setDeleteCommentId(comment.id);
+                                setShowDeleteModal(true);
+                              }}
+                              className="text-gray-500 hover:text-red-500 transition-colors"
+                            >
+                              <HiOutlineTrash className="w-5 h-5" />
+                            </button>
+                          </>
+                        )}
+                        <button
+                          onClick={() => {
+                            setReportCommentId(comment.id);
+                            setShowReportModal(true);
+                          }}
+                          className="text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                          <GiSiren className="w-6 h-6" />
+                        </button>
                       </div>
                       <p className="text-sm text-gray-800 whitespace-pre-line mb-2">
                         {comment.content}
@@ -567,6 +801,228 @@ export default function SocialPage({ params }: PageProps) {
           </div>
         </div>
       </div>
+
+      {/* 댓글 수정 모달 */}
+      <AnimatePresence>
+        {showEditModal && editingCommentId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-end"
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              className="w-full bg-white rounded-t-2xl p-4"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium">댓글 수정</h3>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingCommentId(null);
+                    setEditContent("");
+                    setEditImages([]);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                >
+                  <HiOutlineXMark className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="w-full p-3 border rounded-lg text-sm"
+                  rows={4}
+                  placeholder="댓글을 입력하세요..."
+                />
+
+                {editImages.length > 0 && (
+                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    {editImages.map((image, index) => (
+                      <div key={index} className="relative w-20 h-20 flex-shrink-0">
+                        <Image
+                          src={image.preview}
+                          alt={`Selected ${index + 1}`}
+                          fill
+                          className="object-cover rounded-lg"
+                        />
+                        <button
+                          onClick={() => handleRemoveEditImage(image.preview)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2">
+                  <label className="cursor-pointer hover:text-blue-500">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleEditImageSelect}
+                    />
+                    <HiOutlinePhoto className="w-6 h-6" />
+                  </label>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEditComment(editingCommentId)}
+                    className="flex-1 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
+                  >
+                    저장
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setEditingCommentId(null);
+                      setEditContent("");
+                      setEditImages([]);
+                    }}
+                    className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
+                  >
+                    취소
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 댓글 삭제 모달 */}
+      <AnimatePresence>
+        {showDeleteModal && deleteCommentId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-sm bg-white rounded-2xl p-6"
+            >
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <HiOutlineTrash className="w-6 h-6 text-red-500" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  댓글 삭제
+                </h3>
+                <p className="text-sm text-gray-500">
+                  이 댓글을 삭제하시겠습니까?
+                  <br />
+                  삭제된 댓글은 복구할 수 없습니다.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeleteCommentId(null);
+                  }}
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={() => handleDeleteComment(deleteCommentId)}
+                  className="flex-1 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium"
+                >
+                  삭제
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 댓글 신고 모달 */}
+      <AnimatePresence>
+        {showReportModal && reportCommentId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-sm bg-white rounded-2xl p-6"
+            >
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <GiSiren className="w-6 h-6 text-red-500" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {reportCommentId === post?.id ? '게시글 신고' : '댓글 신고'}
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  신고 사유를 입력해주세요.
+                </p>
+                <textarea
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  className="w-full p-3 border rounded-lg text-sm"
+                  rows={3}
+                  placeholder="신고 사유를 입력하세요..."
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setReportCommentId(null);
+                    setReportReason("");
+                  }}
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleReportComment}
+                  className="flex-1 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium"
+                >
+                  신고하기
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 토스트 알림 */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50"
+          >
+            <div className="bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm">
+              {toastMessage}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 } 
