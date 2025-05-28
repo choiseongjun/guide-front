@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import instance from "@/app/api/axios";
+import { getImageUrl } from "@/app/common/imgUtils";
 
 interface Post {
   id: number;
@@ -18,6 +19,31 @@ interface Post {
   commentCount: number;
   createdAt: string;
   updatedAt: string;
+}
+
+interface Comment {
+  id: number;
+  content: string;
+  imageUrls: string[];
+  userId: number;
+  userName: string;
+  createdAt: string;
+}
+
+interface CommentResponse {
+  content: Comment[];
+  pageable: {
+    pageNumber: number;
+    pageSize: number;
+  };
+  last: boolean;
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  numberOfElements: number;
+  empty: boolean;
 }
 
 const categories = [
@@ -39,11 +65,16 @@ interface PageProps {
 export default function SocialPage({ params }: PageProps) {
   const router = useRouter();
   const [post, setPost] = useState<Post | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState("");
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = useState<{ preview: string; url: string | null }[]>([]);
   const [showImageModal, setShowImageModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [replyTotalCnt,setReplyTotalCnt] = useState(0);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -63,6 +94,38 @@ export default function SocialPage({ params }: PageProps) {
     fetchPost();
   }, [params]);
 
+  const fetchComments = async () => {
+    try {
+      const resolvedParams = await params;
+      console.log('Fetching comments for post:', resolvedParams.id);
+      const response = await instance.get(`/api/v1/social/replies/${resolvedParams.id}`, {
+        params: {
+          page,
+          size: 10
+        }
+      });
+      
+      console.log('Response data:', response.data);
+      
+      if (response.status === 200) {
+        const newComments = response.data.data.replies.content;
+        console.log('New comments:', newComments);
+
+        setReplyTotalCnt(response.data.data.totalCount);
+        setComments(prev => page === 0 ? newComments : [...prev, ...newComments]);
+        setHasMore(!response.data.last);
+      }
+    } catch (error) {
+      console.error('댓글 조회 실패:', error);
+      setComments([]);
+    }
+  };
+  useEffect(() => {
+   
+
+    fetchComments();
+  }, [params, page]);
+
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -75,29 +138,63 @@ export default function SocialPage({ params }: PageProps) {
     return date.toLocaleDateString();
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    // 최대 5개까지만 업로드 가능
+    if (selectedImages.length + files.length > 5) {
+      alert("이미지는 최대 5개까지만 첨부할 수 있습니다.");
+      return;
+    }
+
+    for (const file of Array.from(files)) {
+      // 미리보기를 위한 임시 URL 생성
+      const previewUrl = URL.createObjectURL(file);
+      
+      // 새로운 이미지 객체 추가
+      setSelectedImages(prev => [...prev, { preview: previewUrl, url: null }]);
+
+      // S3 업로드
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('pathType', 'social_reply');
+
+      try {
+        const uploadResponse = await instance.post('/api/v1/s3/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        
+        if (uploadResponse.status === 200) {
+          // 업로드된 URL로 상태 업데이트
+          setSelectedImages(prev => 
+            prev.map(img => 
+              img.preview === previewUrl 
+                ? { ...img, url: uploadResponse.data.fileUrl }
+                : img
+            )
+          );
+        }
+      } catch (error) {
+        console.error('이미지 업로드 실패:', error);
+        alert('이미지 업로드에 실패했습니다.');
+        // 실패한 이미지 제거
+        setSelectedImages(prev => prev.filter(img => img.preview !== previewUrl));
+        URL.revokeObjectURL(previewUrl);
+      }
     }
   };
 
-  const handleCameraClick = () => {
-    // 카메라 접근 권한 요청 및 처리
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-          // 카메라 스트림 처리 로직
-          console.log('Camera access granted');
-        })
-        .catch(err => {
-          console.error('Camera access denied:', err);
-        });
-    }
+  const handleRemoveImage = (previewUrl: string) => {
+    setSelectedImages(prev => {
+      const removedImage = prev.find(img => img.preview === previewUrl);
+      if (removedImage) {
+        URL.revokeObjectURL(removedImage.preview);
+      }
+      return prev.filter(img => img.preview !== previewUrl);
+    });
   };
 
   const handleImageClick = (index: number) => {
@@ -113,6 +210,46 @@ export default function SocialPage({ params }: PageProps) {
   const handleNextImage = () => {
     if (!post) return;
     setCurrentImageIndex((prev) => (prev === post.imageUrls.length - 1 ? 0 : prev + 1));
+  };
+
+  const handleSubmitComment = async () => {
+    const uploadedUrls = selectedImages.map(img => img.url).filter((url): url is string => url !== null);
+    
+    if (!comment.trim() && uploadedUrls.length === 0) {
+      alert("댓글 내용을 입력하거나 이미지를 첨부해주세요.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const resolvedParams = await params;
+      const response = await instance.post(`/api/v1/social/replies/${resolvedParams.id}`, {
+        content: comment.trim(),
+        imageUrls: uploadedUrls,
+      });
+
+      if (response.status === 200) {
+        setComment("");
+        // 모든 이미지 미리보기 URL 해제
+        selectedImages.forEach(img => URL.revokeObjectURL(img.preview));
+        setSelectedImages([]);
+        fetchComments();
+        // 댓글 목록 새로고침
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("댓글 작성 실패:", error);
+      alert("댓글 작성 중 오류가 발생했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleLoadMore = () => {
+    if (hasMore) {
+      setPage(prev => prev + 1);
+    }
   };
 
   if (loading) {
@@ -193,8 +330,8 @@ export default function SocialPage({ params }: PageProps) {
                 <div className="grid grid-cols-2 gap-1">
                   {post.imageUrls.map((image, index) => (
                     <div key={index} className="relative aspect-square">
-                      <Image
-                        src={image}
+                      <Image 
+                        src={getImageUrl(image)}
                         alt={`Post image ${index + 1}`}
                         fill
                         className="object-cover"
@@ -239,9 +376,64 @@ export default function SocialPage({ params }: PageProps) {
         {/* 댓글 섹션 */}
         <div className="bg-white">
           <div className="p-4">
-            <h2 className="font-medium mb-4">댓글 {post.commentCount}개</h2>
+            <h2 className="font-medium mb-4">댓글 {replyTotalCnt}개</h2>
             <div className="space-y-6">
-              {/* 댓글 데이터를 여기에 추가해야 합니다. */}
+              {comments && comments.length > 0 ? (
+                comments.map((comment) => (
+                  <div key={comment.id} className="flex gap-3">
+                    {/* 프로필 이미지 */}
+                    <div className="relative w-10 h-10 rounded-full overflow-hidden bg-black flex-shrink-0">
+                      <div className="w-full h-full flex items-center justify-center text-white text-xs">
+                        {comment.userName?.[0] || "?"}
+                      </div>
+                    </div>
+                    
+                    {/* 댓글 내용 */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-sm">
+                          {comment.userName}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {formatTimeAgo(comment.createdAt)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-800 whitespace-pre-line mb-2">
+                        {comment.content}
+                      </p>
+                      {comment.imageUrls && comment.imageUrls.length > 0 && (
+                        <div className="grid grid-cols-2 gap-1 mb-2">
+                          {comment.imageUrls.map((image, index) => (
+                            <div key={index} className="relative aspect-square">
+                              <Image
+                                src={getImageUrl(image)}
+                                alt={`Comment image ${index + 1}`}
+                                fill
+                                className="object-cover rounded-lg"
+                                unoptimized
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-gray-500 py-4">
+                  아직 댓글이 없습니다.
+                </div>
+              )}
+              
+              {/* 더보기 버튼 */}
+              {hasMore && comments && comments.length > 0 && (
+                <button
+                  onClick={handleLoadMore}
+                  className="w-full py-2 text-sm text-gray-500 hover:text-gray-700"
+                >
+                  더보기
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -319,58 +511,58 @@ export default function SocialPage({ params }: PageProps) {
       {/* 댓글 입력 */}
       <div className={`fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 z-40 transition-opacity duration-200 ${showImageModal ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         <div className="max-w-md mx-auto p-4">
-          {selectedImage && (
-            <div className="relative mb-2 w-20 h-20">
-              <Image
-                src={selectedImage}
-                alt="Selected"
-                fill
-                className="object-cover rounded-lg"
-              />
-              <button
-                onClick={() => setSelectedImage(null)}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-              >
-                ×
-              </button>
+          {selectedImages.length > 0 && (
+            <div className="flex gap-2 mb-2 overflow-x-auto pb-2">
+              {selectedImages.map((image, index) => (
+                <div key={index} className="relative w-20 h-20 flex-shrink-0">
+                  <Image
+                    src={image.preview}
+                    alt={`Selected ${index + 1}`}
+                    fill
+                    className="object-cover rounded-lg"
+                  />
+                  <button
+                    onClick={() => handleRemoveImage(image.preview)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
             </div>
           )}
           <div className="flex items-center gap-2">
-            <div className="flex-1 flex items-center gap-2 px-4 py-2 border rounded-full focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+            <div className="flex-1 flex items-center gap-2 px-4 py-2 border rounded-full focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 min-w-0">
               <input
                 type="text"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="댓글을 입력하세요..."
-                className="flex-1 outline-none text-sm bg-transparent"
+                className="flex-1 outline-none text-sm bg-transparent min-w-0"
               />
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <label className="cursor-pointer hover:text-blue-500">
                   <input
                     type="file"
                     accept="image/*"
+                    multiple
                     className="hidden"
                     onChange={handleImageSelect}
                   />
                   <HiOutlinePhoto className="w-5 h-5" />
                 </label>
-                <button
-                  onClick={handleCameraClick}
-                  className="hover:text-blue-500"
-                >
-                  <HiOutlineCamera className="w-5 h-5" />
-                </button>
               </div>
             </div>
             <button
-              className={`px-4 py-2 rounded-full text-sm font-medium ${
-                (comment.trim() || selectedImage) 
+              onClick={handleSubmitComment}
+              disabled={isSubmitting || (!comment.trim() && selectedImages.length === 0)}
+              className={`px-4 py-2 rounded-full text-sm font-medium flex-shrink-0 ${
+                (comment.trim() || selectedImages.length > 0) && !isSubmitting
                   ? 'bg-blue-500 text-white hover:bg-blue-600' 
                   : 'bg-gray-100 text-gray-400'
               } transition-colors`}
-              disabled={!comment.trim() && !selectedImage}
             >
-              게시
+              {isSubmitting ? "작성 중..." : "게시"}
             </button>
           </div>
         </div>
