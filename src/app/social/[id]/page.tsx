@@ -444,7 +444,7 @@ export default function SocialPage({ params }: PageProps) {
     if (isLikeLoading) return;
     
     try {
-      setIsLikeLoading(true);
+      // setIsLikeLoading(true);
       // UI 즉시 업데이트
       const newLikeStatus = !isLiked;
       setIsLiked(newLikeStatus);
@@ -460,15 +460,15 @@ export default function SocialPage({ params }: PageProps) {
         console.log('서버 좋아요 상태:', serverLikeStatus);
         
         // 서버 상태와 다르다면 다시 동기화
-        if (Boolean(serverLikeStatus) !== newLikeStatus) {
-          setIsLiked(Boolean(serverLikeStatus));
-          // 좋아요 수 다시 가져오기
+        // if (Boolean(serverLikeStatus) !== newLikeStatus) {
+        //   setIsLiked(Boolean(serverLikeStatus));
+        //   // 좋아요 수 다시 가져오기
           const countResponse = await instance.get(`/api/v1/social/posts/${resolvedParams.id}/like/count`);
           if (countResponse.status === 200) {
             const count = typeof countResponse.data === 'object' ? countResponse.data.data : countResponse.data;
             setLikeCount(Number(count));
           }
-        }
+        // } 
       }
     } catch (error) {
       console.error('좋아요 토글 실패:', error);
@@ -476,7 +476,7 @@ export default function SocialPage({ params }: PageProps) {
       setIsLiked(!isLiked);
       setLikeCount(prev => isLiked ? prev + 1 : prev - 1);
     } finally {
-      setIsLikeLoading(false);
+      // setIsLikeLoading(false);
     }
   };
 
