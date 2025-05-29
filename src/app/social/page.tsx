@@ -11,6 +11,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import instance from "@/app/api/axios";
+import { getImageUrl } from "../common/imgUtils";
 
 interface Post {
   id: number;
@@ -283,7 +284,7 @@ function SocialContent() {
                 <div className="relative w-10 h-10 rounded-full overflow-hidden bg-black">
                   {post.userProfileImage ? (
                     <Image
-                      src={post.userProfileImage}
+                      src={getImageUrl(post.userProfileImage)}
                       alt={post.userNickname || "사용자"}
                       width={40}
                       height={40}
@@ -339,7 +340,7 @@ function SocialContent() {
                   {post.imageUrls.map((image, index) => (
                     <div key={index} className="relative aspect-square">
                       <Image
-                        src={image}
+                        src={getImageUrl(image)}
                         alt={`Post image ${index + 1}`}
                         fill
                         className="object-cover"

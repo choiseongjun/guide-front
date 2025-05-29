@@ -12,6 +12,7 @@ import TextStyle from "@tiptap/extension-text-style";
 import Highlight from "@tiptap/extension-highlight";
 import { HiXMark, HiOutlinePhoto, HiOutlinePhone } from "react-icons/hi2";
 import { motion } from "framer-motion";
+import { getImageUrl } from "@/app/common/imgUtils";
 
 interface CreateSocialClientProps {
   params: {
@@ -20,14 +21,13 @@ interface CreateSocialClientProps {
 }
 
 const categories = [
-  { key:1,id: "review", name: "여행후기" },
-  { key:2,id: "food", name: "맛집 추천" },
-  { key:3,id: "accommodation", name: "숙소 추천" },
-  { key:4,id: "tips", name: "여행 팁" },
-  { key:5,id: "companion", name: "동행 구함" },
-  { key:6,id: "question", name: "여행 질문" },
-  { key:7,id: "recommend", name: "지역 명소 추천" },
-
+  { key: 1, id: "review", name: "여행후기" },
+  { key: 2, id: "food", name: "맛집 추천" },
+  { key: 3, id: "accommodation", name: "숙소 추천" },
+  { key: 4, id: "tips", name: "여행 팁" },
+  { key: 5, id: "companion", name: "동행 구함" },
+  { key: 6, id: "question", name: "여행 질문" },
+  { key: 7, id: "recommend", name: "지역 명소 추천" },
 ];
 
 export default function CreateSocialClient({
@@ -274,13 +274,13 @@ export default function CreateSocialClient({
         {/* 이미지 업로드 */}
         <div className="px-4 py-3 border-b border-gray-200">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            이미지
+            이미지12
           </label>
           <div className="flex flex-wrap gap-2">
             {images.map((image, index) => (
               <div key={index} className="relative">
                 <img
-                  src={image}
+                  src={getImageUrl(image)}
                   alt={`Uploaded ${index + 1}`}
                   className="w-20 h-20 object-cover rounded-lg"
                 />

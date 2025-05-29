@@ -1,10 +1,16 @@
 "use client";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { HiOutlineMagnifyingGlass, HiOutlineUserGroup, HiOutlineUser, HiOutlineArrowLeft } from "react-icons/hi2";
+import {
+  HiOutlineMagnifyingGlass,
+  HiOutlineUserGroup,
+  HiOutlineUser,
+  HiOutlineArrowLeft,
+} from "react-icons/hi2";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import instance from "@/app/api/axios";
+import { getImageUrl } from "../common/imgUtils";
 
 interface Participant {
   userId: number;
@@ -46,15 +52,15 @@ export default function ChatListPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"group" | "direct">("group");
-  const [chatRooms, setChatRooms] = useState<ChatRoomResponse['data']>({
+  const [chatRooms, setChatRooms] = useState<ChatRoomResponse["data"]>({
     directChats: [],
-    groupChats: []
+    groupChats: [],
   });
-  const [stats, setStats] = useState<ChatRoomStats['data']>({
+  const [stats, setStats] = useState<ChatRoomStats["data"]>({
     totalDirectChats: 0,
     totalGroupChats: 0,
     unreadDirectMessages: 0,
-    unreadGroupMessages: 0
+    unreadGroupMessages: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -64,10 +70,10 @@ export default function ChatListPage() {
         const [chatRoomsResponse, statsResponse] = await Promise.all([
           instance.get<ChatRoomResponse>("/api/v1/chat-rooms/list", {
             params: {
-              type: activeTab === 'group' ? 'GROUP' : 'DIRECT'
-            }
+              type: activeTab === "group" ? "GROUP" : "DIRECT",
+            },
           }),
-          instance.get<ChatRoomStats>("/api/v1/chat-rooms/stats")
+          instance.get<ChatRoomStats>("/api/v1/chat-rooms/stats"),
         ]);
 
         if (chatRoomsResponse.data.status === 200) {
@@ -87,26 +93,36 @@ export default function ChatListPage() {
     fetchData();
   }, [activeTab]);
 
-  const filteredChats = activeTab === "group"
-    ? chatRooms.groupChats.filter(chat =>
-        chat.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : chatRooms.directChats.filter(chat =>
-        chat.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+  const filteredChats =
+    activeTab === "group"
+      ? chatRooms.groupChats.filter((chat) =>
+          chat.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : chatRooms.directChats.filter((chat) =>
+          chat.name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
 
   // 읽지 않은 메시지 총 개수 계산
-  const totalUnreadGroupChats = chatRooms.groupChats.reduce((sum, chat) => sum + chat.unreadCount, 0);
-  const totalUnreadDirectChats = chatRooms.directChats.reduce((sum, chat) => sum + chat.unreadCount, 0);
+  const totalUnreadGroupChats = chatRooms.groupChats.reduce(
+    (sum, chat) => sum + chat.unreadCount,
+    0
+  );
+  const totalUnreadDirectChats = chatRooms.directChats.reduce(
+    (sum, chat) => sum + chat.unreadCount,
+    0
+  );
 
   const formatTimeAgo = (dateString: string | null) => {
-    if (!dateString) return '';
+    if (!dateString) return "";
     const date = new Date(dateString);
     const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
+    const diffInMinutes = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60)
+    );
+
     if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
-    if (diffInMinutes < 24 * 60) return `${Math.floor(diffInMinutes / 60)}시간 전`;
+    if (diffInMinutes < 24 * 60)
+      return `${Math.floor(diffInMinutes / 60)}시간 전`;
     return `${Math.floor(diffInMinutes / (24 * 60))}일 전`;
   };
 
@@ -206,7 +222,10 @@ export default function ChatListPage() {
             {/* 채팅방 이미지 */}
             <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
               <Image
-                src={chat.thumbnailUrl || "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=60"}
+                src={
+                  getImageUrl(chat.thumbnailUrl) ||
+                  "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=60"
+                }
                 alt={chat.name}
                 fill
                 className="object-cover"
@@ -239,4 +258,4 @@ export default function ChatListPage() {
       </div>
     </div>
   );
-} 
+}

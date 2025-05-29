@@ -2,8 +2,13 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { HiOutlineArrowLeft, HiOutlinePhoto, HiOutlineXMark } from "react-icons/hi2";
+import {
+  HiOutlineArrowLeft,
+  HiOutlinePhoto,
+  HiOutlineXMark,
+} from "react-icons/hi2";
 import instance from "@/app/api/axios";
+import { getImageUrl } from "@/app/common/imgUtils";
 
 interface ImageFile {
   fileUrl?: string;
@@ -21,36 +26,43 @@ export default function CreateSocialPage() {
     if (!files) return;
 
     const newFiles = Array.from(files);
-    
+
     for (const file of newFiles) {
       // 이미지 미리보기 생성
       const preview = URL.createObjectURL(file);
-      
+
       // FormData 생성 및 이미지 업로드
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('pathType', 'social');
+      formData.append("file", file);
+      formData.append("pathType", "social");
 
       try {
-        const uploadResponse = await instance.post('/api/v1/s3/upload', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-        console.log('uploadResponse==',uploadResponse)
+        const uploadResponse = await instance.post(
+          "/api/v1/s3/upload",
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+        console.log("uploadResponse==", uploadResponse);
         // 업로드된 이미지 URL을 받아서 상태 업데이트
-        setImages(prev => [...prev, {
-          fileUrl: uploadResponse.data.fileUrl
-        }]);
+        setImages((prev) => [
+          ...prev,
+          {
+            fileUrl: uploadResponse.data.fileUrl,
+          },
+        ]);
       } catch (error) {
-        console.error('이미지 업로드 실패:', error);
+        console.error("이미지 업로드 실패:", error);
         URL.revokeObjectURL(preview);
       }
     }
   };
 
   const removeImage = (index: number) => {
-    setImages(prev => {
+    setImages((prev) => {
       const newImages = [...prev];
       if (newImages[index].fileUrl) {
         URL.revokeObjectURL(newImages[index].fileUrl!);
@@ -62,29 +74,31 @@ export default function CreateSocialPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       // 이미지 URL이 있는 경우에만 포함
       const requestData: any = {
         content,
-        category
+        category,
       };
 
       // 이미지 URL이 있는 경우에만 추가
-      const imageUrls = images.map(image => image.fileUrl).filter(url => url);
+      const imageUrls = images
+        .map((image) => image.fileUrl)
+        .filter((url) => url);
       if (imageUrls.length > 0) {
         requestData.imageUrls = imageUrls;
       }
 
-      console.log("imageUrls===",imageUrls)
+      console.log("imageUrls===", imageUrls);
       // 소셜 생성
-      const response = await instance.post('/api/social/posts', requestData);
+      const response = await instance.post("/api/social/posts", requestData);
 
       if (response.status === 200) {
-        router.push('/social');
+        router.push("/social");
       }
     } catch (error) {
-      console.error('소셜 생성 실패:', error);
+      console.error("소셜 생성 실패:", error);
     }
   };
 
@@ -120,7 +134,7 @@ export default function CreateSocialPage() {
               {images.map((image, index) => (
                 <div key={index} className="relative aspect-square">
                   <img
-                    src={image.fileUrl}
+                    src={image.fileUrl ? getImageUrl(image.fileUrl) : ""}
                     alt={`Uploaded ${index + 1}`}
                     className="w-full h-full object-cover rounded-lg"
                   />
