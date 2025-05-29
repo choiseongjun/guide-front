@@ -24,7 +24,7 @@ function PaymentRedirectContent() {
 
       try {
         // 결제 취소 또는 실패 시
-        if (status !== "DONE" || errorCode) {
+        if (status !== "paid" || errorCode) {
           const errorMsg = errorMessage || "결제가 취소되었습니다.";
           alert(errorMsg);
           router.push(`/trip/${tripId}`);
