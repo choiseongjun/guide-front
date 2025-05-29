@@ -73,7 +73,6 @@ function PaymentRedirectContent() {
     status,
     errorCode,
     errorMessage,
-    orderName,
     totalAmount,
   ]);
 
