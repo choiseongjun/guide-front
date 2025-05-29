@@ -132,7 +132,8 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
   // STOMP 연결
   useEffect(() => {
     const connectWebSocket = () => {
-      const socket = new SockJS('http://localhost:8080/ws');
+      const wsUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace('http', 'ws') + '/ws';
+      const socket = new SockJS(wsUrl);
       const client = new Client({
         webSocketFactory: () => socket,
         connectHeaders: {
