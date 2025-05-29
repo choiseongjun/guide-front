@@ -12,6 +12,7 @@ import {
   HiOutlineHeart,
 } from "react-icons/hi2";
 import { motion } from "framer-motion";
+import { getImageUrl } from "@/app/common/imgUtils";
 
 // 임시 저장한 여행지 데이터
 const savedPlaces = [
@@ -147,7 +148,7 @@ export default function SavedPlacesPage() {
             <Link href={`/place/${place.id}`}>
               <div className="relative h-48">
                 <Image
-                  src={place.image}
+                  src={getImageUrl(place.image)}
                   alt={place.title}
                   fill
                   sizes="(max-width: 768px) 100vw, 768px"

@@ -7,72 +7,96 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HiPlus as HiPlusIcon } from "react-icons/hi2";
 import TripList from "@/components/TripList";
+import { useState, useEffect } from "react";
+import instance from "@/app/api/axios";
 
-const trips = [
-  {
-    id: 1,
-    title: "제주도 3박 4일 힐링 여행",
-    image:
-      "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&auto=format&fit=crop&q=60",
-    members: 4,
-    price: 450000,
-    discountPrice: 380000,
-    date: "2024.04.15 - 2024.04.18",
-    departure: "서울",
-    time: "09:00",
-    reviews: 128,
-    wishlist: 56,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=1",
-      "https://i.pravatar.cc/150?img=2",
-      "https://i.pravatar.cc/150?img=3",
-      "https://i.pravatar.cc/150?img=4",
-    ],
-  },
-  {
-    id: 2,
-    title: "부산 해운대 바다 여행",
-    image:
-      "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&auto=format&fit=crop&q=60",
-    members: 2,
-    price: 280000,
-    discountPrice: 220000,
-    date: "2024.04.20 - 2024.04.22",
-    departure: "인천",
-    time: "10:30",
-    reviews: 89,
-    wishlist: 42,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=5",
-      "https://i.pravatar.cc/150?img=6",
-    ],
-  },
-  {
-    id: 3,
-    title: "강원도 설악산 등반",
-    image:
-      "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&auto=format&fit=crop&q=60",
-    members: 6,
-    price: 320000,
-    discountPrice: 280000,
-    date: "2024.04.25 - 2024.04.27",
-    departure: "수원",
-    time: "08:00",
-    reviews: 156,
-    wishlist: 78,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=7",
-      "https://i.pravatar.cc/150?img=8",
-      "https://i.pravatar.cc/150?img=9",
-      "https://i.pravatar.cc/150?img=10",
-      "https://i.pravatar.cc/150?img=11",
-      "https://i.pravatar.cc/150?img=12",
-    ],
-  },
-];
+interface Travel {
+  id: number;
+  title: string;
+  highlight: string;
+  description: string;
+  address: string;
+  detailAddress: string;
+  startDate: string;
+  endDate: string;
+  minParticipants: number;
+  maxParticipants: number;
+  price: number;
+  discountRate: number;
+  discountedPrice: number;
+  images: {
+    id: number;
+    imageUrl: string;
+    displayOrder: number;
+  }[];
+  schedules: {
+    id: number;
+    dayNumber: number;
+    title: string;
+    description: string;
+    time: string;
+  }[];
+  reviews?: { id: number }[];
+  likes?: { id: number }[];
+  user: {
+    id: number;
+    nickname: string;
+    profileImageUrl: string | null;
+  };
+}
 
 export default function Home() {
   const router = useRouter();
+  const [recommendedTrips, setRecommendedTrips] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchRecommendedTrips = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await instance.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels`, {
+          params: {
+            page: 0,
+            size: 5
+          }
+        });
+
+        if (response.data.status === 200) {
+          const mappedTrips = response.data.data.content.map((travel: Travel) => ({
+            ...travel,
+            image: travel.images.length > 0 ? travel.images[0].imageUrl : "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&auto=format&fit=crop&q=60",
+            price: travel.discountedPrice > 0 ? travel.discountedPrice : travel.price,
+            originalPrice: travel.price,
+            duration: `${Math.ceil((new Date(travel.endDate).getTime() - new Date(travel.startDate).getTime()) / (1000 * 60 * 60 * 24))}일`,
+            time: travel.schedules[0]?.time || "",
+            location: travel.address.split(" ")[0],
+            reviews: travel.reviews?.length || 0,
+            wishlist: travel.likes?.length || 0,
+            user: {
+              id: travel.user.id,
+              nickname: travel.user.nickname,
+              profileImage: travel.user.profileImageUrl
+            }
+          }));
+          setRecommendedTrips(mappedTrips);
+        }
+      } catch (error: any) {
+        console.error('추천 여행 조회 실패:', error);
+        if (error.message === 'Network Error') {
+          setError('서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요.');
+        } else {
+          setError('데이터를 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요.');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecommendedTrips();
+  }, []);
+
   const settings = {
     dots: true,
     infinite: true,
@@ -95,14 +119,14 @@ export default function Home() {
       id: 2,
       title: "부산 여행",
       image:
-        "https://images.unsplash.com/photo-1596422846543-75c6fc197f11?w=800&auto=format&fit=crop&q=60",
+        "https://travelwithme-dev-file.s3.ap-northeast-2.amazonaws.com/banner/1065_4776_439.jpg",
       description: "바다와 함께하는 부산 여행",
     },
     {
       id: 3,
       title: "강원도 여행",
       image:
-        "https://images.unsplash.com/photo-1598887141929-ef608c1dba3c?w=800&auto=format&fit=crop&q=60",
+        "https://travelwithme-dev-file.s3.ap-northeast-2.amazonaws.com/banner/512_1879_1827.jpg",
       description: "자연과 함께하는 강원도 여행",
     },
   ];
@@ -205,50 +229,69 @@ export default function Home() {
         ))}
       </div>
 
-      <div className="mt-6">
-        <div className="relative mb-6">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="어디로 여행가시나요?"
-              className="w-full h-12 pl-12 pr-24 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none text-sm"
+      <div className="relative mb-6">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="어디로 여행가시나요?"
+            className="w-full h-12 pl-12 pr-24 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none text-sm"
+          />
+          <svg
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
-            <svg
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </div>
-          <button className="absolute right-3 top-1/2 transform -translate-y-1/2 px-4 py-1.5 text-sm bg-blue-500 hover:bg-blue-600 rounded-lg text-white transition-colors shadow-sm">
-            검색
-          </button>
+          </svg>
+        </div>
+        <button className="absolute right-3 top-1/2 transform -translate-y-1/2 px-4 py-1.5 text-sm bg-blue-500 hover:bg-blue-600 rounded-lg text-white transition-colors shadow-sm">
+          검색
+        </button>
+      </div>
+
+      <section className="max-w-md mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold">추천 여행</h2>
+          <Link
+            href="/trip"
+            className="text-sm text-blue-500 hover:text-blue-600"
+          >
+            더보기
+          </Link>
         </div>
 
-        <section className="py-8">
-          <div className="max-w-md mx-auto px-4">
-            <h2 className="text-2xl font-bold mb-6">추천 여행</h2>
-            <TripList
-              trips={trips.map((trip) => ({
-                ...trip,
-                duration: trip.date.split(" - ")[0],
-                time: trip.time,
-                location: trip.departure,
-                participants: `${trip.members}명`,
-                participantsPhotos: trip.participantsPhotos,
-              }))}
-              onTripClick={(tripId) => router.push(`/trip/${tripId}`)}
-            />
+        {error ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+            <p className="text-red-600">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-2 text-sm text-red-600 hover:text-red-700 underline"
+            >
+              새로고침
+            </button>
           </div>
-        </section>
-      </div>
+        ) : loading ? (
+          <div className="flex justify-center items-center h-40">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {recommendedTrips.map((trip) => (
+              <TripList
+                key={trip.id}
+                trips={[trip]}
+                onTripClick={(tripId) => router.push(`/trip/${tripId}`)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
 
       <button
         onClick={() => router.push("/trip/create")}

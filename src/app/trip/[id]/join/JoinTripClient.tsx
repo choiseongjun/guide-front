@@ -9,6 +9,7 @@ import {
   HiOutlineClock,
   HiOutlineMapPin,
 } from "react-icons/hi2";
+import { getImageUrl } from "@/app/common/imgUtils";
 
 // 임시 데이터 (실제로는 API에서 가져올 데이터)
 const tripData = {
@@ -84,7 +85,7 @@ export default function JoinTripClient({
         <div className="bg-white rounded-lg overflow-hidden">
           <div className="relative h-48">
             <Image
-              src={tripData.image}
+              src={getImageUrl(tripData.image)}
               alt={tripData.title}
               fill
               className="object-cover"

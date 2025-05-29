@@ -1,93 +1,223 @@
 "use client";
 import Image from "next/image";
-import { HiOutlineHeart, HiOutlineChatBubbleLeftRight, HiOutlineShare, HiOutlineArrowLeft, HiOutlinePhoto, HiOutlineCamera, HiOutlinePaperAirplane, HiOutlineXMark } from "react-icons/hi2";
+import { HiOutlineHeart, HiOutlineChatBubbleLeftRight, HiOutlineShare, HiOutlineArrowLeft, HiOutlinePhoto, HiOutlineCamera, HiOutlinePaperAirplane, HiOutlineXMark, HiOutlinePencil, HiOutlineTrash, HiHeart } from "react-icons/hi2";
+import { FaExclamationTriangle } from "react-icons/fa";
+import { MdEmergency, MdReportProblem } from "react-icons/md";
+import { GiPoliceCar, GiPoliceBadge, GiSiren } from "react-icons/gi";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import instance from "@/app/api/axios";
+import { getImageUrl } from "@/app/common/imgUtils";
+import { useUser } from "../../../hooks/useUser";
 
-// 실제로는 API에서 데이터를 가져와야 하지만, 예시를 위해 하드코딩
-const post = {
-  id: 2,
-  author: {
-    name: "여행작가",
-    avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=400&auto=format&fit=crop&q=60",
-  },
-  content: `부산 해운대에서의 일몰이 너무 아름다웠어요 🌅 
+interface Post {
+  id: number;
+  content: string;
+  category: string;
+  imageUrls: string[];
+  userId: number;
+  userNickname: string | null;
+  userProfileImage: string | null;
+  likeCount: number;
+  commentCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
-해운대 해수욕장에서 바라본 일몰은 정말 장관이었습니다. 
-바다 위로 지는 태양이 하늘을 붉게 물들이고, 
-그 위로 떠있는 구름들이 마치 불꽃처럼 타오르는 듯 했어요.
+interface Comment {
+  id: number;
+  content: string;
+  imageUrls: string[];
+  userId: number;
+  userName: string;
+  createdAt: string;
+}
 
-특히 오늘은 날씨가 좋아서 더욱 아름다웠는데, 
-해변에 앉아서 바라보는 일몰은 정말 힐링이 되더라고요.
-주변 사람들도 다들 카메라를 들고 이 순간을 담으려고 했답니다.
+interface CommentResponse {
+  content: Comment[];
+  pageable: {
+    pageNumber: number;
+    pageSize: number;
+  };
+  last: boolean;
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  numberOfElements: number;
+  empty: boolean;
+}
 
-#부산여행 #해운대 #일몰 #힐링여행 #여행스타그램`,
-  images: [
-    "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&auto=format&fit=crop&q=60",
-    "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&auto=format&fit=crop&q=60",
-  ],
-  likes: 256,
-  comments: 42,
-  shares: 15,
-  location: "부산 해운대구",
-  timeAgo: "5시간 전",
-  commentsList: [
-    {
-      id: 1,
-      author: {
-        name: "여행러",
-        avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=60",
-      },
-      content: "정말 아름다운 일몰이네요! 다음에 가면 꼭 이 장소에서 일몰을 봐야겠어요 😍",
-      timeAgo: "3시간 전",
-      likes: 12,
-    },
-    {
-      id: 2,
-      author: {
-        name: "사진작가",
-        avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&auto=format&fit=crop&q=60",
-      },
-      content: "사진이 정말 잘 나왔네요! 카메라 설정을 공유해주실 수 있나요?",
-      timeAgo: "2시간 전",
-      likes: 8,
-    },
-  ],
-};
+const categories = [
+  { id: "TRAVEL_REVIEW", name: "여행후기" },
+  { id: "RESTAURANT_RECOMMENDATION", name: "맛집 추천" },
+  { id: "ACCOMMODATION_RECOMMENDATION", name: "숙소 추천" },
+  { id: "TRAVEL_TIP", name: "여행 팁" },
+  { id: "TRAVEL_COMPANION", name: "동행 구함" },
+  { id: "TRAVEL_QUESTION", name: "여행 질문" },
+];
 
-export default function PostDetailPage() {
+interface PageProps {
+  params: Promise<{
+    id: string;
+  }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default function SocialPage({ params }: PageProps) {
   const router = useRouter();
+  const { user: me } = useUser();
+  const [post, setPost] = useState<Post | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState("");
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = useState<{ preview: string; url: string | null }[]>([]);
   const [showImageModal, setShowImageModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [replyTotalCnt,setReplyTotalCnt] = useState(0);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editImages, setEditImages] = useState<{ preview: string; url: string | null }[]>([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteCommentId, setDeleteCommentId] = useState<number | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportCommentId, setReportCommentId] = useState<number | null>(null);
+  const [reportReason, setReportReason] = useState("");
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [isLikeLoading, setIsLikeLoading] = useState(false);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+  useEffect(() => {
+    const fetchPost = async () => {
+      try {
+        const resolvedParams = await params;
+        const response = await instance.get(`/api/social/posts/${resolvedParams.id}`);
+        if (response.status === 200) {
+          setPost(response.data);
+        }
+      } catch (error) {
+        console.error('게시글 조회 실패:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPost();
+  }, [params]);
+
+  const fetchComments = async () => {
+    try {
+      const resolvedParams = await params;
+      console.log('Fetching comments for post:', resolvedParams.id);
+      const response = await instance.get(`/api/v1/social/replies/${resolvedParams.id}`, {
+        params: {
+          page,
+          size: 10
+        }
+      });
+      
+      console.log('Response data:', response.data);
+      
+      if (response.status === 200) {
+        const newComments = response.data.data.replies.content;
+        console.log('New comments:', newComments);
+
+        setReplyTotalCnt(response.data.data.totalCount);
+        setComments(prev => page === 0 ? newComments : [...prev, ...newComments]);
+        setHasMore(!response.data.last);
+      }
+    } catch (error) {
+      console.error('댓글 조회 실패:', error);
+      setComments([]);
+    }
+  };
+  useEffect(() => {
+    fetchComments();
+  }, [params, page]);
+
+  useEffect(() => {
+    console.log('comments===',comments);
+
+    console.log('me===',me)
+  },[]);
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return '방금 전';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}분 전`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}시간 전`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}일 전`;
+    return date.toLocaleDateString();
+  };
+
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    // 최대 5개까지만 업로드 가능
+    if (selectedImages.length + files.length > 5) {
+      alert("이미지는 최대 5개까지만 첨부할 수 있습니다.");
+      return;
+    }
+
+    for (const file of Array.from(files)) {
+      // 미리보기를 위한 임시 URL 생성
+      const previewUrl = URL.createObjectURL(file);
+      
+      // 새로운 이미지 객체 추가
+      setSelectedImages(prev => [...prev, { preview: previewUrl, url: null }]);
+
+      // S3 업로드
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('pathType', 'social_reply');
+
+      try {
+        const uploadResponse = await instance.post('/api/v1/s3/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        
+        if (uploadResponse.status === 200) {
+          // 업로드된 URL로 상태 업데이트
+          setSelectedImages(prev => 
+            prev.map(img => 
+              img.preview === previewUrl 
+                ? { ...img, url: uploadResponse.data.fileUrl }
+                : img
+            )
+          );
+        }
+      } catch (error) {
+        console.error('이미지 업로드 실패:', error);
+        alert('이미지 업로드에 실패했습니다.');
+        // 실패한 이미지 제거
+        setSelectedImages(prev => prev.filter(img => img.preview !== previewUrl));
+        URL.revokeObjectURL(previewUrl);
+      }
     }
   };
 
-  const handleCameraClick = () => {
-    // 카메라 접근 권한 요청 및 처리
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-          // 카메라 스트림 처리 로직
-          console.log('Camera access granted');
-        })
-        .catch(err => {
-          console.error('Camera access denied:', err);
-        });
-    }
+  const handleRemoveImage = (previewUrl: string) => {
+    setSelectedImages(prev => {
+      const removedImage = prev.find(img => img.preview === previewUrl);
+      if (removedImage) {
+        URL.revokeObjectURL(removedImage.preview);
+      }
+      return prev.filter(img => img.preview !== previewUrl);
+    });
   };
 
   const handleImageClick = (index: number) => {
@@ -96,12 +226,318 @@ export default function PostDetailPage() {
   };
 
   const handlePrevImage = () => {
-    setCurrentImageIndex((prev) => (prev === 0 ? post.images.length - 1 : prev - 1));
+    if (!post) return;
+    setCurrentImageIndex((prev) => (prev === 0 ? post.imageUrls.length - 1 : prev - 1));
   };
 
   const handleNextImage = () => {
-    setCurrentImageIndex((prev) => (prev === post.images.length - 1 ? 0 : prev + 1));
+    if (!post) return;
+    setCurrentImageIndex((prev) => (prev === post.imageUrls.length - 1 ? 0 : prev + 1));
   };
+
+  const handleSubmitComment = async () => {
+    const uploadedUrls = selectedImages.map(img => img.url).filter((url): url is string => url !== null);
+    
+    if (!comment.trim() && uploadedUrls.length === 0) {
+      alert("댓글 내용을 입력하거나 이미지를 첨부해주세요.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const resolvedParams = await params;
+      const response = await instance.post(`/api/v1/social/replies/${resolvedParams.id}`, {
+        content: comment.trim(),
+        imageUrls: uploadedUrls,
+      });
+
+      if (response.status === 200) {
+        setComment("");
+        // 모든 이미지 미리보기 URL 해제
+        selectedImages.forEach(img => URL.revokeObjectURL(img.preview));
+        setIsLiked(true)
+        setSelectedImages([]);
+        fetchComments();
+        // 댓글 목록 새로고침
+        // router.refresh();
+      }
+    } catch (error) {
+      console.error("댓글 작성 실패:", error);
+      alert("댓글 작성 중 오류가 발생했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleLoadMore = () => {
+    if (hasMore) {
+      setPage(prev => prev + 1);
+    }
+  };
+
+  const showSuccessToast = (message: string) => {
+    setToastMessage(message);
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+    }, 2000);
+  };
+
+  const handleEditComment = async (commentId: number) => {
+    if (!editContent.trim() && editImages.length === 0) {
+      alert("댓글 내용을 입력하거나 이미지를 첨부해주세요.");
+      return;
+    }
+
+    try {
+      const uploadedUrls = editImages.map(img => img.url).filter((url): url is string => url !== null);
+      
+      const response = await instance.put(`/api/v1/social/replies/${commentId}`, {
+        content: editContent.trim(),
+        imageUrls: uploadedUrls
+      });
+
+      if (response.status === 200) {
+        // 수정 성공 후 모달 닫기
+        setEditingCommentId(null);
+        setEditContent("");
+        setEditImages([]);
+        setShowEditModal(false);
+        
+        // 댓글 목록 새로고침
+        const resolvedParams = await params;
+        const listResponse = await instance.get(`/api/v1/social/replies/${resolvedParams.id}`, {
+          params: {
+            page: 0,
+            size: 10
+          }
+        });
+        
+        if (listResponse.status === 200) {
+          setComments(listResponse.data.data.replies.content);
+          setReplyTotalCnt(listResponse.data.data.totalCount);
+          setPage(0); // 페이지 초기화
+          showSuccessToast("댓글이 수정되었습니다.");
+        }
+      }
+    } catch (error) {
+      console.error('댓글 수정 실패:', error);
+      alert('댓글 수정에 실패했습니다.');
+    }
+  };
+
+  const handleEditImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    // 최대 5개까지만 업로드 가능
+    if (editImages.length + files.length > 5) {
+      alert("이미지는 최대 5개까지만 첨부할 수 있습니다.");
+      return;
+    }
+
+    for (const file of Array.from(files)) {
+      // 미리보기를 위한 임시 URL 생성
+      const previewUrl = URL.createObjectURL(file);
+      
+      // 새로운 이미지 객체 추가
+      setEditImages(prev => [...prev, { preview: previewUrl, url: null }]);
+
+      // S3 업로드
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('pathType', 'social_reply');
+
+      try {
+        const uploadResponse = await instance.post('/api/v1/s3/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        
+        if (uploadResponse.status === 200) {
+          // 업로드된 URL로 상태 업데이트
+          setEditImages(prev => 
+            prev.map(img => 
+              img.preview === previewUrl 
+                ? { ...img, url: uploadResponse.data.fileUrl }
+                : img
+            )
+          );
+        }
+      } catch (error) {
+        console.error('이미지 업로드 실패:', error);
+        alert('이미지 업로드에 실패했습니다.');
+        // 실패한 이미지 제거
+        setEditImages(prev => prev.filter(img => img.preview !== previewUrl));
+        URL.revokeObjectURL(previewUrl);
+      }
+    }
+  };
+
+  const handleRemoveEditImage = (previewUrl: string) => {
+    setEditImages(prev => {
+      const removedImage = prev.find(img => img.preview === previewUrl);
+      if (removedImage) {
+        URL.revokeObjectURL(removedImage.preview);
+      }
+      return prev.filter(img => img.preview !== previewUrl);
+    });
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    try {
+      const response = await instance.delete(`/api/v1/social/replies/${commentId}`);
+
+      if (response.status === 200) {
+        // 삭제 성공 후 모달 닫기
+        setShowDeleteModal(false);
+        setDeleteCommentId(null);
+        
+        // 댓글 목록 새로고침
+        const resolvedParams = await params;
+        const listResponse = await instance.get(`/api/v1/social/replies/${resolvedParams.id}`, {
+          params: {
+            page: 0,
+            size: 10
+          }
+        });
+        
+        if (listResponse.status === 200) {
+          setComments(listResponse.data.data.replies.content);
+          setReplyTotalCnt(listResponse.data.data.totalCount);
+          setPage(0); // 페이지 초기화
+        }
+      }
+    } catch (error) {
+      console.error('댓글 삭제 실패:', error);
+      alert('댓글 삭제에 실패했습니다.');
+    }
+  };
+
+  const handleReportComment = async () => {
+    if (!reportReason.trim()) {
+      alert("신고 사유를 입력해주세요.");
+      return;
+    }
+
+    try {
+      const response = await instance.post(`/api/v1/social/replies/${reportCommentId}/report`, {
+        reason: reportReason.trim()
+      });
+
+      if (response.status === 200) {
+        setShowReportModal(false);
+        setReportCommentId(null);
+        setReportReason("");
+        showSuccessToast("신고가 접수되었습니다.");
+      }
+    } catch (error) {
+      console.error('댓글 신고 실패:', error);
+      alert('신고 처리 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 좋아요 토글
+  const handleLikeToggle = async () => {
+    if (isLikeLoading) return;
+    
+    try {
+      // setIsLikeLoading(true);
+      // UI 즉시 업데이트
+      const newLikeStatus = !isLiked;
+      setIsLiked(newLikeStatus);
+      setLikeCount(prev => newLikeStatus ? prev + 1 : prev - 1);
+
+      const resolvedParams = await params;
+      const response = await instance.post(`/api/v1/social/posts/${resolvedParams.id}/like`);
+      console.log('좋아요 토글 응답:', response);
+      
+      if (response.status === 200) {
+        // 서버 응답으로 최종 상태 동기화
+        const serverLikeStatus = typeof response.data === 'object' ? response.data.data : response.data;
+        console.log('서버 좋아요 상태:', serverLikeStatus);
+        
+        // 서버 상태와 다르다면 다시 동기화
+        // if (Boolean(serverLikeStatus) !== newLikeStatus) {
+        //   setIsLiked(Boolean(serverLikeStatus));
+        //   // 좋아요 수 다시 가져오기
+          const countResponse = await instance.get(`/api/v1/social/posts/${resolvedParams.id}/like/count`);
+          if (countResponse.status === 200) {
+            const count = typeof countResponse.data === 'object' ? countResponse.data.data : countResponse.data;
+            setLikeCount(Number(count));
+          }
+        // } 
+      }
+    } catch (error) {
+      console.error('좋아요 토글 실패:', error);
+      // 에러 발생 시 원래 상태로 복구
+      setIsLiked(!isLiked);
+      setLikeCount(prev => isLiked ? prev + 1 : prev - 1);
+    } finally {
+      // setIsLikeLoading(false);
+    }
+  };
+
+  // 좋아요 상태 확인
+  const checkLikeStatus = async () => {
+    try {
+      const resolvedParams = await params;
+      const response = await instance.get(`/api/v1/social/posts/${resolvedParams.id}/like`);
+      console.log('좋아요 상태 응답:', response);
+      if (response.status === 200) {
+        const likeStatus = typeof response.data === 'object' ? response.data.data : response.data;
+        console.log('좋아요 상태:', likeStatus);
+        setIsLiked(Boolean(likeStatus));
+      }
+    } catch (error) {
+      console.error('좋아요 상태 확인 실패:', error);
+    }
+  };
+
+  // 좋아요 수 가져오기
+  const fetchLikeCount = async () => {
+    try {
+      const resolvedParams = await params;
+      const response = await instance.get(`/api/v1/social/posts/${resolvedParams.id}/like/count`);
+      console.log('좋아요 수 응답:', response);
+      if (response.status === 200) {
+        const count = typeof response.data === 'object' ? response.data.data : response.data;
+        console.log('좋아요 수:', count);
+        setLikeCount(Number(count));
+      }
+    } catch (error) {
+      console.error('좋아요 수 조회 실패:', error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      await Promise.all([
+        checkLikeStatus(),
+        fetchLikeCount()
+      ]);
+    };
+
+    fetchInitialData();
+  }, [params]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (!post) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-500">게시글을 찾을 수 없습니다.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-32">
@@ -115,7 +551,7 @@ export default function PostDetailPage() {
             >
               <HiOutlineArrowLeft className="w-6 h-6" />
             </button>
-            <h1 className="text-xl font-bold ml-4">소셜</h1>
+            <h1 className="text-xl font-bold ml-4">게시글</h1>
           </div>
         </div>
       </header>
@@ -127,17 +563,40 @@ export default function PostDetailPage() {
           <div className="p-4">
             {/* 작성자 정보 */}
             <div className="flex items-center gap-3 mb-4">
-              <Image
-                src={post.author.avatar}
-                alt={post.author.name}
-                width={40}
-                height={40}
-                className="rounded-full"
-              />
-              <div>
-                <div className="font-medium">{post.author.name}</div>
-                <div className="text-sm text-gray-500">{post.timeAgo}</div>
+              <div className="relative w-10 h-10 rounded-full overflow-hidden bg-black">
+                {post.userProfileImage ? (
+                  <Image
+                    src={post.userProfileImage}
+                    alt={post.userNickname || "사용자"}
+                    width={40}
+                    height={40}
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-white text-xs">
+                    {post.userNickname?.[0] || "?"}
+                  </div>
+                )}
               </div>
+              <div className="flex-1">
+                <div className="font-medium">{post.userNickname || "익명 사용자"}</div>
+                <div className="text-sm text-gray-500">
+                  {formatTimeAgo(post.createdAt)} •{" "}
+                  <span className="text-blue-500">
+                    {categories.find((c) => c.id === post.category)?.name}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setReportCommentId(post.id);
+                  setShowReportModal(true);
+                }}
+                className="text-gray-400 hover:text-red-500 transition-colors"
+              >
+                <GiSiren className="w-6 h-6" />
+              </button>
             </div>
 
             {/* 게시글 내용 */}
@@ -146,110 +605,57 @@ export default function PostDetailPage() {
             </div>
 
             {/* 이미지 그리드 */}
-            {post.images.length > 0 && (
+            {post.imageUrls && post.imageUrls.length > 0 && (
               <div className="mb-4">
-                {post.images.length === 1 ? (
-                  <div 
-                    className="relative aspect-[4/3] rounded-lg overflow-hidden cursor-pointer"
-                    onClick={() => handleImageClick(0)}
-                  >
-                    <Image
-                      src={post.images[0]}
-                      alt="Post image"
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                ) : post.images.length === 2 ? (
-                  <div className="grid grid-cols-2 gap-1">
-                    {post.images.map((image, index) => (
-                      <div 
-                        key={index} 
-                        className="relative aspect-square rounded-lg overflow-hidden cursor-pointer"
-                        onClick={() => handleImageClick(index)}
-                      >
-                        <Image
-                          src={image}
-                          alt={`Post image ${index + 1}`}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : post.images.length === 3 ? (
-                  <div className="grid grid-cols-2 gap-1">
-                    <div 
-                      className="relative aspect-square rounded-lg overflow-hidden cursor-pointer"
-                      onClick={() => handleImageClick(0)}
-                    >
-                      <Image
-                        src={post.images[0]}
-                        alt="Post image 1"
+                <div className="grid grid-cols-2 gap-1">
+                  {post.imageUrls.map((image, index) => (
+                    <div key={index} className="relative aspect-square">
+                      <Image 
+                        src={getImageUrl(image)}
+                        alt={`Post image ${index + 1}`}
                         fill
                         className="object-cover"
+                        unoptimized
                       />
                     </div>
-                    <div className="grid grid-rows-2 gap-1">
-                      {post.images.slice(1).map((image, index) => (
-                        <div 
-                          key={index} 
-                          className="relative aspect-square rounded-lg overflow-hidden cursor-pointer"
-                          onClick={() => handleImageClick(index + 1)}
-                        >
-                          <Image
-                            src={image}
-                            alt={`Post image ${index + 2}`}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-1">
-                    {post.images.slice(0, 4).map((image, index) => (
-                      <div 
-                        key={index} 
-                        className="relative aspect-square rounded-lg overflow-hidden cursor-pointer"
-                        onClick={() => handleImageClick(index)}
-                      >
-                        <Image
-                          src={image}
-                          alt={`Post image ${index + 1}`}
-                          fill
-                          className="object-cover"
-                        />
-                        {index === 3 && post.images.length > 4 && (
-                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                            <span className="text-white text-xl font-bold">+{post.images.length - 4}</span>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
             )}
 
             {/* 통계 */}
             <div className="flex items-center gap-4 text-sm text-gray-500">
-              <div className="flex items-center gap-1">
-                <HiOutlineHeart className="w-5 h-5" />
-                <span>{post.likes}</span>
-              </div>
+              <button 
+                onClick={handleLikeToggle}
+                disabled={isLikeLoading}
+                className={`flex items-center gap-1 ${isLiked ? 'text-red-500' : 'text-gray-500'} hover:text-red-500 transition-colors`}
+              >
+                {isLiked ? (
+                  <HiHeart className="w-5 h-5" />
+                ) : (
+                  <HiOutlineHeart className="w-5 h-5" />
+                )}
+                <span>{likeCount}</span>
+              </button>
               <div className="flex items-center gap-1">
                 <HiOutlineChatBubbleLeftRight className="w-5 h-5" />
-                <span>{post.comments}</span>
+                <span>{replyTotalCnt}</span>
               </div>
             </div>
           </div>
 
           {/* 액션 버튼 */}
           <div className="flex border-t border-gray-200">
-            <button className="flex-1 py-3 flex items-center justify-center gap-2 text-gray-600 hover:bg-gray-50">
-              <HiOutlineHeart className="w-6 h-6" />
+            <button 
+              onClick={handleLikeToggle}
+              disabled={isLikeLoading}
+              className={`flex-1 py-3 flex items-center justify-center gap-2 ${isLiked ? 'text-red-500' : 'text-gray-600'} hover:text-red-500 transition-colors`}
+            >
+              {isLiked ? (
+                <HiHeart className="w-6 h-6" />
+              ) : (
+                <HiOutlineHeart className="w-6 h-6" />
+              )}
               <span>좋아요</span>
             </button>
             <button className="flex-1 py-3 flex items-center justify-center gap-2 text-gray-600 hover:bg-gray-50">
@@ -266,35 +672,106 @@ export default function PostDetailPage() {
         {/* 댓글 섹션 */}
         <div className="bg-white">
           <div className="p-4">
-            <h2 className="font-medium mb-4">댓글 {post.comments}개</h2>
+            <h2 className="font-medium mb-4">댓글 {replyTotalCnt}개</h2>
             <div className="space-y-6">
-              {post.commentsList.map((comment) => (
-                <div key={comment.id} className="flex gap-3">
-                  <div className="flex-shrink-0">
-                    <Image
-                      src={comment.author.avatar}
-                      alt={comment.author.name}
-                      width={36}
-                      height={36}
-                      className="rounded-full"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-sm">{comment.author.name}</span>
-                      <span className="text-xs text-gray-500">{comment.timeAgo}</span>
+              {comments && comments.length > 0 ? (
+                comments.map((comment) => (
+                  <div key={comment.id} className="flex gap-3">
+                    {/* 프로필 이미지 */}
+                    <div className="relative w-10 h-10 rounded-full overflow-hidden bg-black flex-shrink-0">
+                      <div className="w-full h-full flex items-center justify-center text-white text-xs">
+                        {comment.userName?.[0] || "?"}
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-800 break-words">{comment.content}</p>
-                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                      <button className="flex items-center gap-1 hover:text-blue-500">
-                        <HiOutlineHeart className="w-4 h-4" />
-                        <span>{comment.likes}</span>
-                      </button>
-                      <button className="hover:text-blue-500">답글</button>
+                    
+                    {/* 댓글 내용 */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-sm">
+                          {comment.userName}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {formatTimeAgo(comment.createdAt)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-end gap-3 mt-2">
+                        {me && me.id === comment.userId && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setEditingCommentId(comment.id);
+                                setEditContent(comment.content);
+                                if (comment.imageUrls && comment.imageUrls.length > 0) {
+                                  setEditImages(comment.imageUrls.map(url => ({
+                                    preview: getImageUrl(url),
+                                    url: url
+                                  })));
+                                } else {
+                                  setEditImages([]);
+                                }
+                                setShowEditModal(true);
+                              }}
+                              className="text-gray-500 hover:text-blue-500 transition-colors"
+                            >
+                              <HiOutlinePencil className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setDeleteCommentId(comment.id);
+                                setShowDeleteModal(true);
+                              }}
+                              className="text-gray-500 hover:text-red-500 transition-colors"
+                            >
+                              <HiOutlineTrash className="w-5 h-5" />
+                            </button>
+                          </>
+                        )}
+                        <button
+                          onClick={() => {
+                            setReportCommentId(comment.id);
+                            setShowReportModal(true);
+                          }}
+                          className="text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                          <GiSiren className="w-6 h-6" />
+                        </button>
+                      </div>
+                      <p className="text-sm text-gray-800 whitespace-pre-line mb-2">
+                        {comment.content}
+                      </p>
+                      {comment.imageUrls && comment.imageUrls.length > 0 && (
+                        <div className="grid grid-cols-2 gap-1 mb-2">
+                          {comment.imageUrls.map((image, index) => (
+                            <div key={index} className="relative aspect-square">
+                              <Image
+                                src={getImageUrl(image)}
+                                alt={`Comment image ${index + 1}`}
+                                fill
+                                className="object-cover rounded-lg"
+                                unoptimized
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="text-center text-gray-500 py-4">
+                  아직 댓글이 없습니다.
                 </div>
-              ))}
+              )}
+              
+              {/* 더보기 버튼 */}
+              {hasMore && comments && comments.length > 0 && (
+                <button
+                  onClick={handleLoadMore}
+                  className="w-full py-2 text-sm text-gray-500 hover:text-gray-700"
+                >
+                  더보기
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -321,7 +798,7 @@ export default function PostDetailPage() {
               {/* 이미지 */}
               <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-black">
                 <Image
-                  src={post.images[currentImageIndex]}
+                  src={post.imageUrls[currentImageIndex]}
                   alt={`Post image ${currentImageIndex + 1}`}
                   fill
                   className="object-contain"
@@ -329,7 +806,7 @@ export default function PostDetailPage() {
               </div>
 
               {/* 이전/다음 버튼 */}
-              {post.images.length > 1 && (
+              {post.imageUrls.length > 1 && (
                 <>
                   <button
                     onClick={handlePrevImage}
@@ -351,9 +828,9 @@ export default function PostDetailPage() {
               )}
 
               {/* 이미지 인디케이터 */}
-              {post.images.length > 1 && (
+              {post.imageUrls.length > 1 && (
                 <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 flex gap-2">
-                  {post.images.map((_, index) => (
+                  {post.imageUrls.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentImageIndex(index)}
@@ -372,62 +849,284 @@ export default function PostDetailPage() {
       {/* 댓글 입력 */}
       <div className={`fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 z-40 transition-opacity duration-200 ${showImageModal ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         <div className="max-w-md mx-auto p-4">
-          {selectedImage && (
-            <div className="relative mb-2 w-20 h-20">
-              <Image
-                src={selectedImage}
-                alt="Selected"
-                fill
-                className="object-cover rounded-lg"
-              />
-              <button
-                onClick={() => setSelectedImage(null)}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-              >
-                ×
-              </button>
+          {selectedImages.length > 0 && (
+            <div className="flex gap-2 mb-2 overflow-x-auto pb-2">
+              {selectedImages.map((image, index) => (
+                <div key={index} className="relative w-20 h-20 flex-shrink-0">
+                  <Image
+                    src={image.preview}
+                    alt={`Selected ${index + 1}`}
+                    fill
+                    className="object-cover rounded-lg"
+                  />
+                  <button
+                    onClick={() => handleRemoveImage(image.preview)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
             </div>
           )}
           <div className="flex items-center gap-2">
-            <div className="flex-1 flex items-center gap-2 px-4 py-2 border rounded-full focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+            <div className="flex-1 flex items-center gap-2 px-4 py-2 border rounded-full focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 min-w-0">
               <input
                 type="text"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="댓글을 입력하세요..."
-                className="flex-1 outline-none text-sm bg-transparent"
+                className="flex-1 outline-none text-sm bg-transparent min-w-0"
               />
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <label className="cursor-pointer hover:text-blue-500">
                   <input
                     type="file"
                     accept="image/*"
+                    multiple
                     className="hidden"
                     onChange={handleImageSelect}
                   />
                   <HiOutlinePhoto className="w-5 h-5" />
                 </label>
-                <button
-                  onClick={handleCameraClick}
-                  className="hover:text-blue-500"
-                >
-                  <HiOutlineCamera className="w-5 h-5" />
-                </button>
               </div>
             </div>
             <button
-              className={`px-4 py-2 rounded-full text-sm font-medium ${
-                (comment.trim() || selectedImage) 
+              onClick={handleSubmitComment}
+              disabled={isSubmitting || (!comment.trim() && selectedImages.length === 0)}
+              className={`px-4 py-2 rounded-full text-sm font-medium flex-shrink-0 ${
+                (comment.trim() || selectedImages.length > 0) && !isSubmitting
                   ? 'bg-blue-500 text-white hover:bg-blue-600' 
                   : 'bg-gray-100 text-gray-400'
               } transition-colors`}
-              disabled={!comment.trim() && !selectedImage}
             >
-              게시
+              {isSubmitting ? "작성 중..." : "게시"}
             </button>
           </div>
         </div>
       </div>
+
+      {/* 댓글 수정 모달 */}
+      <AnimatePresence>
+        {showEditModal && editingCommentId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-end"
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              className="w-full bg-white rounded-t-2xl p-4"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium">댓글 수정</h3>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingCommentId(null);
+                    setEditContent("");
+                    setEditImages([]);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                >
+                  <HiOutlineXMark className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="w-full p-3 border rounded-lg text-sm"
+                  rows={4}
+                  placeholder="댓글을 입력하세요..."
+                />
+
+                {editImages.length > 0 && (
+                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    {editImages.map((image, index) => (
+                      <div key={index} className="relative w-20 h-20 flex-shrink-0">
+                        <Image
+                          src={image.preview}
+                          alt={`Selected ${index + 1}`}
+                          fill
+                          className="object-cover rounded-lg"
+                        />
+                        <button
+                          onClick={() => handleRemoveEditImage(image.preview)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2">
+                  <label className="cursor-pointer hover:text-blue-500">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleEditImageSelect}
+                    />
+                    <HiOutlinePhoto className="w-6 h-6" />
+                  </label>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEditComment(editingCommentId)}
+                    className="flex-1 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium"
+                  >
+                    저장
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setEditingCommentId(null);
+                      setEditContent("");
+                      setEditImages([]);
+                    }}
+                    className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
+                  >
+                    취소
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 댓글 삭제 모달 */}
+      <AnimatePresence>
+        {showDeleteModal && deleteCommentId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-sm bg-white rounded-2xl p-6"
+            >
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <HiOutlineTrash className="w-6 h-6 text-red-500" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  댓글 삭제
+                </h3>
+                <p className="text-sm text-gray-500">
+                  이 댓글을 삭제하시겠습니까?
+                  <br />
+                  삭제된 댓글은 복구할 수 없습니다.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeleteCommentId(null);
+                  }}
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={() => handleDeleteComment(deleteCommentId)}
+                  className="flex-1 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium"
+                >
+                  삭제
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 댓글 신고 모달 */}
+      <AnimatePresence>
+        {showReportModal && reportCommentId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-sm bg-white rounded-2xl p-6"
+            >
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <GiSiren className="w-6 h-6 text-red-500" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {reportCommentId === post?.id ? '게시글 신고' : '댓글 신고'}
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  신고 사유를 입력해주세요.
+                </p>
+                <textarea
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  className="w-full p-3 border rounded-lg text-sm"
+                  rows={3}
+                  placeholder="신고 사유를 입력하세요..."
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setReportCommentId(null);
+                    setReportReason("");
+                  }}
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleReportComment}
+                  className="flex-1 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium"
+                >
+                  신고하기
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 토스트 알림 */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50"
+          >
+            <div className="bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm">
+              {toastMessage}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 } 

@@ -1,18 +1,22 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    domains: ["*"],
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'i.pravatar.cc',
+        protocol: "https",
+        hostname: "**",
       },
       {
-        protocol: 'https',
-        hostname: 'picsum.photos',
+        protocol: "http",
+        hostname: "**",
       },
     ],
-    domains: ['images.unsplash.com', 'i.pravatar.cc', 'picsum.photos'],
+  },
+  env: {
+    NEXT_PUBLIC_BASE_URL:
+      process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8080",
   },
 };
 
-module.exports = nextConfig; 
+module.exports = nextConfig;

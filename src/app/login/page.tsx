@@ -1,12 +1,21 @@
+"use client";
+
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import LoginClient from "./LoginClient";
 
-type Props = {
-    params: Promise<{ id: string }>;
-    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+function LoginContent() {
+  const searchParams = useSearchParams();
+  const params = {
+    id: searchParams.get('id') || ''
   };
+  return <LoginClient params={params} />;
+}
 
-export default async function LoginPage({ params }: Props) {
-    const resolvedParams = await params;
-
-  return <LoginClient  params={resolvedParams}/>;
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginContent />
+    </Suspense>
+  );
 } 

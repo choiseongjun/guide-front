@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import {
   HiOutlineArrowLeft,
@@ -17,295 +17,75 @@ import {
 } from "react-icons/hi2";
 import { useRouter, usePathname } from "next/navigation";
 import TripList from "@/components/TripList";
+import instance from "@/app/api/axios";
+import { log } from "console";
 
-// 임시 데이터
-const trips = [
-  {
-    id: 1,
-    title: "제주도 3박 4일 힐링 여행",
-    image:
-      "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&auto=format&fit=crop&q=60",
-    price: 450000,
-    discountPrice: 380000,
-    duration: "4일",
-    activity: "힐링",
-    participants: "2-4명",
-    transport: "렌터카",
-    facilities: ["반려동물 동반 가능", "수영장", "스파"],
-    date: "2024-04-15",
-    time: "09:00",
-    location: "제주시",
-    reviews: 128,
-    wishlist: 56,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=1",
-      "https://i.pravatar.cc/150?img=2",
-      "https://i.pravatar.cc/150?img=3",
-      "https://i.pravatar.cc/150?img=4",
-    ],
-  },
-  {
-    id: 2,
-    title: "부산 해운대 맛집 투어",
-    image:
-      "https://images.unsplash.com/photo-1596422846543-75c6fc197f11?w=800&auto=format&fit=crop&q=60",
-    price: 280000,
-    discountPrice: 220000,
-    duration: "2일",
-    activity: "맛집",
-    participants: "1-6명",
-    transport: "대중교통",
-    facilities: ["해변", "맛집"],
-    date: "2024-04-20",
-    time: "10:30",
-    location: "해운대구",
-    reviews: 89,
-    wishlist: 42,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=5",
-      "https://i.pravatar.cc/150?img=6",
-      "https://i.pravatar.cc/150?img=7",
-    ],
-  },
-  {
-    id: 3,
-    title: "강원도 설악산 등반",
-    image:
-      "https://images.unsplash.com/photo-1598887141929-ef608c1dba3c?w=800&auto=format&fit=crop&q=60",
-    price: 320000,
-    discountPrice: 280000,
-    duration: "3일",
-    activity: "등산",
-    participants: "4-8명",
-    transport: "버스",
-    facilities: ["숙소", "식사", "장비대여"],
-    date: "2024-04-25",
-    time: "08:00",
-    location: "속초시",
-    reviews: 156,
-    wishlist: 78,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=8",
-      "https://i.pravatar.cc/150?img=9",
-      "https://i.pravatar.cc/150?img=10",
-      "https://i.pravatar.cc/150?img=11",
-      "https://i.pravatar.cc/150?img=12",
-    ],
-  },
-  {
-    id: 4,
-    title: "여수 바다 여행",
-    image:
-      "https://images.unsplash.com/photo-1598887141929-ef608c1dba3c?w=800&auto=format&fit=crop&q=60",
-    price: 350000,
-    discountPrice: 290000,
-    duration: "3일",
-    activity: "해변",
-    participants: "2-6명",
-    transport: "렌터카",
-    facilities: ["해변", "수상스포츠", "맛집"],
-    date: "2024-05-01",
-    time: "11:00",
-    location: "여수시",
-    reviews: 92,
-    wishlist: 45,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=13",
-      "https://i.pravatar.cc/150?img=14",
-      "https://i.pravatar.cc/150?img=15",
-    ],
-  },
-  {
-    id: 5,
-    title: "경주 역사 문화 여행",
-    image:
-      "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&auto=format&fit=crop&q=60",
-    price: 250000,
-    discountPrice: 200000,
-    duration: "2일",
-    activity: "문화",
-    participants: "1-4명",
-    transport: "대중교통",
-    facilities: ["문화재", "박물관", "맛집"],
-    date: "2024-05-05",
-    time: "09:30",
-    location: "경주시",
-    reviews: 112,
-    wishlist: 63,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=16",
-      "https://i.pravatar.cc/150?img=17",
-      "https://i.pravatar.cc/150?img=18",
-      "https://i.pravatar.cc/150?img=19",
-    ],
-  },
-  {
-    id: 6,
-    title: "전주 한옥마을 체험",
-    image:
-      "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&auto=format&fit=crop&q=60",
-    price: 280000,
-    discountPrice: 230000,
-    duration: "2일",
-    activity: "문화",
-    participants: "2-4명",
-    transport: "대중교통",
-    facilities: ["한옥숙박", "전통체험", "맛집"],
-    date: "2024-05-10",
-    time: "10:00",
-    location: "전주시",
-    reviews: 145,
-    wishlist: 71,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=20",
-      "https://i.pravatar.cc/150?img=21",
-      "https://i.pravatar.cc/150?img=22",
-    ],
-  },
-  {
-    id: 7,
-    title: "강원도 스키장 투어",
-    image:
-      "https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&auto=format&fit=crop&q=60",
-    price: 420000,
-    discountPrice: 360000,
-    duration: "3일",
-    activity: "스키",
-    participants: "2-6명",
-    transport: "렌터카",
-    facilities: ["스키장", "장비대여", "숙소"],
-    date: "2024-12-20",
-    time: "08:30",
-    location: "평창군",
-    reviews: 98,
-    wishlist: 52,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=23",
-      "https://i.pravatar.cc/150?img=24",
-      "https://i.pravatar.cc/150?img=25",
-      "https://i.pravatar.cc/150?img=26",
-    ],
-  },
-  {
-    id: 8,
-    title: "제주 올레길 트레킹",
-    image:
-      "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&auto=format&fit=crop&q=60",
-    price: 380000,
-    discountPrice: 320000,
-    duration: "4일",
-    activity: "트레킹",
-    participants: "4-8명",
-    transport: "버스",
-    facilities: ["숙소", "식사", "가이드"],
-    date: "2024-05-15",
-    time: "07:00",
-    location: "제주시",
-    reviews: 167,
-    wishlist: 89,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=27",
-      "https://i.pravatar.cc/150?img=28",
-      "https://i.pravatar.cc/150?img=29",
-      "https://i.pravatar.cc/150?img=30",
-      "https://i.pravatar.cc/150?img=31",
-    ],
-  },
-  {
-    id: 9,
-    title: "울릉도 독도 투어",
-    image:
-      "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&auto=format&fit=crop&q=60",
-    price: 550000,
-    discountPrice: 480000,
-    duration: "3일",
-    activity: "해변",
-    participants: "2-4명",
-    transport: "배",
-    facilities: ["숙소", "식사", "가이드"],
-    date: "2024-05-20",
-    time: "08:00",
-    location: "울릉군",
-    reviews: 78,
-    wishlist: 45,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=32",
-      "https://i.pravatar.cc/150?img=33",
-      "https://i.pravatar.cc/150?img=34",
-    ],
-  },
-  {
-    id: 10,
-    title: "강원도 MTB 투어",
-    image:
-      "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=800&auto=format&fit=crop&q=60",
-    price: 320000,
-    discountPrice: 280000,
-    duration: "2일",
-    activity: "자전거",
-    participants: "2-6명",
-    transport: "렌터카",
-    facilities: ["장비대여", "숙소", "식사"],
-    date: "2024-05-25",
-    time: "09:00",
-    location: "홍천군",
-    reviews: 92,
-    wishlist: 58,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=35",
-      "https://i.pravatar.cc/150?img=36",
-      "https://i.pravatar.cc/150?img=37",
-      "https://i.pravatar.cc/150?img=38",
-    ],
-  },
-  {
-    id: 11,
-    title: "부산 야경 투어",
-    image:
-      "https://images.unsplash.com/photo-1596422846543-75c6fc197f11?w=800&auto=format&fit=crop&q=60",
-    price: 180000,
-    discountPrice: 150000,
-    duration: "1일",
-    activity: "도시",
-    participants: "1-4명",
-    transport: "대중교통",
-    facilities: ["맛집", "카페"],
-    date: "2024-06-01",
-    time: "18:00",
-    location: "부산시",
-    reviews: 145,
-    wishlist: 89,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=39",
-      "https://i.pravatar.cc/150?img=40",
-      "https://i.pravatar.cc/150?img=41",
-    ],
-  },
-  {
-    id: 12,
-    title: "제주 서핑 체험",
-    image:
-      "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&auto=format&fit=crop&q=60",
-    price: 280000,
-    discountPrice: 240000,
-    duration: "2일",
-    activity: "서핑",
-    participants: "2-4명",
-    transport: "렌터카",
-    facilities: ["장비대여", "숙소", "식사"],
-    date: "2024-06-05",
-    time: "10:00",
-    location: "제주시",
-    reviews: 112,
-    wishlist: 67,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=42",
-      "https://i.pravatar.cc/150?img=43",
-      "https://i.pravatar.cc/150?img=44",
-      "https://i.pravatar.cc/150?img=45",
-    ],
-  },
-];
+interface Travel {
+  id: number;
+  title: string;
+  highlight: string;
+  description: string;
+  address: string;
+  detailAddress: string;
+  latitude: number;
+  longitude: number;
+  startDate: string;
+  endDate: string;
+  minParticipants: number;
+  maxParticipants: number;
+  isPaid: boolean;
+  price: number;
+  discountRate: number;
+  discountedPrice: number;
+  providedItems: string;
+  notProvidedItems: string;
+  requiresApproval: boolean;
+  minAge: number;
+  maxAge: number;
+  hasSchedule: boolean;
+  schedules: {
+    id: number;
+    dayNumber: number;
+    title: string;
+    time: string;
+    description: string;
+  }[];
+  tags: {
+    id: number;
+    name: string;
+  }[];
+  images: {
+    id: number;
+    imageUrl: string;
+    displayOrder: number;
+    originalFileName: string;
+    storedFileName: string;
+    fileSize: number;
+  }[];
+  reviews?: { id: number }[];
+  likes?: { id: number }[];
+  participants?: { profileImage: string }[];
+  createdBy: string;
+  updatedBy: string;
+  links: any[];
+  user: {
+    id: number;
+    email: string | null;
+    nickname: string;
+    profileImageUrl: string;
+  };
+}
+
+interface TravelResponse {
+  status: number;
+  data: {
+    content: Travel[];
+    totalPages: number;
+    totalElements: number;
+    size: number;
+    number: number;
+  };
+}
 
 const filters = {
   activities: ["힐링", "맛집", "액티비티", "문화", "쇼핑"],
@@ -340,6 +120,11 @@ export default function ThemePageClient({
   const [showFilters, setShowFilters] = useState(false);
   const [showSort, setShowSort] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("date");
+  const [trips, setTrips] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const observerTarget = useRef<HTMLDivElement>(null);
   const [selectedFilters, setSelectedFilters] = useState<SelectedFilters>({
     activities: [],
     transport: [],
@@ -352,6 +137,96 @@ export default function ThemePageClient({
     rating: "",
     wishlist: "",
   });
+
+  // 카테고리 ID가 변경될 때 상태 초기화
+  useEffect(() => {
+    // 모든 상태 초기화
+    setPage(0);
+    setTrips([]);
+    setHasMore(true);
+    setLoading(false);
+    
+    // 새로운 데이터 로드
+    fetchTravels(0);
+  }, [params.id]);
+
+  // fetchTravels 함수를 useCallback으로 메모이제이션
+  const fetchTravels = useCallback(async (pageNum: number = 0) => {
+    if (loading) return;  // 이미 로딩 중이면 중복 호출 방지
+
+    try {
+      setLoading(true);
+      const response = await instance.get<TravelResponse>(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels`,
+        {
+          params: {
+            page: pageNum,
+            size: 10,
+            categoryId: params.id
+          }
+        }
+      );
+
+      if (response.data.status === 200) {
+        const mappedTrips = response.data.data.content.map(travel => ({
+          ...travel,
+          image: travel.images.length > 0 ? travel.images[0].imageUrl : "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&auto=format&fit=crop&q=60",
+          price: travel.discountedPrice > 0 ? travel.discountedPrice : travel.price,
+          originalPrice: travel.price,
+          duration: `${Math.ceil((new Date(travel.endDate).getTime() - new Date(travel.startDate).getTime()) / (1000 * 60 * 60 * 24))}일`,
+          time: travel.schedules[0]?.time || "",
+          location: travel.address.split(" ")[0],
+          reviews: travel.reviews?.length || 0,
+          wishlist: travel.likes?.length || 0,
+          user: {
+            id: travel.user.id,
+            nickname: travel.user.nickname,
+            profileImage: travel.user.profileImageUrl
+          }
+        }));
+
+        setTrips(prev => pageNum === 0 ? mappedTrips : [...prev, ...mappedTrips]);
+        setHasMore(response.data.data.content.length === 10);
+        setPage(pageNum);
+      }
+    } catch (error) {
+      console.error('여행 목록 조회 실패:', error);
+      setHasMore(false);  // 에러 발생 시 더 이상 로드하지 않도록 설정
+    } finally {
+      setLoading(false);
+    }
+  }, [params.id, loading]);
+
+  // Intersection Observer 설정
+  useEffect(() => {
+    let isFetching = false;  // API 호출 중복 방지를 위한 플래그
+
+    const observer = new IntersectionObserver(
+      async (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading && !isFetching) {
+          isFetching = true;
+          await fetchTravels(page + 1);
+          isFetching = false;
+        }
+      },
+      {
+        root: null,
+        rootMargin: "100px",  // 더 일찍 로딩 시작
+        threshold: 0.1,
+      }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [page, hasMore, loading, fetchTravels]);
 
   // 현재 경로가 여행 관련 페이지인지 확인
   useEffect(() => {
@@ -694,6 +569,12 @@ export default function ThemePageClient({
             trips={trips}
             onTripClick={(tripId) => router.push(`/trip/${tripId}`)}
           />
+          {/* 무한 스크롤 감지 요소 */}
+          <div ref={observerTarget} className="h-10 flex items-center justify-center">
+            {loading && (
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+            )}
+          </div>
         </div>
       </main>
     </div>
