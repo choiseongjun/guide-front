@@ -109,13 +109,15 @@ const sampleReviews: Review[] = [
     user: {
       id: 10,
       nickname: "여행러1",
-      profileImageUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60"
+      profileImageUrl:
+        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60",
     },
     title: "정말 좋은 여행이었어요!",
     rating: 5,
-    content: "정말 좋은 여행이었습니다! 가이드님이 친절하게 설명해주셔서 더욱 즐거웠어요. 다음에도 꼭 참여하고 싶네요.",
+    content:
+      "정말 좋은 여행이었습니다! 가이드님이 친절하게 설명해주셔서 더욱 즐거웠어요. 다음에도 꼭 참여하고 싶네요.",
     createdAt: "2024-03-15T10:00:00Z",
-    updatedAt: "2024-03-15T10:00:00Z"
+    updatedAt: "2024-03-15T10:00:00Z",
   },
   {
     id: 2,
@@ -123,17 +125,22 @@ const sampleReviews: Review[] = [
     user: {
       id: 11,
       nickname: "여행러2",
-      profileImageUrl: null
+      profileImageUrl: null,
     },
     title: "일정이 잘 짜여있는 여행",
     rating: 4,
-    content: "일정이 잘 짜여있어서 편안하게 여행할 수 있었어요. 특히 맛집 추천이 정말 좋았습니다!",
+    content:
+      "일정이 잘 짜여있어서 편안하게 여행할 수 있었어요. 특히 맛집 추천이 정말 좋았습니다!",
     createdAt: "2024-03-14T15:30:00Z",
-    updatedAt: "2024-03-14T15:30:00Z"
-  }
+    updatedAt: "2024-03-14T15:30:00Z",
+  },
 ];
 
-export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function TripDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const router = useRouter();
   const { user, isLoading: userLoading } = useUser();
   const [trip, setTrip] = useState<Trip | null>(null);
@@ -142,7 +149,9 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [loading, setLoading] = useState(true);
   const [isCreator, setIsCreator] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [selectedParticipantId, setSelectedParticipantId] = useState<number | null>(null);
+  const [selectedParticipantId, setSelectedParticipantId] = useState<
+    number | null
+  >(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewContent, setReviewContent] = useState("");
@@ -159,16 +168,20 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   useEffect(() => {
     const fetchTrip = async () => {
       try {
-        const response = await instance.get(`/api/v1/travels/${resolvedParams.id}`);
+        const response = await instance.get(
+          `/api/v1/travels/${resolvedParams.id}`
+        );
         if (response.data.status === 200) {
           const tripData = response.data.data;
           setTrip(tripData);
           setIsCreator(user?.id === tripData.user.id);
-          
+
           // 좋아요 상태 확인 API 호출
           if (user) {
             try {
-              const likeResponse = await instance.get(`/api/v1/travels/${resolvedParams.id}/like`);
+              const likeResponse = await instance.get(
+                `/api/v1/travels/${resolvedParams.id}/like`
+              );
               // API 응답에서 실제 좋아요 상태 확인
               setIsWishlist(likeResponse.data.data || false);
             } catch (error) {
@@ -192,14 +205,16 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const response = await instance.get(`/api/v1/travels/${resolvedParams.id}/reviews`);
+        const response = await instance.get(
+          `/api/v1/travels/${resolvedParams.id}/reviews`
+        );
         if (response.status === 200) {
           // API 응답 구조에 맞게 데이터 설정
           const reviewsData = response.data.data.content || [];
           setReviews(reviewsData);
         }
       } catch (error) {
-        console.error('리뷰 조회 실패:', error);
+        console.error("리뷰 조회 실패:", error);
         setReviews([]);
       }
     };
@@ -221,7 +236,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
   const handleParticipateClick = () => {
     if (!user) {
-      router.push('/login');
+      router.push("/login");
       return;
     }
     router.push(`/trip/${resolvedParams.id}/participate`);
@@ -234,19 +249,19 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       );
       if (response.data.status === 200) {
         // 상태 업데이트
-        setTrip(prev => {
+        setTrip((prev) => {
           if (!prev) return null;
           return {
             ...prev,
-            participants: prev.participants.map(p => 
-              p.id === participantId ? { ...p, status: 'APPROVED' } : p
-            )
+            participants: prev.participants.map((p) =>
+              p.id === participantId ? { ...p, status: "APPROVED" } : p
+            ),
           };
         });
       }
     } catch (error) {
-      console.error('참여자 승인 실패:', error);
-      alert('참여자 승인에 실패했습니다.');
+      console.error("참여자 승인 실패:", error);
+      alert("참여자 승인에 실패했습니다.");
     }
   };
 
@@ -257,19 +272,19 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       );
       if (response.data.status === 200) {
         // 상태 업데이트
-        setTrip(prev => {
+        setTrip((prev) => {
           if (!prev) return null;
           return {
             ...prev,
-            participants: prev.participants.map(p => 
-              p.id === participantId ? { ...p, status: 'REJECTED' } : p
-            )
+            participants: prev.participants.map((p) =>
+              p.id === participantId ? { ...p, status: "REJECTED" } : p
+            ),
           };
         });
       }
     } catch (error) {
-      console.error('참여자 거절 실패:', error);
-      alert('참여자 거절에 실패했습니다.');
+      console.error("참여자 거절 실패:", error);
+      alert("참여자 거절에 실패했습니다.");
     }
   };
 
@@ -285,52 +300,63 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       );
       if (response.data.status === 200) {
         // 상태 업데이트
-        setTrip(prev => {
+        setTrip((prev) => {
           if (!prev) return null;
           return {
             ...prev,
-            participants: prev.participants.filter(p => p.user.id !== user?.id)
+            participants: prev.participants.filter(
+              (p) => p.user.id !== user?.id
+            ),
           };
         });
         setShowCancelModal(false);
       }
     } catch (error) {
-      console.error('참여 취소 실패:', error);
-      alert('참여 취소에 실패했습니다.');
+      console.error("참여 취소 실패:", error);
+      alert("참여 취소에 실패했습니다.");
     }
   };
 
-  const handleReviewImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleReviewImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const files = e.target.files;
     if (!files) return;
 
     const newFiles = Array.from(files);
-    
+
     for (const file of newFiles) {
       // FormData 생성 및 이미지 업로드
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('pathType', 'review');
+      formData.append("file", file);
+      formData.append("pathType", "review");
 
       try {
-        const uploadResponse = await instance.post('/api/v1/s3/upload', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-        
+        const uploadResponse = await instance.post(
+          "/api/v1/s3/upload",
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
         // 업로드된 이미지 URL을 받아서 상태 업데이트
-        setReviewImages(prev => [...prev, {
-          fileUrl: uploadResponse.data.fileUrl
-        }]);
+        setReviewImages((prev) => [
+          ...prev,
+          {
+            fileUrl: uploadResponse.data.fileUrl,
+          },
+        ]);
       } catch (error) {
-        console.error('이미지 업로드 실패:', error);
+        console.error("이미지 업로드 실패:", error);
       }
     }
   };
 
   const removeReviewImage = (index: number) => {
-    setReviewImages(prev => {
+    setReviewImages((prev) => {
       const newImages = [...prev];
       newImages.splice(index, 1);
       return newImages;
@@ -342,7 +368,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     setReviewTitle(review.title);
     setReviewContent(review.content);
     setRating(review.rating);
-    setReviewImages(review.imageUrls?.map(url => ({ fileUrl: url })) || []);
+    setReviewImages(review.imageUrls?.map((url) => ({ fileUrl: url })) || []);
     setShowReviewForm(true);
   };
 
@@ -355,17 +381,21 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     if (!reviewToDelete) return;
 
     try {
-      const response = await instance.delete(`/api/v1/travels/${resolvedParams.id}/reviews/${reviewToDelete}`);
+      const response = await instance.delete(
+        `/api/v1/travels/${resolvedParams.id}/reviews/${reviewToDelete}`
+      );
       if (response.status === 200) {
         // 리뷰 목록 새로고침
-        const reviewsResponse = await instance.get(`/api/v1/travels/${resolvedParams.id}/reviews`);
+        const reviewsResponse = await instance.get(
+          `/api/v1/travels/${resolvedParams.id}/reviews`
+        );
         if (reviewsResponse.status === 200) {
           setReviews(reviewsResponse.data.data.content || []);
         }
       }
     } catch (error) {
-      console.error('리뷰 삭제 실패:', error);
-      alert('리뷰 삭제에 실패했습니다.');
+      console.error("리뷰 삭제 실패:", error);
+      alert("리뷰 삭제에 실패했습니다.");
     } finally {
       setShowDeleteModal(false);
       setReviewToDelete(null);
@@ -378,25 +408,33 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         title: reviewTitle,
         rating: rating,
         content: reviewContent,
-        imageUrls: reviewImages.map(image => image.fileUrl)
+        imageUrls: reviewImages.map((image) => image.fileUrl),
       };
 
       let response;
       if (editingReview) {
         // 수정
-        response = await instance.put(`/api/v1/travels/${resolvedParams.id}/reviews/${editingReview.id}`, requestData);
+        response = await instance.put(
+          `/api/v1/travels/${resolvedParams.id}/reviews/${editingReview.id}`,
+          requestData
+        );
       } else {
         // 새로 작성
-        response = await instance.post(`/api/v1/travels/${resolvedParams.id}/reviews`, requestData);
+        response = await instance.post(
+          `/api/v1/travels/${resolvedParams.id}/reviews`,
+          requestData
+        );
       }
-      
+
       if (response.status === 200) {
         // 리뷰 목록 새로고침
-        const reviewsResponse = await instance.get(`/api/v1/travels/${resolvedParams.id}/reviews`);
+        const reviewsResponse = await instance.get(
+          `/api/v1/travels/${resolvedParams.id}/reviews`
+        );
         if (reviewsResponse.status === 200) {
           setReviews(reviewsResponse.data.data.content || []);
         }
-        
+
         setShowReviewForm(false);
         setReviewContent("");
         setReviewTitle("");
@@ -405,8 +443,8 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         setEditingReview(null);
       }
     } catch (error) {
-      console.error('리뷰 작성/수정 실패:', error);
-      alert('리뷰 작성/수정에 실패했습니다.');
+      console.error("리뷰 작성/수정 실패:", error);
+      alert("리뷰 작성/수정에 실패했습니다.");
     }
   };
 
@@ -415,18 +453,20 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diffInSeconds < 60) return '방금 전';
+    if (diffInSeconds < 60) return "방금 전";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}분 전`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}시간 전`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}일 전`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)}시간 전`;
+    if (diffInSeconds < 604800)
+      return `${Math.floor(diffInSeconds / 86400)}일 전`;
     return date.toLocaleDateString();
   };
 
   const handleWishlistClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     if (!user) {
-      router.push('/login');
+      router.push("/login");
       return;
     }
 
@@ -434,16 +474,16 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       if (isWishlist) {
         // 찜하기 취소
         await instance.delete(`/api/v1/travels/${resolvedParams.id}/like`);
-        setWishlistCount(prev => Math.max(0, prev - 1));
+        setWishlistCount((prev) => Math.max(0, prev - 1));
       } else {
         // 찜하기 추가
         await instance.post(`/api/v1/travels/${resolvedParams.id}/like`);
-        setWishlistCount(prev => prev + 1);
+        setWishlistCount((prev) => prev + 1);
       }
       setIsWishlist(!isWishlist);
     } catch (error) {
-      console.error('찜하기 처리 실패:', error);
-      alert('찜하기 처리에 실패했습니다.');
+      console.error("찜하기 처리 실패:", error);
+      alert("찜하기 처리에 실패했습니다.");
     }
   };
 
@@ -493,7 +533,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         {/* 이미지 슬라이더 */}
         <div className="relative h-80">
           <Image
-            src={ trip.images[currentImageIndex].imageUrl}
+            src={getImageUrl(trip.images[currentImageIndex].imageUrl)}
             alt={trip.title}
             fill
             className="object-cover"
@@ -538,7 +578,10 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
           <div className="flex items-center gap-3">
             <div className="relative w-12 h-12 rounded-full overflow-hidden">
               <Image
-                src={trip.user.profileImageUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60"}
+                src={
+                  trip.user.profileImageUrl ||
+                  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60"
+                }
                 alt={trip.user.nickname}
                 fill
                 className="object-cover"
@@ -592,7 +635,9 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               </div>
               <div>
                 <p className="text-xs text-gray-500 mb-0.5">여행지</p>
-                <p className="text-sm font-medium text-gray-900">{trip.address}</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {trip.address}
+                </p>
               </div>
             </div>
 
@@ -639,10 +684,17 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         {!isCreator && (
           <div className="fixed bottom-20 left-1/2 -translate-x-1/2 max-w-md w-full px-4">
             <div className="flex justify-end">
-              {user && trip.participants.some(p => p.user.id === user.id && (p.status === 'APPROVED' || p.status === 'PENDING')) ? (
-                <button 
+              {user &&
+              trip.participants.some(
+                (p) =>
+                  p.user.id === user.id &&
+                  (p.status === "APPROVED" || p.status === "PENDING")
+              ) ? (
+                <button
                   onClick={() => {
-                    const participant = trip.participants.find(p => p.user.id === user.id);
+                    const participant = trip.participants.find(
+                      (p) => p.user.id === user.id
+                    );
                     if (participant) {
                       handleCancelClick(participant.id);
                     }
@@ -652,7 +704,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                   <HiOutlineXCircle className="w-6 h-6" />
                 </button>
               ) : (
-                <button 
+                <button
                   onClick={handleParticipateClick}
                   className="w-14 h-14 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors shadow-lg"
                 >
@@ -669,7 +721,9 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         {/* 여행 설명 */}
         <div className="bg-white p-4 mb-4">
           <h2 className="text-lg font-semibold mb-2">여행 설명</h2>
-          <p className="text-gray-600 whitespace-pre-line">{trip.description}</p>
+          <p className="text-gray-600 whitespace-pre-line">
+            {trip.description}
+          </p>
         </div>
 
         {/* 참여자 정보 */}
@@ -709,7 +763,9 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
               <h3 className="text-lg font-semibold mb-4">참여 취소</h3>
-              <p className="text-gray-600 mb-6">정말로 참여를 취소하시겠습니까?</p>
+              <p className="text-gray-600 mb-6">
+                정말로 참여를 취소하시겠습니까?
+              </p>
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setShowCancelModal(false)}
@@ -753,7 +809,8 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                   <div className="flex-1">
                     <h4 className="font-medium">{participant.user.nickname}</h4>
                     <p className="text-sm text-gray-500">
-                      {new Date(participant.createdAt).toLocaleDateString()} 참여
+                      {new Date(participant.createdAt).toLocaleDateString()}{" "}
+                      참여
                     </p>
                   </div>
                   {user?.id === participant.user.id && (
@@ -794,10 +851,13 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                   <div className="flex-1">
                     <h4 className="font-medium">{participant.user.nickname}</h4>
                     <p className="text-sm text-gray-500">
-                      {new Date(participant.createdAt).toLocaleDateString()} 신청
+                      {new Date(participant.createdAt).toLocaleDateString()}{" "}
+                      신청
                     </p>
                     {participant.message && (
-                      <p className="text-sm text-gray-600 mt-1">{participant.message}</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {participant.message}
+                      </p>
                     )}
                   </div>
                   {user?.id === participant.user.id ? (
@@ -807,26 +867,31 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                     >
                       <HiOutlineXCircle className="w-5 h-5" />
                     </button>
-                  ) : isCreator && (
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleApprove(participant.id)}
-                        className="p-2 text-green-500 hover:bg-green-50 rounded-full transition-colors"
-                      >
-                        <HiOutlineCheck className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => handleReject(participant.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                      >
-                        <HiOutlineXMark className="w-5 h-5" />
-                      </button>
-                    </div>
+                  ) : (
+                    isCreator && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleApprove(participant.id)}
+                          className="p-2 text-green-500 hover:bg-green-50 rounded-full transition-colors"
+                        >
+                          <HiOutlineCheck className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleReject(participant.id)}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                        >
+                          <HiOutlineXMark className="w-5 h-5" />
+                        </button>
+                      </div>
+                    )
                   )}
                 </div>
               ))}
-            {trip.participants.filter((p) => p.status === "PENDING").length === 0 && (
-              <p className="text-center text-gray-500 py-4">대기중인 신청이 없습니다.</p>
+            {trip.participants.filter((p) => p.status === "PENDING").length ===
+              0 && (
+              <p className="text-center text-gray-500 py-4">
+                대기중인 신청이 없습니다.
+              </p>
             )}
           </div>
         </div>
@@ -867,14 +932,15 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
           <h2 className="text-xl font-bold mb-4">여행 일정</h2>
           <div className="space-y-4">
             {trip.schedules.map((schedule) => (
-              <div key={schedule.id} className="border-l-2 border-blue-500 pl-4">
+              <div
+                key={schedule.id}
+                className="border-l-2 border-blue-500 pl-4"
+              >
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm font-medium text-blue-500">
                     Day {schedule.dayNumber}
                   </span>
-                  <span className="text-sm text-gray-500">
-                    {schedule.time}
-                  </span>
+                  <span className="text-sm text-gray-500">{schedule.time}</span>
                 </div>
                 <h3 className="font-medium mb-1">{schedule.title}</h3>
                 <p className="text-sm text-gray-600">{schedule.description}</p>
@@ -917,7 +983,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold">
-                    {editingReview ? '리뷰 수정' : '리뷰 작성'}
+                    {editingReview ? "리뷰 수정" : "리뷰 작성"}
                   </h3>
                   <button
                     onClick={() => {
@@ -959,7 +1025,9 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                         className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center hover:border-gray-400 transition-colors cursor-pointer"
                       >
                         <HiOutlinePhoto className="w-8 h-8 text-gray-400 mb-1" />
-                        <span className="text-sm text-gray-500">이미지 추가</span>
+                        <span className="text-sm text-gray-500">
+                          이미지 추가
+                        </span>
                         <input
                           id="review-image-upload"
                           type="file"
@@ -1027,7 +1095,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                         : "bg-gray-100 text-gray-400"
                     }`}
                   >
-                    {editingReview ? '수정하기' : '작성하기'}
+                    {editingReview ? "수정하기" : "작성하기"}
                   </button>
                 </div>
               </div>
@@ -1038,26 +1106,31 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
           <div className="space-y-4">
             {reviews && reviews.length > 0 ? (
               reviews.map((review) => (
-                <div key={review.id} className="bg-white rounded-lg p-4 shadow-sm">
+                <div
+                  key={review.id}
+                  className="bg-white rounded-lg p-4 shadow-sm"
+                >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-100">
                         {review.user?.profileImageUrl ? (
                           <Image
                             src={review.user.profileImageUrl}
-                            alt={review.user?.nickname || '사용자'}
+                            alt={review.user?.nickname || "사용자"}
                             fill
                             className="object-cover"
                             unoptimized
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-400">
-                            {review.user?.nickname?.[0] || '?'}
+                            {review.user?.nickname?.[0] || "?"}
                           </div>
                         )}
                       </div>
                       <div>
-                        <div className="font-medium">{review.user?.nickname || '알 수 없는 사용자'}</div>
+                        <div className="font-medium">
+                          {review.user?.nickname || "알 수 없는 사용자"}
+                        </div>
                         <div className="flex items-center gap-1 text-sm text-gray-500">
                           <div className="flex">
                             {[1, 2, 3, 4, 5].map((star) => (
@@ -1094,8 +1167,10 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                     )}
                   </div>
                   <h3 className="font-semibold text-lg mb-2">{review.title}</h3>
-                  <p className="text-gray-700 whitespace-pre-line mb-3">{review.content}</p>
-                  
+                  <p className="text-gray-700 whitespace-pre-line mb-3">
+                    {review.content}
+                  </p>
+
                   {/* 리뷰 이미지 */}
                   {review.imageUrls && review.imageUrls.length > 0 && (
                     <div className="grid grid-cols-3 gap-2 mt-3">
@@ -1128,7 +1203,9 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
             <h3 className="text-lg font-semibold mb-4">리뷰 삭제</h3>
-            <p className="text-gray-600 mb-6">정말로 이 리뷰를 삭제하시겠습니까?</p>
+            <p className="text-gray-600 mb-6">
+              정말로 이 리뷰를 삭제하시겠습니까?
+            </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => {
@@ -1151,4 +1228,4 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       )}
     </div>
   );
-} 
+}
