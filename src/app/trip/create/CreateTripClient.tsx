@@ -24,9 +24,10 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import Script from "next/script";
 import instance from "@/app/api/axios";
-import imageCompression from 'browser-image-compression';
-import { uploadToS3 } from '@/utils/s3Upload';
+import imageCompression from "browser-image-compression";
+import { uploadToS3 } from "@/utils/s3Upload";
 import { log } from "node:console";
+import { getImageUrl } from "@/app/common/imgUtils";
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
@@ -166,9 +167,11 @@ export default function CreateTripClient() {
       TextStyle,
       Highlight,
     ],
-    content: '',
+    content: "",
     onCreate: ({ editor }) => {
-      editor.commands.setContent("서울의 아름다운 풍경을 둘러보는 3박 4일 여행입니다.디테일내용입니다.");
+      editor.commands.setContent(
+        "서울의 아름다운 풍경을 둘러보는 3박 4일 여행입니다.디테일내용입니다."
+      );
     },
     onUpdate: ({ editor }) => {
       setDescription(editor.getHTML());
@@ -416,7 +419,9 @@ export default function CreateTripClient() {
   useEffect(() => {
     setTitle("서울 3박 4일 여행");
     setHighlight("아름다운 서울의 풍경을 만끽하세요");
-    setDescription("서울의 아름다운 풍경을 둘러보는 3박 4일 여행입니다.디테일내용입니다.");
+    setDescription(
+      "서울의 아름다운 풍경을 둘러보는 3박 4일 여행입니다.디테일내용입니다."
+    );
     setAddress("서울특별시 동작시");
     setDetailAddress("애월읍");
     setLatitude(33.450701);
@@ -433,38 +438,41 @@ export default function CreateTripClient() {
     setMaxAge(60);
     setIsScheduleEnabled(true);
     setTags(["제주도", "3박4일", "일출", "시티투어"]);
-    setDiscountRate(10)
-    
+    setDiscountRate(10);
+
     // 일정 초기값 설정
     setSchedules([
       {
         day: 1,
         title: "제주도 도착 및 시티투어",
         items: [
-          { time: "14:00", content: "제주도 도착 후 시티투어를 진행합니다." }
-        ]
+          { time: "14:00", content: "제주도 도착 후 시티투어를 진행합니다." },
+        ],
       },
       {
         day: 2,
         title: "성산일출봉 관광",
         items: [
-          { time: "09:00", content: "성산일출봉에서 아름다운 일출을 감상합니다." }
-        ]
-      }
+          {
+            time: "09:00",
+            content: "성산일출봉에서 아름다운 일출을 감상합니다.",
+          },
+        ],
+      },
     ]);
   }, []);
 
   // 할인율 10%로 설정
   useEffect(() => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      discountRate: 10
+      discountRate: 10,
     }));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const formData = {
       title,
       highlight,
@@ -473,66 +481,72 @@ export default function CreateTripClient() {
       detailAddress,
       latitude,
       longitude,
-      startDate: Array.isArray(date) && date[0] ? date[0].toISOString().split('T')[0] : '',
-      endDate: Array.isArray(date) && date[1] ? date[1].toISOString().split('T')[0] : '',
+      startDate:
+        Array.isArray(date) && date[0]
+          ? date[0].toISOString().split("T")[0]
+          : "",
+      endDate:
+        Array.isArray(date) && date[1]
+          ? date[1].toISOString().split("T")[0]
+          : "",
       minParticipants,
       maxParticipants,
       isPaid: !isFree,
       price: isFree ? 0 : Number(price),
       discountRate,
-      providedItems: providedItems.join(','),
-      notProvidedItems: notProvidedItems.join(','),
-      requiresApproval: approvalType === 'manual',
+      providedItems: providedItems.join(","),
+      notProvidedItems: notProvidedItems.join(","),
+      requiresApproval: approvalType === "manual",
       minAge,
       maxAge,
       hasSchedule: isScheduleEnabled,
-      schedules: schedules.flatMap(schedule => 
-        schedule.items.map(item => ({
+      schedules: schedules.flatMap((schedule) =>
+        schedule.items.map((item) => ({
           dayNumber: schedule.day,
           title: schedule.title,
           time: item.time,
-          description: item.content
+          description: item.content,
         }))
       ),
-      tags: tags.map(tag => ({
-        name: tag
+      tags: tags.map((tag) => ({
+        name: tag,
       })),
       images: images.map((url, index) => ({
         imageUrl: url,
-        displayOrder: index
+        displayOrder: index,
       })),
-      categoryId: selectedCategory
+      categoryId: selectedCategory,
     };
 
-    console.log("formData==",formData);
-    
+    console.log("formData==", formData);
+
     try {
       const response = await instance.post(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels`,
         formData,
         {
           headers: {
-            'Content-Type': 'application/json'
-          }
+            "Content-Type": "application/json",
+          },
         }
       );
-      console.log("response==",response);
-      
+      console.log("response==", response);
+
       if (response.data.status === 200) {
-        alert('여행이 성공적으로 생성되었습니다.');
-        router.push('/'); // 메인 페이지로 이동
+        alert("여행이 성공적으로 생성되었습니다.");
+        router.push("/"); // 메인 페이지로 이동
       }
     } catch (error: any) {
-      console.error('여행 생성 실패:', error);
+      console.error("여행 생성 실패:", error);
       if (error.response) {
         // 서버에서 응답이 왔지만 에러인 경우
-        alert(error.response.data.message || '여행 생성에 실패했습니다.');
+        alert(error.response.data.message || "여행 생성에 실패했습니다.");
       } else if (error.request) {
         // 요청은 보냈지만 응답이 없는 경우
-        alert('서버와 통신할 수 없습니다.');
+        alert("서버와 통신할 수 없습니다.");
       } else {
         // 요청 설정 중 에러가 발생한 경우
-        alert('여행 생성 중 오류가 발생했습니다.');
+        alert("여행 생성 중 오류가 발생했습니다.");
       }
     }
   };
@@ -541,14 +555,14 @@ export default function CreateTripClient() {
     const options = {
       maxSizeMB: 1,
       maxWidthOrHeight: 1920,
-      useWebWorker: true
+      useWebWorker: true,
     };
 
     try {
       const compressedFile = await imageCompression(file, options);
       return compressedFile;
     } catch (error) {
-      console.error('이미지 압축 실패:', error);
+      console.error("이미지 압축 실패:", error);
       return file;
     }
   };
@@ -559,36 +573,38 @@ export default function CreateTripClient() {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      
+
       const result = await uploadToS3(file, {
-        pathType: 'trip',
+        pathType: "trip",
         maxSizeMB: 30,
-        allowedTypes: ['image/']
+        allowedTypes: ["image/"],
       });
 
       if (result.success) {
-        setImages(prev => [...prev, result.fileUrl]);
+        setImages((prev) => [...prev, result.fileUrl]);
       } else {
-        alert(result.error || '이미지 업로드에 실패했습니다.');
+        alert(result.error || "이미지 업로드에 실패했습니다.");
       }
     }
 
     // input 초기화
     if (e.target) {
-      e.target.value = '';
+      e.target.value = "";
     }
   };
 
-  const handleEditorImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEditorImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     if (!e.target.files || !e.target.files.length || !editor) return;
 
     const files = Array.from(e.target.files);
 
     for (const file of files) {
       const result = await uploadToS3(file, {
-        pathType: 'trip',
+        pathType: "trip",
         maxSizeMB: 30,
-        allowedTypes: ['image/']
+        allowedTypes: ["image/"],
       });
 
       if (result.success) {
@@ -606,17 +622,19 @@ export default function CreateTripClient() {
         // 이미지 삽입 후 약간의 지연을 두고 커서 이동
         setTimeout(() => {
           editor.commands.blur();
-          editor.commands.setTextSelection(editor.state.selection.$anchor.pos + 1);
+          editor.commands.setTextSelection(
+            editor.state.selection.$anchor.pos + 1
+          );
           editor.commands.insertContent("\n\n\n");
         }, 100);
       } else {
-        alert(result.error || '이미지 업로드에 실패했습니다.');
+        alert(result.error || "이미지 업로드에 실패했습니다.");
       }
     }
 
     // input 초기화
     if (e.target) {
-      e.target.value = '';
+      e.target.value = "";
     }
   };
 
@@ -739,7 +757,7 @@ export default function CreateTripClient() {
             {images.map((image, index) => (
               <div key={index} className="relative">
                 <Image
-                  src={image}
+                  src={getImageUrl(image)}
                   alt={`여행 이미지 ${index + 1}`}
                   width={100}
                   height={100}

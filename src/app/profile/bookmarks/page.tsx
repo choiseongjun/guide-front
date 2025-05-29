@@ -9,6 +9,7 @@ import {
   HiOutlineUser,
 } from "react-icons/hi2";
 import { motion } from "framer-motion";
+import { getImageUrl } from "@/app/common/imgUtils";
 
 interface Bookmark {
   id: number;
@@ -135,7 +136,7 @@ export default function BookmarksPage() {
               <Link href={`/post/${bookmark.id}`}>
                 <div className="relative h-48">
                   <Image
-                    src={bookmark.image}
+                    src={getImageUrl(bookmark.image)}
                     alt={bookmark.title}
                     fill
                     className="object-cover"

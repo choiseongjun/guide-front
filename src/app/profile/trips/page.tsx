@@ -3,8 +3,15 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { HiOutlineArrowLeft, HiOutlineCalendar, HiOutlineMapPin, HiOutlineUserGroup, HiOutlineClock } from "react-icons/hi2";
+import {
+  HiOutlineArrowLeft,
+  HiOutlineCalendar,
+  HiOutlineMapPin,
+  HiOutlineUserGroup,
+  HiOutlineClock,
+} from "react-icons/hi2";
 import instance from "@/app/api/axios";
+import { getImageUrl } from "@/app/common/imgUtils";
 
 interface Participant {
   userId: number;
@@ -35,16 +42,21 @@ export default function TripsPage() {
   const router = useRouter();
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'pending' | 'completed'>('pending');
+  const [activeTab, setActiveTab] = useState<"pending" | "completed">(
+    "pending"
+  );
 
   useEffect(() => {
     const fetchChatRooms = async () => {
       try {
-        const response = await instance.get<ChatRoomResponse>("/api/v1/chat-rooms/list", {
-          params: {
-            type: 'GROUP'
+        const response = await instance.get<ChatRoomResponse>(
+          "/api/v1/chat-rooms/list",
+          {
+            params: {
+              type: "GROUP",
+            },
           }
-        });
+        );
         if (response.data.status === 200) {
           setChatRooms(response.data.data.groupChats);
         }
@@ -60,12 +72,12 @@ export default function TripsPage() {
   }, []);
 
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return '';
+    if (!dateString) return "";
     const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return date.toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -96,21 +108,21 @@ export default function TripsPage() {
           <div className="flex gap-4">
             <button
               className={`py-4 px-2 font-medium text-sm ${
-                activeTab === 'pending'
-                  ? 'text-blue-500 border-b-2 border-blue-500'
-                  : 'text-gray-500'
+                activeTab === "pending"
+                  ? "text-blue-500 border-b-2 border-blue-500"
+                  : "text-gray-500"
               }`}
-              onClick={() => setActiveTab('pending')}
+              onClick={() => setActiveTab("pending")}
             >
               대기중인 여행
             </button>
             <button
               className={`py-4 px-2 font-medium text-sm ${
-                activeTab === 'completed'
-                  ? 'text-blue-500 border-b-2 border-blue-500'
-                  : 'text-gray-500'
+                activeTab === "completed"
+                  ? "text-blue-500 border-b-2 border-blue-500"
+                  : "text-gray-500"
               }`}
-              onClick={() => setActiveTab('completed')}
+              onClick={() => setActiveTab("completed")}
             >
               완료된 여행
             </button>
@@ -129,7 +141,10 @@ export default function TripsPage() {
             >
               <div className="relative h-48">
                 <Image
-                  src={chatRoom.thumbnailUrl || "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=60"}
+                  src={
+                    getImageUrl(chatRoom.thumbnailUrl) ||
+                    "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=60"
+                  }
                   alt={chatRoom.name}
                   fill
                   className="object-cover"
@@ -148,7 +163,9 @@ export default function TripsPage() {
                   </div>
                   {chatRoom.unreadCount > 0 && (
                     <div className="flex items-center gap-2">
-                      <span className="text-blue-500">새 메시지 {chatRoom.unreadCount}개</span>
+                      <span className="text-blue-500">
+                        새 메시지 {chatRoom.unreadCount}개
+                      </span>
                     </div>
                   )}
                 </div>

@@ -13,6 +13,7 @@ import { useState, useEffect } from "react";
 import instance from "@/app/api/axios";
 import { useUser } from "@/hooks/useUser";
 import { useRouter } from "next/navigation";
+import { getImageUrl } from "@/app/common/imgUtils";
 
 interface Trip {
   id: number;
@@ -78,56 +79,60 @@ interface TripListProps {
 export default function TripList({ trips, onTripClick }: TripListProps) {
   const router = useRouter();
   const { user } = useUser();
-  const [wishlistStatus, setWishlistStatus] = useState<{ [key: number]: boolean }>({});
-  const [wishlistCounts, setWishlistCounts] = useState<{ [key: number]: number }>({});
+  const [wishlistStatus, setWishlistStatus] = useState<{
+    [key: number]: boolean;
+  }>({});
+  const [wishlistCounts, setWishlistCounts] = useState<{
+    [key: number]: number;
+  }>({});
 
   // 초기 상태 설정
   useEffect(() => {
-    console.log('trips data:', trips);
+    console.log("trips data:", trips);
     const initialWishlistStatus: { [key: number]: boolean } = {};
     const initialWishlistCounts: { [key: number]: number } = {};
-    
-    trips.forEach(trip => {
+
+    trips.forEach((trip) => {
       console.log(`Trip ${trip.id} liked:`, trip.liked);
       initialWishlistStatus[trip.id] = trip.liked;
       initialWishlistCounts[trip.id] = trip.likes?.length || 0;
     });
 
-    console.log('Initial wishlist status:', initialWishlistStatus);
+    console.log("Initial wishlist status:", initialWishlistStatus);
     setWishlistStatus(initialWishlistStatus);
     setWishlistCounts(initialWishlistCounts);
   }, [trips, user?.id]);
 
   const handleWishlistClick = async (e: React.MouseEvent, tripId: number) => {
     e.stopPropagation();
-    
+
     if (!user) {
-      router.push('/login');
+      router.push("/login");
       return;
     }
 
     try {
       if (wishlistStatus[tripId]) {
         await instance.delete(`/api/v1/travels/${tripId}/like`);
-        setWishlistCounts(prev => ({
+        setWishlistCounts((prev) => ({
           ...prev,
-          [tripId]: Math.max(0, prev[tripId] - 1)
+          [tripId]: Math.max(0, prev[tripId] - 1),
         }));
       } else {
         await instance.post(`/api/v1/travels/${tripId}/like`);
-        setWishlistCounts(prev => ({
+        setWishlistCounts((prev) => ({
           ...prev,
-          [tripId]: prev[tripId] + 1
+          [tripId]: prev[tripId] + 1,
         }));
       }
 
-      setWishlistStatus(prev => ({
+      setWishlistStatus((prev) => ({
         ...prev,
-        [tripId]: !prev[tripId]
+        [tripId]: !prev[tripId],
       }));
     } catch (error) {
-      console.error('찜하기 처리 실패:', error);
-      alert('찜하기 처리에 실패했습니다.');
+      console.error("찜하기 처리 실패:", error);
+      alert("찜하기 처리에 실패했습니다.");
     }
   };
 
@@ -138,26 +143,32 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
     return url;
   };
 
-  const getParticipantStatus = (participants: Trip['participants']) => {
+  const getParticipantStatus = (participants: Trip["participants"]) => {
     if (!participants) return { pendingCount: 0, approvedCount: 0 };
     // Ensure participants is an array
     const participantsArray = Array.isArray(participants) ? participants : [];
-    const pendingCount = participantsArray.filter(p => p.status === 'PENDING').length;
-    const approvedCount = participantsArray.filter(p => p.status === 'APPROVED').length;
+    const pendingCount = participantsArray.filter(
+      (p) => p.status === "PENDING"
+    ).length;
+    const approvedCount = participantsArray.filter(
+      (p) => p.status === "APPROVED"
+    ).length;
     return { pendingCount, approvedCount };
   };
 
-  console.log('trips==',trips)
+  console.log("trips==", trips);
 
   return (
     <div className="space-y-4">
       {trips.map((trip) => {
-        const { pendingCount, approvedCount } = getParticipantStatus(trip.participants);
-        const approvedParticipants = Array.isArray(trip.participants) 
-          ? trip.participants.filter(p => p.status === 'APPROVED').slice(0, 3)
+        const { pendingCount, approvedCount } = getParticipantStatus(
+          trip.participants
+        );
+        const approvedParticipants = Array.isArray(trip.participants)
+          ? trip.participants.filter((p) => p.status === "APPROVED").slice(0, 3)
           : [];
 
-        console.log("trip==",trip);
+        console.log("trip==", trip);
         return (
           <div
             key={trip.id}
@@ -166,7 +177,7 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
           >
             <div className="relative h-48">
               <Image
-                src={trip.images?.[0]?.imageUrl || trip.image}
+                src={getImageUrl(trip.image)}
                 alt={trip.title}
                 fill
                 sizes="(max-width: 768px) 100vw, 768px"
@@ -178,10 +189,12 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
                 onClick={(e) => handleWishlistClick(e, trip.id)}
                 className="absolute top-2 right-2 p-2 bg-white bg-opacity-80 rounded-full hover:bg-opacity-100 transition-all"
               >
-                <HiOutlineHeart 
+                <HiOutlineHeart
                   className={`w-6 h-6 ${
-                    wishlistStatus[trip.id] ? 'text-red-500 fill-red-500' : 'text-gray-600'
-                  }`} 
+                    wishlistStatus[trip.id]
+                      ? "text-red-500 fill-red-500"
+                      : "text-gray-600"
+                  }`}
                 />
               </button>
             </div>
@@ -190,7 +203,11 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
               <div className="flex items-center gap-2 mb-3">
                 <div className="relative w-8 h-8 rounded-full overflow-hidden">
                   <Image
-                    src={getProfileImage(trip.user.profileImage)}
+                    src={
+                      trip.user.profileImage
+                        ? getProfileImage(trip.user.profileImage)
+                        : ""
+                    }
                     alt={trip.user.nickname}
                     fill
                     className="object-cover"
@@ -247,19 +264,25 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
                   {/* 승인된 참여자 */}
                   <div className="flex items-center gap-2">
                     <div className="flex -space-x-2">
-                      {trip.participants && trip.participants
-                        .filter(p => p.status === 'APPROVED')
-                        .slice(0, 4)
-                        .map((participant) => (
-                          <div key={participant.id} className="relative w-6 h-6 rounded-full border-2 border-white overflow-hidden">
-                            <Image
-                              src={getProfileImage(participant.user.profileImageUrl)}
-                              alt={participant.user.nickname}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                        ))}
+                      {trip.participants &&
+                        trip.participants
+                          .filter((p) => p.status === "APPROVED")
+                          .slice(0, 4)
+                          .map((participant) => (
+                            <div
+                              key={participant.id}
+                              className="relative w-6 h-6 rounded-full border-2 border-white overflow-hidden"
+                            >
+                              <Image
+                                src={getProfileImage(
+                                  participant.user.profileImageUrl
+                                )}
+                                alt={participant.user.nickname}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                          ))}
                       {approvedCount > 4 && (
                         <div className="relative w-6 h-6 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
                           +{approvedCount - 4}
@@ -273,19 +296,25 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
                     <div className="flex items-center gap-2">
                       <span className="text-blue-600 text-xs">대기중:</span>
                       <div className="flex -space-x-2">
-                        {trip.participants && trip.participants
-                          .filter(p => p.status === 'PENDING')
-                          .slice(0, 4)
-                          .map((participant) => (
-                            <div key={participant.id} className="relative w-6 h-6 rounded-full border-2 border-white overflow-hidden">
-                              <Image
-                                src={getProfileImage(participant.user.profileImageUrl)}
-                                alt={participant.user.nickname}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                          ))}
+                        {trip.participants &&
+                          trip.participants
+                            .filter((p) => p.status === "PENDING")
+                            .slice(0, 4)
+                            .map((participant) => (
+                              <div
+                                key={participant.id}
+                                className="relative w-6 h-6 rounded-full border-2 border-white overflow-hidden"
+                              >
+                                <Image
+                                  src={getProfileImage(
+                                    participant.user.profileImageUrl
+                                  )}
+                                  alt={participant.user.nickname}
+                                  fill
+                                  className="object-cover"
+                                />
+                              </div>
+                            ))}
                         {pendingCount > 4 && (
                           <div className="relative w-6 h-6 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
                             +{pendingCount - 4}
@@ -321,7 +350,11 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
                   <span>{trip.reviews}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <HiOutlineHeart className={`w-4 h-4 ${wishlistStatus[trip.id] ? 'text-red-500 fill-current' : ''}`} />
+                  <HiOutlineHeart
+                    className={`w-4 h-4 ${
+                      wishlistStatus[trip.id] ? "text-red-500 fill-current" : ""
+                    }`}
+                  />
                   <span>{wishlistCounts[trip.id] || 0}</span>
                 </div>
               </div>

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import instance from '@/app/api/axios';
+import { useState, useEffect } from "react";
+import instance from "@/app/api/axios";
 
 interface User {
   id: number;
@@ -9,14 +9,13 @@ interface User {
   role: string;
   createdAt: string;
   updatedAt: string;
-  age:number;
-  nationality:string;
-  tripLevel:number;
-  followers:number;
-  following:number;
-  reviews:number;
-  gender:string;
-
+  age: number;
+  nationality: string;
+  tripLevel: number;
+  followers: number;
+  following: number;
+  reviews: number;
+  gender: string;
 }
 
 let cachedUser: User | null = null;
@@ -28,26 +27,30 @@ export function useUser() {
   const [loading, setLoading] = useState(!cachedUser);
 
   const fetchUser = async () => {
-    // 이미 로딩 중이면 중복 요청 방지
-    if (isLoading) {
-      return;
+    if (cachedUser) {
+      return cachedUser;
+    }
+
+    const at = localStorage.getItem("at");
+    if (!at) {
+      setLoading(false);
+      return null;
     }
 
     try {
       isLoading = true;
       setLoading(true);
-      const response = await instance.get('/api/v1/users/me');
-      
+      const response = await instance.get("/api/v1/users/me");
+
       if (response.data.status === 200) {
         cachedUser = response.data.data;
         setUser(cachedUser);
+        return cachedUser;
       }
-    } catch (err) {
-      error = err as Error;
-      console.error('사용자 정보 조회 실패:', err);
-      // 에러 발생 시 캐시된 사용자 정보 초기화
-      cachedUser = null;
+    } catch (error) {
+      console.error("사용자 정보 조회 실패:", error);
       setUser(null);
+      return null;
     } finally {
       isLoading = false;
       setLoading(false);
@@ -64,21 +67,21 @@ export function useUser() {
   // 토큰 변경 감지를 위한 이벤트 리스너
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'token' && !e.newValue) {
+      if (e.key === "token" && !e.newValue) {
         // 토큰이 삭제되었을 때 (로그아웃)
         cachedUser = null;
         setUser(null);
-      } else if (e.key === 'token' && e.newValue) {
+      } else if (e.key === "token" && e.newValue) {
         // 토큰이 새로 설정되었을 때 (로그인)
         fetchUser();
       }
     };
 
     // 로컬 스토리지 변경 감지
-    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
 
     // 현재 토큰 확인
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token && cachedUser) {
       // 토큰이 없는데 캐시된 사용자 정보가 있는 경우
       cachedUser = null;
@@ -86,7 +89,7 @@ export function useUser() {
     }
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
 
@@ -100,6 +103,6 @@ export function useUser() {
     isLoading: loading,
     error,
     clearUserCache,
-    refreshUser: fetchUser
+    refreshUser: fetchUser,
   };
-} 
+}

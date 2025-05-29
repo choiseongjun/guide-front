@@ -9,6 +9,7 @@ import {
   HiOutlineMapPin,
 } from "react-icons/hi2";
 import { motion } from "framer-motion";
+import { getImageUrl } from "@/app/common/imgUtils";
 
 interface Review {
   id: number;
@@ -156,7 +157,7 @@ export default function MyReviewsPage() {
               <Link href={`/review/${review.id}`}>
                 <div className="relative h-48">
                   <Image
-                    src={review.image}
+                    src={getImageUrl(review.image)}
                     alt={review.title}
                     fill
                     className="object-cover"
