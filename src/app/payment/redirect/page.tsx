@@ -10,6 +10,7 @@ function PaymentRedirectContent() {
   const searchParams = useSearchParams();
   const tripId = searchParams.get("tripId");
   const paymentId = searchParams.get("paymentId");
+  const transactionType = searchParams.get("transactionType");
   const status = searchParams.get("status");
   const errorCode = searchParams.get("errorCode");
   const errorMessage = searchParams.get("errorMessage");
@@ -24,7 +25,7 @@ function PaymentRedirectContent() {
 
       try {
         // 결제 취소 또는 실패 시
-        if (status !== "paid" || errorCode) {
+        if (transactionType !== "PAYMENT") {
           const errorMsg = errorMessage || "결제가 취소되었습니다.";
           alert(errorMsg);
           router.push(`/trip/${tripId}`);
