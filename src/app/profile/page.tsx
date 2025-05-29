@@ -153,17 +153,7 @@ export default function ProfilePage() {
     // 모바일 환경 체크
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-    if (!isMobile) {
-      // PC 환경일 경우 모바일로 리디렉션
-      const currentUrl = window.location.href;
-      const mobileUrl = `https://m.tripwithme.com${window.location.pathname}${window.location.search}`;
-
-      // 모바일 URL로 리디렉션
-      window.location.href = mobileUrl;
-      return;
-    }
-
-    // 모바일 환경에서 본인인증 진행
+    // 본인인증 진행
     const response: any = await PortOne.requestIdentityVerification({
       storeId: "store-0d664ae7-e67d-4bb7-b891-2a9003c6b9bb",
       identityVerificationId: `identity-verification-${crypto.randomUUID()}`,
@@ -232,6 +222,72 @@ export default function ProfilePage() {
     return gender === "MALE" ? "남성" : "여성";
   };
 
+  const testCertification = async () => {
+    const identityVerificationId = "identity-verification-c23b2c40-0cac-48ae-a06f-207e9f8bc89b";
+    const PORTONE_API_SECRET = "ZUhPSzQzQUpCN1dLa1I0RFd3Y1VuQT09";
+    try {
+      const verificationResponse = await instance.post(
+        `https://api.portone.io/identity-verifications/${encodeURIComponent(identityVerificationId)}/send`,
+        {
+          channelKey: "channel-key-e997c286-fdb5-4239-9583-991a7bbf5cee"
+        },
+        {
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${PORTONE_API_SECRET}`
+          }
+        }
+      );
+
+      console.log("verificationResponse=", verificationResponse);
+    } catch (error) {
+      console.error("인증 확인 실패:", error);
+    }
+  };
+
+  const checkVerificationResult = async (identityVerificationId: string) => {
+    const PORTONE_API_SECRET = "ZUhPSzQzQUpCN1dLa1I0RFd3Y1VuQT09";
+    try {
+      const response = await instance.get(
+        `https://api.portone.io/identity-verifications/${encodeURIComponent(identityVerificationId)}`,
+        {
+          headers: { 
+            "Authorization": `Bearer ${PORTONE_API_SECRET}`
+          }
+        }
+      );
+
+      console.log("인증 결과:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("인증 결과 조회 실패:", error);
+      throw error;
+    }
+  };
+
+  // 본인인증 완료 후 리다이렉트되는 페이지에서 호출할 함수
+  const handleVerificationComplete = async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    // const identityVerificationId = urlParams.get('identityVerificationId');
+    const identityVerificationId ="identity-verification-d73ec821-435f-4430-aa75-58513cede58c"
+    if (identityVerificationId) {
+      try {
+        const result = await checkVerificationResult(identityVerificationId);
+        // 여기서 받은 정보를 서버에 저장하거나 처리할 수 있습니다
+        console.log("인증 완료:", result);
+      } catch (error) {
+        console.error("인증 결과 처리 실패:", error);
+      }
+    }
+  };
+
+  // 페이지 로드 시 인증 완료 여부 확인
+  useEffect(() => {
+    if (window.location.pathname === '/profile/certification/complete') {
+      handleVerificationComplete();
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* 프로필 헤더 */}
@@ -279,6 +335,7 @@ export default function ProfilePage() {
                     {(user as any)?.introduction || ""}
                   </p>
                   <button onClick={certification}>본인인증 하기</button>
+                  <button onClick={handleVerificationComplete}>테스트본인인증</button>
                 </div>
               </div>
             </div>
@@ -476,7 +533,7 @@ export default function ProfilePage() {
                 <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
               </motion.button>
 
-              <motion.button
+              {/* <motion.button
                 whileHover={{ scale: 1.02 }}
                 className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
                 onClick={() => router.push("/profile/bookmarks")}
@@ -491,7 +548,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
-              </motion.button>
+              </motion.button> */}
 
               <motion.button
                 whileHover={{ scale: 1.02 }}

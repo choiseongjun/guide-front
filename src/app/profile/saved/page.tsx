@@ -1,223 +1,191 @@
 "use client";
-import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import {
-  HiOutlineChevronLeft,
-  HiOutlineMapPin,
-  HiOutlineCalendar,
-  HiOutlineClock,
-  HiOutlineUserGroup,
-  HiOutlineStar,
-  HiOutlineHeart,
-} from "react-icons/hi2";
-import { motion } from "framer-motion";
-import { getImageUrl } from "@/app/common/imgUtils";
 
-// 임시 저장한 여행지 데이터
-const savedPlaces = [
-  {
-    id: 1,
-    title: "에펠탑",
-    image: "https://picsum.photos/seed/eiffel/200/120",
-    location: "프랑스 파리",
-    category: "명소",
-    savedAt: "2024-02-15",
-    duration: "2시간",
-    time: "09:00-21:00",
-    participants: "1-4명",
-    reviews: 128,
-    wishlist: 56,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=1",
-      "https://i.pravatar.cc/150?img=2",
-      "https://i.pravatar.cc/150?img=3",
-    ],
-  },
-  {
-    id: 2,
-    title: "성산일출봉",
-    image: "https://picsum.photos/seed/seongsan/200/120",
-    location: "제주도 성산",
-    category: "명소",
-    savedAt: "2024-02-10",
-    duration: "3시간",
-    time: "07:00-19:00",
-    participants: "1-6명",
-    reviews: 89,
-    wishlist: 42,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=4",
-      "https://i.pravatar.cc/150?img=5",
-    ],
-  },
-  {
-    id: 3,
-    title: "도쿄 디즈니랜드",
-    image: "https://picsum.photos/seed/tokyo/200/120",
-    location: "일본 도쿄",
-    category: "테마파크",
-    savedAt: "2024-02-05",
-    duration: "1일",
-    time: "08:00-22:00",
-    participants: "2-4명",
-    reviews: 156,
-    wishlist: 78,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=6",
-      "https://i.pravatar.cc/150?img=7",
-      "https://i.pravatar.cc/150?img=8",
-    ],
-  },
-  {
-    id: 4,
-    title: "푸켓 해변",
-    image: "https://picsum.photos/seed/phuket/200/120",
-    location: "태국 푸켓",
-    category: "해변",
-    savedAt: "2024-02-01",
-    duration: "4시간",
-    time: "08:00-18:00",
-    participants: "1-8명",
-    reviews: 92,
-    wishlist: 45,
-    participantsPhotos: [
-      "https://i.pravatar.cc/150?img=9",
-      "https://i.pravatar.cc/150?img=10",
-    ],
-  },
-];
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import TripList from "@/components/TripList";
+import instance from "@/app/api/axios";
 
-export default function SavedPlacesPage() {
-  const [activeTab, setActiveTab] = useState<"places" | "posts">("places");
+interface Trip {
+  id: number;
+  title: string;
+  image: string;
+  price: number;
+  discountPrice: number;
+  duration: string;
+  time: string;
+  location: string;
+  reviews: number;
+  wishlist: number;
+  participantsPhotos?: string[];
+  transport?: string;
+  highlight?: string;
+  startDate?: string;
+  endDate?: string;
+  discountRate: number;
+  originalPrice: number;
+  facilities: string[];
+  maxParticipants: number;
+  currentParticipants: number | null;
+  participants: {
+    id: number;
+    travelId: number;
+    status: string;
+    message: string;
+    createdAt: string;
+    updatedAt: string;
+    user: {
+      id: number;
+      nickname: string;
+      profileImageUrl: string | null;
+    };
+  }[];
+  user: {
+    id: number;
+    nickname: string;
+    profileImage: string;
+  };
+  images?: {
+    id: number;
+    imageUrl: string;
+    displayOrder: number;
+  }[];
+  likes: {
+    id: number;
+    user: {
+      id: number;
+      nickname: string;
+      profileImageUrl: string | null;
+    };
+    createdAt: string;
+  }[];
+  liked: boolean;
+}
+
+export default function SavedTripsPage() {
+  const router = useRouter();
+  const [likedTrips, setLikedTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+
+  useEffect(() => {
+    const fetchLikedTrips = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await instance.get(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels/liked-travels`,
+          {
+            params: {
+              page,
+              size: 10
+            }
+          }
+        );
+        if (response.data.status === 200) {
+          const newTrips = response.data.data.content.map((travel: any) => ({
+            id: travel.id,
+            title: travel.title,
+            image: travel.images.length > 0 ? travel.images[0].imageUrl : "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&auto=format&fit=crop&q=60",
+            price: travel.discountedPrice > 0 ? travel.discountedPrice : travel.price,
+            discountPrice: travel.discountedPrice,
+            originalPrice: travel.price,
+            duration: `${Math.ceil((new Date(travel.endDate).getTime() - new Date(travel.startDate).getTime()) / (1000 * 60 * 60 * 24))}일`,
+            time: travel.schedules[0]?.time || "",
+            location: travel.address.split(" ")[0],
+            reviews: travel.reviews?.length || 0,
+            wishlist: travel.likes?.length || 0,
+            highlight: travel.highlight,
+            startDate: travel.startDate,
+            endDate: travel.endDate,
+            discountRate: travel.discountRate,
+            facilities: [],
+            maxParticipants: travel.maxParticipants,
+            currentParticipants: 0,
+            participants: [],
+            liked: true,
+            user: {
+              id: travel.user.id,
+              nickname: travel.user.nickname,
+              profileImage: travel.user.profileImageUrl || ""
+            },
+            images: travel.images,
+            likes: travel.likes || []
+          }));
+
+          if (page === 0) {
+            setLikedTrips(newTrips);
+          } else {
+            setLikedTrips(prev => [...prev, ...newTrips]);
+          }
+          setHasMore(!response.data.data.last);
+        }
+      } catch (error: any) {
+        console.error('찜한 여행 조회 실패:', error);
+        if (error.message === 'Network Error') {
+          setError('서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요.');
+        } else {
+          setError('데이터를 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요.');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLikedTrips();
+  }, [page]);
+
+  const handleTripClick = (tripId: number) => {
+    router.push(`/trip/${tripId}`);
+  };
+
+  const handleLoadMore = () => {
+    if (!loading && hasMore) {
+      setPage(prev => prev + 1);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 헤더 */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-md mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/profile"
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <HiOutlineChevronLeft className="w-6 h-6 text-gray-600" />
-            </Link>
-            <h1 className="text-lg font-medium">저장한 여행지</h1>
-          </div>
-        </div>
-      </div>
+    <main className="min-h-screen bg-gray-50 pb-20">
+      <div className="max-w-md mx-auto px-4 py-6">
+        <h1 className="text-2xl font-bold mb-6">찜한 여행</h1>
 
-      {/* 탭 메뉴 */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-md mx-auto px-4">
-          <div className="flex gap-4">
+        {error ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+            <p className="text-red-600">{error}</p>
             <button
-              className={`py-4 px-2 font-medium text-sm ${
-                activeTab === "places"
-                  ? "text-blue-500 border-b-2 border-blue-500"
-                  : "text-gray-500"
-              }`}
-              onClick={() => setActiveTab("places")}
+              onClick={() => window.location.reload()}
+              className="mt-2 text-sm text-red-600 hover:text-red-700 underline"
             >
-              여행지
-            </button>
-            <button
-              className={`py-4 px-2 font-medium text-sm ${
-                activeTab === "posts"
-                  ? "text-blue-500 border-b-2 border-blue-500"
-                  : "text-gray-500"
-              }`}
-              onClick={() => setActiveTab("posts")}
-            >
-              게시글
+              새로고침
             </button>
           </div>
-        </div>
+        ) : loading && page === 0 ? (
+          <div className="flex justify-center items-center h-40">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          </div>
+        ) : likedTrips.length > 0 ? (
+          <div className="space-y-4">
+            <TripList
+              trips={likedTrips}
+              onTripClick={handleTripClick}
+            />
+            {hasMore && (
+              <button
+                onClick={handleLoadMore}
+                className="w-full py-2 text-sm text-gray-600 hover:text-gray-800"
+              >
+                더보기
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-500">찜한 여행이 없습니다.</p>
+          </div>
+        )}
       </div>
-
-      {/* 여행지 목록 */}
-      <div className="max-w-md mx-auto px-4 py-4 space-y-4">
-        {savedPlaces.map((place) => (
-          <motion.div
-            key={place.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-          >
-            <Link href={`/place/${place.id}`}>
-              <div className="relative h-48">
-                <Image
-                  src={getImageUrl(place.image)}
-                  alt={place.title}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 768px"
-                  priority
-                  className="object-cover"
-                />
-                <div className="absolute top-4 right-4 bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                  {place.category}
-                </div>
-              </div>
-              <div className="p-4">
-                <h3 className="text-lg font-semibold mb-2">{place.title}</h3>
-
-                {/* 기본 정보 */}
-                <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                  <div className="flex items-center gap-1">
-                    <HiOutlineCalendar className="w-4 h-4" />
-                    <span>{place.duration}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <HiOutlineClock className="w-4 h-4" />
-                    <span>{place.time}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <HiOutlineMapPin className="w-4 h-4" />
-                    <span>{place.location}</span>
-                  </div>
-                </div>
-
-                {/* 참여자 프로필 사진 */}
-                {place.participantsPhotos && (
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="flex -space-x-2">
-                      {place.participantsPhotos.map((photo, index) => (
-                        <div
-                          key={index}
-                          className="relative w-8 h-8 rounded-full border-2 border-white overflow-hidden"
-                        >
-                          <Image
-                            src={photo}
-                            alt={`참여자 ${index + 1}`}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                    <span className="text-sm text-gray-500">
-                      {place.participants}
-                    </span>
-                  </div>
-                )}
-
-                {/* 리뷰와 찜 */}
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1">
-                    <HiOutlineStar className="w-4 h-4 text-yellow-400" />
-                    <span>리뷰 {place.reviews}개</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <HiOutlineHeart className="w-4 h-4 text-red-400" />
-                    <span>찜 {place.wishlist}명</span>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          </motion.div>
-        ))}
-      </div>
-    </div>
+    </main>
   );
 }
