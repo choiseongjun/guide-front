@@ -17,17 +17,17 @@ function CertificationCompleteContent() {
           "identityVerificationId"
         );
 
-        if (!code || !identityVerificationId) {
+        console.log("identityVerificationId=", identityVerificationId);
+        if (!identityVerificationId) {
           alert("본인인증 정보가 올바르지 않습니다.");
           router.push("/profile");
           return;
         }
 
         // 본인인증 완료 처리 API 호출
-        const response = await instance.post(
+        const response = await instance.put(
           "/api/v1/users/certification/complete",
           {
-            code,
             identityVerificationId,
           }
         );
