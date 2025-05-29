@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import instance from "@/app/api/axios";
 import { useUser } from "@/hooks/useUser";
 
-export default function PaymentRedirectPage() {
+function PaymentRedirectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tripId = searchParams.get("tripId");
@@ -80,4 +80,18 @@ export default function PaymentRedirectPage() {
   }
 
   return null;
+}
+
+export default function PaymentRedirectPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+      }
+    >
+      <PaymentRedirectContent />
+    </Suspense>
+  );
 }
