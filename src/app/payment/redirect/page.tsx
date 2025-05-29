@@ -16,6 +16,7 @@ function PaymentRedirectContent() {
   const errorCode = searchParams.get("errorCode");
   const errorMessage = searchParams.get("errorMessage");
   const totalAmount = searchParams.get("totalAmount");
+
   const { user } = useUser();
   const [loading, setLoading] = useState(true);
 
@@ -25,21 +26,21 @@ function PaymentRedirectContent() {
 
       try {
         // 결제 취소 또는 실패 시
-        if (transactionType !== "PAYMENT") {
-          const errorMsg = errorMessage || "결제가 취소되었습니다.";
-          alert(errorMsg);
-          // 결제 정보 삭제
-          localStorage.removeItem(`payment_${tripId}`);
-          router.push(`/trip/${tripId}`);
-          return;
-        }
+        // if (transactionType !== "PAYMENT") {
+        //   const errorMsg = errorMessage || "결제가 취소되었습니다.";
+        //   alert(errorMsg);
+        //   // 결제 정보 삭제
+        //   localStorage.removeItem(`payment_${tripId}`);
+        //   router.push(`/trip/${tripId}`);
+        //   return;
+        // }
 
         // 이전 페이지에서 저장한 결제 정보 가져오기
-        const paymentInfo = localStorage.getItem(`payment_${tripId}`);
-        if (!paymentInfo) {
-          throw new Error("결제 정보를 찾을 수 없습니다.");
-        }
-        const { amount, productName } = JSON.parse(paymentInfo);
+        // const paymentInfo = localStorage.getItem(`payment_${tripId}`);
+        // if (!paymentInfo) {
+        //   throw new Error("결제 정보를 찾을 수 없습니다.");
+        // }
+        // const { amount, productName } = JSON.parse(paymentInfo);
 
         // 결제 정보 저장
         const paymentData = {
@@ -48,14 +49,16 @@ function PaymentRedirectContent() {
           txId: txId,
           userId: user?.id,
           productId: tripId,
-          productName: productName,
-          amount: amount,
+          productName: "",
+          amount: totalAmount,
           currency: "KRW",
           paymentMethod: "SIMPLE",
           paymentStatus: "COMPLETED",
           paymentDate: new Date().toISOString(),
           cardInfo: "****-****-****-****",
         };
+
+        console.log("paymentData=", paymentData);
 
         const saveResponse = await instance.post("/api/payments", paymentData);
         if (saveResponse.status === 200) {
@@ -68,10 +71,10 @@ function PaymentRedirectContent() {
         }
       } catch (error) {
         console.error("결제 정보 저장 실패:", error);
-        alert("결제 정보를 처리하는데 실패했습니다.");
+        // alert("결제 정보를 처리하는데 실패했습니다.");
         // 결제 정보 삭제
         localStorage.removeItem(`payment_${tripId}`);
-        router.push(`/trip/${tripId}`);
+        // router.push(`/trip/${tripId}/payment`);
       } finally {
         setLoading(false);
       }

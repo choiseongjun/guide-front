@@ -91,9 +91,10 @@ export default function PaymentPage({
       totalAmount: totalAmount,
       currency: "KRW" as any,
       payMethod: "CARD",
-      redirectUrl: `${window.location.origin}/payment/redirect?tripId=${trip.id}`,
+      redirectUrl: `${window.location.origin}/payment/redirect?tripId=${trip.id}&totalAmount=${finalPrice}`,
       customData: {
         tripId: trip.id,
+        totalAmount: finalPrice,
       },
     });
     console.log("결제 결과:", payment);
