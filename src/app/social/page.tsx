@@ -8,7 +8,7 @@ import {
   HiPlus,
 } from "react-icons/hi2";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import instance from "@/app/api/axios";
 
@@ -33,7 +33,7 @@ const categories = [
   { id: "4", name: "여행 팁" },
   { id: "5", name: "동행 구함" },
   { id: "6", name: "여행 질문" },
-]; 
+];
 
 type SortOption = "latest" | "popular" | "comments";
 type FilterState = {
@@ -43,10 +43,10 @@ type FilterState = {
   theme: string[];
 };
 
-export default function SocialPage() {
+function SocialContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'all');
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "all");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showFilter, setShowFilter] = useState(false);
   const [showSort, setShowSort] = useState(false);
@@ -67,7 +67,7 @@ export default function SocialPage() {
 
   // URL 쿼리 파라미터가 변경될 때 탭 상태 업데이트
   useEffect(() => {
-    const tab = searchParams.get('tab');
+    const tab = searchParams.get("tab");
     if (tab) {
       setActiveTab(tab);
     }
@@ -81,29 +81,31 @@ export default function SocialPage() {
 
   const fetchPosts = async (pageNum: number = 0) => {
     try {
-      
-      
       setServerError(false);
-      const endpoint = activeTab === 'my' ? '/api/social/posts/user/me' : '/api/social/posts';
-      
+      const endpoint =
+        activeTab === "my" ? "/api/social/posts/user/me" : "/api/social/posts";
+
       const response = await instance.get(endpoint, {
         params: {
           page: pageNum,
           size: 10,
-          sort: 'createdAt,desc',
-          category: selectedCategories.length > 0 ? selectedCategories.join(',') : undefined
-        }
+          sort: "createdAt,desc",
+          category:
+            selectedCategories.length > 0
+              ? selectedCategories.join(",")
+              : undefined,
+        },
       });
-      console.log(response.data)
+      console.log(response.data);
 
       if (response.status === 200) {
         const newPosts = response.data.data.content;
-        setPosts(prev => pageNum === 0 ? newPosts : [...prev, ...newPosts]);
+        setPosts((prev) => (pageNum === 0 ? newPosts : [...prev, ...newPosts]));
         setHasMore(newPosts.length === 10);
         setPage(pageNum);
       }
     } catch (error) {
-      console.error('게시글 조회 실패:', error);
+      console.error("게시글 조회 실패:", error);
       setServerError(true);
     }
   };
@@ -136,7 +138,6 @@ export default function SocialPage() {
 
   // 초기 데이터 로드 및 카테고리/탭 변경 시 데이터 리셋
   useEffect(() => {
-    
     setPosts([]);
     setHasMore(true);
     setPage(0);
@@ -147,7 +148,7 @@ export default function SocialPage() {
   useEffect(() => {
     const checkServerStatus = async () => {
       try {
-        await instance.get('/api/health');
+        await instance.get("/api/health");
         setServerError(false);
       } catch (error) {
         setServerError(true);
@@ -183,10 +184,12 @@ export default function SocialPage() {
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diffInSeconds < 60) return '방금 전';
+    if (diffInSeconds < 60) return "방금 전";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}분 전`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}시간 전`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}일 전`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)}시간 전`;
+    if (diffInSeconds < 604800)
+      return `${Math.floor(diffInSeconds / 86400)}일 전`;
     return date.toLocaleDateString();
   };
 
@@ -294,7 +297,9 @@ export default function SocialPage() {
                   )}
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-medium text-sm">{post.userNickname || "익명 사용자"}</h3>
+                  <h3 className="font-medium text-sm">
+                    {post.userNickname || "익명 사용자"}
+                  </h3>
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <span>{formatTimeAgo(post.createdAt)}</span>
                     <span>•</span>
@@ -376,7 +381,10 @@ export default function SocialPage() {
         </AnimatePresence>
 
         {/* 무한 스크롤 감지 요소 */}
-        <div ref={observerTarget} className="h-10 flex items-center justify-center">
+        <div
+          ref={observerTarget}
+          className="h-10 flex items-center justify-center"
+        >
           {loading && (
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
           )}
@@ -391,5 +399,13 @@ export default function SocialPage() {
         <HiPlus className="w-6 h-6" />
       </button>
     </div>
+  );
+}
+
+export default function Social() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SocialContent />
+    </Suspense>
   );
 }

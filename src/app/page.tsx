@@ -56,38 +56,55 @@ export default function Home() {
       try {
         setLoading(true);
         setError(null);
-        const response = await instance.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels`, {
-          params: {
-            page: 0,
-            size: 5
+        const response = await instance.get(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels`,
+          {
+            params: {
+              page: 0,
+              size: 5,
+            },
           }
-        });
+        );
 
         if (response.data.status === 200) {
-          const mappedTrips = response.data.data.content.map((travel: Travel) => ({
-            ...travel,
-            image: travel.images.length > 0 ? travel.images[0].imageUrl : "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&auto=format&fit=crop&q=60",
-            price: travel.discountedPrice > 0 ? travel.discountedPrice : travel.price,
-            originalPrice: travel.price,
-            duration: `${Math.ceil((new Date(travel.endDate).getTime() - new Date(travel.startDate).getTime()) / (1000 * 60 * 60 * 24))}일`,
-            time: travel.schedules[0]?.time || "",
-            location: travel.address.split(" ")[0],
-            reviews: travel.reviews?.length || 0,
-            wishlist: travel.likes?.length || 0,
-            user: {
-              id: travel.user.id,
-              nickname: travel.user.nickname,
-              profileImage: travel.user.profileImageUrl
-            }
-          }));
+          const mappedTrips = response.data.data.content.map(
+            (travel: Travel) => ({
+              ...travel,
+              image:
+                travel.images.length > 0
+                  ? travel.images[0].imageUrl
+                  : "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&auto=format&fit=crop&q=60",
+              price:
+                travel.discountedPrice > 0
+                  ? travel.discountedPrice
+                  : travel.price,
+              originalPrice: travel.price,
+              duration: `${Math.ceil(
+                (new Date(travel.endDate).getTime() -
+                  new Date(travel.startDate).getTime()) /
+                  (1000 * 60 * 60 * 24)
+              )}일`,
+              time: travel.schedules[0]?.time || "",
+              location: travel.address.split(" ")[0],
+              reviews: travel.reviews?.length || 0,
+              wishlist: travel.likes?.length || 0,
+              user: {
+                id: travel.user.id,
+                nickname: travel.user.nickname,
+                profileImage: travel.user.profileImageUrl,
+              },
+            })
+          );
           setRecommendedTrips(mappedTrips);
         }
       } catch (error: any) {
-        console.error('추천 여행 조회 실패:', error);
-        if (error.message === 'Network Error') {
-          setError('서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요.');
+        console.error("추천 여행 조회 실패:", error);
+        if (error.message === "Network Error") {
+          setError("서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요.");
         } else {
-          setError('데이터를 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요.');
+          setError(
+            "데이터를 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요."
+          );
         }
       } finally {
         setLoading(false);
@@ -282,9 +299,9 @@ export default function Home() {
           </div>
         ) : (
           <div className="space-y-4">
-            {recommendedTrips.map((trip) => (
+            {recommendedTrips.map((trip, index) => (
               <TripList
-                key={trip.id}
+                key={index}
                 trips={[trip]}
                 onTripClick={(tripId) => router.push(`/trip/${tripId}`)}
               />

@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { HiOutlineCheckCircle } from "react-icons/hi2";
 import instance from "@/app/api/axios";
 
-export default function CertificationCompletePage() {
+function CertificationCompleteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -13,7 +13,9 @@ export default function CertificationCompletePage() {
     const handleCertificationComplete = async () => {
       try {
         const code = searchParams.get("code");
-        const identityVerificationId = searchParams.get("identityVerificationId");
+        const identityVerificationId = searchParams.get(
+          "identityVerificationId"
+        );
 
         if (!code || !identityVerificationId) {
           alert("본인인증 정보가 올바르지 않습니다.");
@@ -22,10 +24,13 @@ export default function CertificationCompletePage() {
         }
 
         // 본인인증 완료 처리 API 호출
-        const response = await instance.post("/api/v1/users/certification/complete", {
-          code,
-          identityVerificationId,
-        });
+        const response = await instance.post(
+          "/api/v1/users/certification/complete",
+          {
+            code,
+            identityVerificationId,
+          }
+        );
 
         if (response.status === 200) {
           // 성공 메시지 표시 후 프로필 페이지로 이동
@@ -59,4 +64,12 @@ export default function CertificationCompletePage() {
       </div>
     </div>
   );
-} 
+}
+
+export default function CertificationComplete() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CertificationCompleteContent />
+    </Suspense>
+  );
+}

@@ -3,9 +3,15 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { HiOutlineArrowLeft, HiOutlineCalendar, HiOutlineClock, HiOutlineMapPin, HiOutlineUserGroup } from "react-icons/hi2";
+import {
+  HiOutlineArrowLeft,
+  HiOutlineCalendar,
+  HiOutlineClock,
+  HiOutlineMapPin,
+  HiOutlineUserGroup,
+} from "react-icons/hi2";
 import instance from "@/app/api/axios";
-import PortOne from "@portone/browser-sdk/v2"
+import PortOne from "@portone/browser-sdk/v2";
 
 interface Trip {
   id: number;
@@ -33,16 +39,24 @@ interface Trip {
   };
 }
 
-export default function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
+export default function PaymentPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const router = useRouter();
   const [trip, setTrip] = useState<Trip | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'simple' | 'card'>('simple');
+  const [paymentMethod, setPaymentMethod] = useState<"simple" | "card">(
+    "simple"
+  );
   const resolvedParams = use(params);
 
   useEffect(() => {
     const fetchTrip = async () => {
       try {
-        const response = await instance.get(`/api/v1/travels/${resolvedParams.id}`);
+        const response = await instance.get(
+          `/api/v1/travels/${resolvedParams.id}`
+        );
         if (response.data.status === 200) {
           setTrip(response.data.data);
         }
@@ -57,29 +71,29 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
   function randomId() {
     return [...crypto.getRandomValues(new Uint32Array(2))]
       .map((word) => word.toString(16).padStart(8, "0"))
-      .join("")
+      .join("");
   }
   const handlePayment = async () => {
     if (!trip) return;
-    
+
     const orderName = trip.title;
     const totalAmount = finalPrice;
-    
-    console.log('결제 진행:', paymentMethod);
+
+    console.log("결제 진행:", paymentMethod);
     const payment = await PortOne.requestPayment({
-      storeId: process.env.NEXT_PUBLIC_PG_STORE_ID,
-      channelKey: process.env.NEXT_PUBLIC_PG_PAY_CHANNEL_ID,
+      storeId: process.env.NEXT_PUBLIC_PG_STORE_ID as string,
+      channelKey: process.env.NEXT_PUBLIC_PG_PAY_CHANNEL_ID as string,
       paymentId: randomId(),
       orderName: orderName,
       totalAmount: totalAmount,
-      currency: "KRW" as const, 
+      currency: "KRW" as any,
       payMethod: "CARD",
       redirectUrl: `${window.location.origin}/payment/redirect?tripId=${trip.id}`,
       customData: {
-        tripId: trip.id
-      }
+        tripId: trip.id,
+      },
     });
-    console.log('결제 결과:', payment);
+    console.log("결제 결과:", payment);
   };
 
   if (!trip) {
@@ -123,7 +137,10 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
           <div className="space-y-2 text-gray-600">
             <div className="flex items-center">
               <HiOutlineCalendar className="w-5 h-5 mr-2" />
-              <span>{new Date(trip.startDate).toLocaleDateString()} ~ {new Date(trip.endDate).toLocaleDateString()}</span>
+              <span>
+                {new Date(trip.startDate).toLocaleDateString()} ~{" "}
+                {new Date(trip.endDate).toLocaleDateString()}
+              </span>
             </div>
             <div className="flex items-center">
               <HiOutlineMapPin className="w-5 h-5 mr-2" />
@@ -131,7 +148,10 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
             </div>
             <div className="flex items-center">
               <HiOutlineUserGroup className="w-5 h-5 mr-2" />
-              <span>현재 {trip.currentParticipants || 0}명 / 최대 {trip.maxParticipants}명</span>
+              <span>
+                현재 {trip.currentParticipants || 0}명 / 최대{" "}
+                {trip.maxParticipants}명
+              </span>
             </div>
           </div>
         </div>
@@ -139,7 +159,9 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
         {/* 여행 설명 */}
         <div className="bg-white rounded-lg p-4 mb-6">
           <h3 className="text-lg font-semibold mb-4">여행 소개{trip.id}</h3>
-          <p className="text-gray-600 whitespace-pre-line">{trip.description}</p>
+          <p className="text-gray-600 whitespace-pre-line">
+            {trip.description}
+          </p>
         </div>
 
         {/* 결제 금액 */}
@@ -181,8 +203,8 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
                 type="radio"
                 name="payment"
                 value="simple"
-                checked={paymentMethod === 'simple'}
-                onChange={() => setPaymentMethod('simple')}
+                checked={paymentMethod === "simple"}
+                onChange={() => setPaymentMethod("simple")}
                 className="w-4 h-4 text-blue-600"
               />
               <span>간편결제</span>
@@ -192,8 +214,8 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
                 type="radio"
                 name="payment"
                 value="card"
-                checked={paymentMethod === 'card'}
-                onChange={() => setPaymentMethod('card')}
+                checked={paymentMethod === "card"}
+                onChange={() => setPaymentMethod("card")}
                 className="w-4 h-4 text-blue-600"
               />
               <span>카드결제</span>
@@ -211,4 +233,4 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
       </div>
     </div>
   );
-} 
+}

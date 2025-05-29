@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import instance from "@/app/api/axios";
 
-export default function PaymentRedirectPage() {
+function PaymentRedirectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -17,8 +17,11 @@ export default function PaymentRedirectPage() {
         const errorCode = searchParams.get("errorCode");
         const errorMessage = searchParams.get("errorMessage");
         const tripId = searchParams.get("tripId");
-        
-        console.log("전체 URL 파라미터:", Object.fromEntries(searchParams.entries()));
+
+        console.log(
+          "전체 URL 파라미터:",
+          Object.fromEntries(searchParams.entries())
+        );
         console.log("tripId=", tripId);
         console.log("status===", status);
         console.log("errorCode===", errorCode);
@@ -29,7 +32,11 @@ export default function PaymentRedirectPage() {
         }
 
         // 결제 취소 또는 실패 시 바로 결제 페이지로 이동
-        if (status !== "DONE" || errorCode === "FAILURE_TYPE_PG" || errorCode === "PAY_PROCESS_CANCELED") {
+        if (
+          status !== "DONE" ||
+          errorCode === "FAILURE_TYPE_PG" ||
+          errorCode === "PAY_PROCESS_CANCELED"
+        ) {
           const errorMsg = errorMessage || "결제가 취소되었습니다.";
           alert(errorMsg);
           router.push(`/trip/${tripId}/payment`);
@@ -64,4 +71,12 @@ export default function PaymentRedirectPage() {
       </div>
     </div>
   );
-} 
+}
+
+export default function PaymentRedirect() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PaymentRedirectContent />
+    </Suspense>
+  );
+}
