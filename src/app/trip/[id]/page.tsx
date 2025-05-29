@@ -25,7 +25,7 @@ import {
 import { HiOutlineChatBubbleLeft } from "react-icons/hi2";
 import instance from "@/app/api/axios";
 import { useUser } from "@/hooks/useUser";
-import { getImageUrl } from "@/app/common/imgUtils";
+import { getImageUrl, getProfileImage } from "@/app/common/imgUtils";
 
 interface Participant {
   id: number;
@@ -579,7 +579,7 @@ export default function TripDetailPage({
             <div className="relative w-12 h-12 rounded-full overflow-hidden">
               <Image
                 src={
-                  trip.user.profileImageUrl ||
+                  getProfileImage(trip.user.profileImageUrl) ||
                   "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60"
                 }
                 alt={trip.user.nickname}
@@ -720,10 +720,19 @@ export default function TripDetailPage({
 
         {/* 여행 설명 */}
         <div className="bg-white p-4 mb-4">
-          <h2 className="text-lg font-semibold mb-2">여행 설명</h2>
-          <p className="text-gray-600 whitespace-pre-line">
+          <h2 className="text-lg font-semibold mb-2">여행 설명11</h2>
+          {/* <p className="text-gray-600 whitespace-pre-line">
             {trip.description}
-          </p>
+          </p> */}
+          <div
+            className="text-gray-600 prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{
+              __html: trip.description.replace(
+                /<img/g,
+                '<img class="w-full h-auto rounded-lg my-4"'
+              ),
+            }}
+          />
         </div>
 
         {/* 참여자 정보 */}
@@ -840,7 +849,9 @@ export default function TripDetailPage({
                   <div className="relative w-10 h-10 rounded-full overflow-hidden">
                     <Image
                       src={
-                        participant.user.profileImageUrl ||
+                        getProfileImage(
+                          participant.user.profileImageUrl ?? ""
+                        ) ||
                         "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60"
                       }
                       alt={participant.user.nickname}

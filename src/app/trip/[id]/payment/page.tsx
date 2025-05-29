@@ -159,10 +159,16 @@ export default function PaymentPage({
 
         {/* 여행 설명 */}
         <div className="bg-white rounded-lg p-4 mb-6">
-          <h3 className="text-lg font-semibold mb-4">여행 소개{trip.id}</h3>
-          <p className="text-gray-600 whitespace-pre-line">
-            {trip.description}
-          </p>
+          <h3 className="text-lg font-semibold mb-4">여행 소개</h3>
+          <div
+            className="text-gray-600 prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{
+              __html: trip.description.replace(
+                /<img/g,
+                '<img class="w-full h-auto rounded-lg my-4"'
+              ),
+            }}
+          />
         </div>
 
         {/* 결제 금액 */}

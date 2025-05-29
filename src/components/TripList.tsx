@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 import instance from "@/app/api/axios";
 import { useUser } from "@/hooks/useUser";
 import { useRouter } from "next/navigation";
-import { getImageUrl } from "@/app/common/imgUtils";
+import { getImageUrl, getProfileImage } from "@/app/common/imgUtils";
 
 interface Trip {
   id: number;
@@ -133,17 +133,6 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
     } catch (error) {
       console.error("찜하기 처리 실패:", error);
       alert("찜하기 처리에 실패했습니다.");
-    }
-  };
-
-  const getProfileImage = (url: string | null) => {
-    if (!url) {
-      return "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60";
-    }
-    if (url.includes("http")) {
-      return url;
-    } else {
-      return getImageUrl(url);
     }
   };
 

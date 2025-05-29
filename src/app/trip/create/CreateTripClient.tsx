@@ -613,7 +613,7 @@ export default function CreateTripClient() {
           .chain()
           .focus()
           .setImage({
-            src: result.fileUrl,
+            src: getImageUrl(result.fileUrl),
             alt: "Uploaded image",
             title: "Uploaded image",
           })
