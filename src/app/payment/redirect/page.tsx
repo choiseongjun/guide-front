@@ -28,19 +28,28 @@ function PaymentRedirectContent() {
         if (transactionType !== "PAYMENT") {
           const errorMsg = errorMessage || "결제가 취소되었습니다.";
           alert(errorMsg);
+          // 결제 정보 삭제
+          localStorage.removeItem(`payment_${tripId}`);
           router.push(`/trip/${tripId}`);
           return;
         }
+
+        // 이전 페이지에서 저장한 결제 정보 가져오기
+        const paymentInfo = localStorage.getItem(`payment_${tripId}`);
+        if (!paymentInfo) {
+          throw new Error("결제 정보를 찾을 수 없습니다.");
+        }
+        const { amount, productName } = JSON.parse(paymentInfo);
 
         // 결제 정보 저장
         const paymentData = {
           paymentId: paymentId,
           transactionType: "PAYMENT",
-          txId: txId, // paymentId를 txId로 사용
+          txId: txId,
           userId: user?.id,
           productId: tripId,
-          productName: "",
-          amount: "",
+          productName: productName,
+          amount: amount,
           currency: "KRW",
           paymentMethod: "SIMPLE",
           paymentStatus: "COMPLETED",
@@ -51,6 +60,8 @@ function PaymentRedirectContent() {
         const saveResponse = await instance.post("/api/payments", paymentData);
         if (saveResponse.status === 200) {
           console.log("결제 정보 저장 성공");
+          // 결제 정보 삭제
+          localStorage.removeItem(`payment_${tripId}`);
           router.push(`/payment/complete?tripId=${tripId}`);
         } else {
           throw new Error("결제 정보 저장 실패");
@@ -58,6 +69,8 @@ function PaymentRedirectContent() {
       } catch (error) {
         console.error("결제 정보 저장 실패:", error);
         alert("결제 정보를 처리하는데 실패했습니다.");
+        // 결제 정보 삭제
+        localStorage.removeItem(`payment_${tripId}`);
         router.push(`/trip/${tripId}`);
       } finally {
         setLoading(false);
@@ -70,7 +83,9 @@ function PaymentRedirectContent() {
     router,
     user?.id,
     paymentId,
+    transactionType,
     status,
+    txId,
     errorCode,
     errorMessage,
     totalAmount,
