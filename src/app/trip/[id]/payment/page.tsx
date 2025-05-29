@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useUser } from "@/hooks/useUser";
 import {
   HiOutlineArrowLeft,
   HiOutlineCalendar,
@@ -46,6 +47,7 @@ export default function PaymentPage({
   params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
+  const { user } = useUser();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"simple" | "card">(
     "simple"
@@ -94,6 +96,34 @@ export default function PaymentPage({
         tripId: trip.id,
       },
     });
+    if (payment?.transactionType === "PAYMENT") {
+      try {
+        const paymentData = {
+          paymentId: payment.paymentId,
+          transactionType: payment.transactionType,
+          txId: payment.txId,
+          userId: user?.id,
+          productId: trip.id,
+          productName: trip.title,
+          amount: finalPrice,
+          currency: "KRW",
+          paymentMethod: paymentMethod === "simple" ? "SIMPLE" : "SIMPLE",
+          paymentStatus: "COMPLETED",
+          paymentDate: new Date().toISOString(),
+          hostUserKey: trip.user.id.toString(),
+          cardInfo: "****-****-****-****",
+        };
+
+        const response = await instance.post("/api/payments", paymentData);
+        if (response.status === 200) {
+          console.log("결제 정보 저장 성공");
+          router.push(`/payment/complete?tripId=${trip.id}`);
+        }
+      } catch (error) {
+        console.error("결제 정보 저장 실패:", error);
+        alert("결제 정보 저장에 실패했습니다.");
+      }
+    }
     console.log("결제 결과:", payment);
   };
 
