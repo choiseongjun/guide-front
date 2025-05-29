@@ -12,9 +12,9 @@ function PaymentRedirectContent() {
   const paymentId = searchParams.get("paymentId");
   const transactionType = searchParams.get("transactionType");
   const status = searchParams.get("status");
+  const txId = searchParams.get("txId");
   const errorCode = searchParams.get("errorCode");
   const errorMessage = searchParams.get("errorMessage");
-  const orderName = searchParams.get("orderName");
   const totalAmount = searchParams.get("totalAmount");
   const { user } = useUser();
   const [loading, setLoading] = useState(true);
@@ -36,11 +36,11 @@ function PaymentRedirectContent() {
         const paymentData = {
           paymentId: paymentId,
           transactionType: "PAYMENT",
-          txId: paymentId, // paymentId를 txId로 사용
+          txId: txId, // paymentId를 txId로 사용
           userId: user?.id,
           productId: tripId,
-          productName: orderName,
-          amount: totalAmount,
+          productName: "",
+          amount: "",
           currency: "KRW",
           paymentMethod: "SIMPLE",
           paymentStatus: "COMPLETED",
