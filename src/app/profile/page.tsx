@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -25,7 +25,7 @@ import {
 import instance from "@/app/api/axios";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
-import PortOne from "@portone/browser-sdk/v2"
+import PortOne from "@portone/browser-sdk/v2";
 // 임시 사용자 데이터
 const userData = {
   isLoggedIn: true,
@@ -137,7 +137,12 @@ export default function ProfilePage() {
   const router = useRouter();
   const { user } = useUser();
   const [activeSection, setActiveSection] = useState("profile");
-  const [isLoggedIn, setIsLoggedIn] = useState(userData.isLoggedIn);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const at = localStorage.getItem("at");
+    setIsLoggedIn(!!at);
+  }, []);
 
   const handleLogin = () => {
     router.push("/login");
@@ -146,19 +151,19 @@ export default function ProfilePage() {
   const certification = async () => {
     // 모바일 환경 체크
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
+
     if (!isMobile) {
       // PC 환경일 경우 모바일로 리디렉션
       const currentUrl = window.location.href;
       const mobileUrl = `https://m.tripwithme.com${window.location.pathname}${window.location.search}`;
-      
+
       // 모바일 URL로 리디렉션
       window.location.href = mobileUrl;
       return;
     }
 
     // 모바일 환경에서 본인인증 진행
-    const response:any = await PortOne.requestIdentityVerification({
+    const response: any = await PortOne.requestIdentityVerification({
       storeId: "store-0d664ae7-e67d-4bb7-b891-2a9003c6b9bb",
       identityVerificationId: `identity-verification-${crypto.randomUUID()}`,
       channelKey: "channel-key-e997c286-fdb5-4239-9583-991a7bbf5cee",
@@ -169,32 +174,32 @@ export default function ProfilePage() {
       return alert(response.message);
     }
     console.log(response);
-  }
+  };
 
   const handleLogout = async () => {
     try {
-      const refreshToken = localStorage.getItem('rt');
-      
+      const refreshToken = localStorage.getItem("rt");
+
       // 카카오 로그아웃 API 호출
-      await instance.post('/api/auth/kakao/logout', null, {
+      await instance.post("/api/auth/kakao/logout", null, {
         headers: {
-          'Refresh-Token': refreshToken
-        }
+          "Refresh-Token": refreshToken,
+        },
       });
 
       // 로컬 스토리지 정리
-      localStorage.removeItem('at');
-      localStorage.removeItem('rt');
-      localStorage.removeItem('user');
-      
+      localStorage.removeItem("at");
+      localStorage.removeItem("rt");
+      localStorage.removeItem("user");
+
       // 로그인 상태 변경
       setIsLoggedIn(false);
-      
+
       // 로그인 페이지로 리다이렉션
-      router.push('/login');
+      router.push("/login");
     } catch (error) {
-      console.error('로그아웃 에러:', error);
-      alert('로그아웃 중 오류가 발생했습니다.');
+      console.error("로그아웃 에러:", error);
+      alert("로그아웃 중 오류가 발생했습니다.");
     }
   };
 
@@ -229,106 +234,108 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* 프로필 헤더 */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-md mx-auto px-4 py-6">
-          <div className="flex items-center gap-4">
-            <div className="relative w-20 h-20 rounded-full overflow-hidden bg-gray-100">
-              {user?.profileImageUrl ? (
-                <Image
-                  src={user.profileImageUrl}
-                  alt={user.nickname}
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl">
-                  {user?.nickname?.[0] || "?"}
-                </div>
-              )}
-            </div>
-            <div className="flex-1">
-              <div className="flex flex-col">
-              <button
-                  onClick={() => router.push("/profile/account")}
-                  className="self-start mt-2 p-1 text-gray-500 hover:text-blue-500 transition-colors flex justify-start w-full"
-                >
-                  <HiOutlinePencil className="w-4 h-4" />
-                </button>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-bold">{user?.nickname || "여행러"}</h2>
-                  <div className="flex items-center gap-1">
-                    <div className="bg-blue-500 rounded-full p-1">
-                      <HiOutlineShieldCheck className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="text-xs text-gray-500">본인인증완료</span>
+      {isLoggedIn && (
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-md mx-auto px-4 py-6">
+            <div className="flex items-center gap-4">
+              <div className="relative w-20 h-20 rounded-full overflow-hidden bg-gray-100">
+                {user?.profileImageUrl ? (
+                  <Image
+                    src={user.profileImageUrl}
+                    alt={user.nickname}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl">
+                    {user?.nickname?.[0] || "?"}
                   </div>
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="flex flex-col">
+                  <button
+                    onClick={() => router.push("/profile/account")}
+                    className="self-start mt-2 p-1 text-gray-500 hover:text-blue-500 transition-colors flex justify-start w-full"
+                  >
+                    <HiOutlinePencil className="w-4 h-4" />
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold">
+                      {user?.nickname || "여행러"}
+                    </h2>
+                    <div className="flex items-center gap-1">
+                      <div className="bg-blue-500 rounded-full p-1">
+                        <HiOutlineShieldCheck className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        본인인증완료
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {(user as any)?.introduction || ""}
+                  </p>
+                  <button onClick={certification}>본인인증 하기</button>
                 </div>
-                <p className="text-sm text-gray-500 mt-1">{(user as any)?.introduction || ""}</p>
-                <button onClick={certification}>본인인증 하기</button>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* 프로필 섹션 */}
-      <div className="bg-white">
-        <div className="max-w-md mx-auto px-4 py-6">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              {/* <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold">{user?.nickname || "여행러"}</h1>
-                <div className="flex items-center space-x-1 bg-gradient-to-r from-orange-400 to-red-500 text-white px-2 py-1 rounded-full text-sm">
-                  <HiOutlineFire className="w-4 h-4" />
-                  <span>36.5°C</span>
-                </div>
-              </div> */}
-              {/* <p className="text-gray-600 text-sm mt-1">
-                {user?.introduction || ""}
-              </p> */}
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
-                <div className="flex items-center gap-1 text-sm text-gray-500">
-                  <HiOutlineUser className="w-4 h-4" />
-                  <span>{getGenderText(user?.gender)}</span>
-                </div>
-                <div className="flex items-center gap-1 text-sm text-gray-500">
-                  <HiOutlineCalendar className="w-4 h-4" />
-                  <span>{user?.age || 32}세</span>
-                </div>
-                <div className="flex items-center gap-1 text-sm text-gray-500">
-                  <HiOutlineMapPin className="w-4 h-4" />
-                  <span>{user?.nationality || "대한민국"}</span>
-                </div>
-                <div
-                  className={`flex items-center gap-1 text-sm ${getLevelColor(
-                    calculateTripLevel(user?.tripLevel || 0).level
-                  )}`}
-                >
-                  <HiOutlineStar className="w-4 h-4" />
-                  <span>{calculateTripLevel(user?.tripLevel || 0).title}</span>
+      {isLoggedIn && (
+        <div className="bg-white">
+          <div className="max-w-md mx-auto px-4 py-6">
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
+                  <div className="flex items-center gap-1 text-sm text-gray-500">
+                    <HiOutlineUser className="w-4 h-4" />
+                    <span>{getGenderText(user?.gender)}</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-sm text-gray-500">
+                    <HiOutlineCalendar className="w-4 h-4" />
+                    <span>{user?.age || 32}세</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-sm text-gray-500">
+                    <HiOutlineMapPin className="w-4 h-4" />
+                    <span>{user?.nationality || "대한민국"}</span>
+                  </div>
+                  <div
+                    className={`flex items-center gap-1 text-sm ${getLevelColor(
+                      calculateTripLevel(user?.tripLevel || 0).level
+                    )}`}
+                  >
+                    <HiOutlineStar className="w-4 h-4" />
+                    <span>
+                      {calculateTripLevel(user?.tripLevel || 0).title}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* 통계 */}
-          <div className="grid grid-cols-3 gap-4 mt-6">
-            <div className="text-center">
-              <div className="font-bold">{user?.followers || 0}</div>
-              <div className="text-sm text-gray-500">팔로워</div>
-            </div>
-            <div className="text-center">
-              <div className="font-bold">{user?.following || 0}</div>
-              <div className="text-sm text-gray-500">팔로잉</div>
-            </div>
-            <div className="text-center">
-              <div className="font-bold">{user?.reviews || 0}</div>
-              <div className="text-sm text-gray-500">리뷰</div>
+            {/* 통계 */}
+            <div className="grid grid-cols-3 gap-4 mt-6">
+              <div className="text-center">
+                <div className="font-bold">{user?.followers || 0}</div>
+                <div className="text-sm text-gray-500">팔로워</div>
+              </div>
+              <div className="text-center">
+                <div className="font-bold">{user?.following || 0}</div>
+                <div className="text-sm text-gray-500">팔로잉</div>
+              </div>
+              <div className="text-center">
+                <div className="font-bold">{user?.reviews || 0}</div>
+                <div className="text-sm text-gray-500">리뷰</div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* 트립 레벨 */}
       {isLoggedIn && (
@@ -423,7 +430,9 @@ export default function ProfilePage() {
                 <div className="flex items-center">
                   <HiOutlineUserGroup className="w-6 h-6 text-purple-500 mr-3" />
                   <div>
-                    <h4 className="font-medium text-gray-800">참여 신청 관리</h4>
+                    <h4 className="font-medium text-gray-800">
+                      참여 신청 관리
+                    </h4>
                     <p className="text-sm text-gray-600">
                       대기중인 신청 3건 • 승인된 신청 5건
                     </p>
@@ -498,7 +507,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
-              </motion.button> 
+              </motion.button>
 
               <motion.button
                 whileHover={{ scale: 1.02 }}
