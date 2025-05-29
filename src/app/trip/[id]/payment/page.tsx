@@ -12,6 +12,7 @@ import {
 } from "react-icons/hi2";
 import instance from "@/app/api/axios";
 import PortOne from "@portone/browser-sdk/v2";
+import { getImageUrl } from "@/app/common/imgUtils";
 
 interface Trip {
   id: number;
@@ -123,7 +124,7 @@ export default function PaymentPage({
         <div className="relative w-full h-48 mb-6 rounded-lg overflow-hidden">
           {trip.images[0] && (
             <Image
-              src={trip.images[0].imageUrl}
+              src={getImageUrl(trip.images[0].imageUrl)}
               alt={trip.title}
               fill
               className="object-cover"

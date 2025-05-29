@@ -145,61 +145,76 @@ export default function ThemePageClient({
     setTrips([]);
     setHasMore(true);
     setLoading(false);
-    
+
     // 새로운 데이터 로드
     fetchTravels(0);
   }, [params.id]);
 
   // fetchTravels 함수를 useCallback으로 메모이제이션
-  const fetchTravels = useCallback(async (pageNum: number = 0) => {
-    if (loading) return;  // 이미 로딩 중이면 중복 호출 방지
+  const fetchTravels = useCallback(
+    async (pageNum: number = 0) => {
+      if (loading) return; // 이미 로딩 중이면 중복 호출 방지
 
-    try {
-      setLoading(true);
-      const response = await instance.get<TravelResponse>(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels`,
-        {
-          params: {
-            page: pageNum,
-            size: 10,
-            categoryId: params.id
+      try {
+        setLoading(true);
+        const response = await instance.get<TravelResponse>(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels`,
+          {
+            params: {
+              page: pageNum,
+              size: 10,
+              categoryId: params.id,
+            },
           }
+        );
+
+        if (response.data.status === 200) {
+          const mappedTrips = response.data.data.content.map((travel) => ({
+            ...travel,
+            image:
+              travel.images.length > 0
+                ? travel.images[0].imageUrl
+                : "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&auto=format&fit=crop&q=60",
+            price:
+              travel.discountedPrice > 0
+                ? travel.discountedPrice
+                : travel.price,
+            originalPrice: travel.price,
+            duration: `${Math.ceil(
+              (new Date(travel.endDate).getTime() -
+                new Date(travel.startDate).getTime()) /
+                (1000 * 60 * 60 * 24)
+            )}일`,
+            time: travel.schedules[0]?.time || "",
+            location: travel.address.split(" ")[0],
+            reviews: travel.reviews?.length || 0,
+            wishlist: travel.likes?.length || 0,
+            user: {
+              id: travel.user.id,
+              nickname: travel.user.nickname,
+              profileImage: travel.user.profileImageUrl,
+            },
+          }));
+
+          setTrips((prev) =>
+            pageNum === 0 ? mappedTrips : [...prev, ...mappedTrips]
+          );
+          setHasMore(response.data.data.content.length === 10);
+          setPage(pageNum);
         }
-      );
-
-      if (response.data.status === 200) {
-        const mappedTrips = response.data.data.content.map(travel => ({
-          ...travel,
-          image: travel.images.length > 0 ? travel.images[0].imageUrl : "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&auto=format&fit=crop&q=60",
-          price: travel.discountedPrice > 0 ? travel.discountedPrice : travel.price,
-          originalPrice: travel.price,
-          duration: `${Math.ceil((new Date(travel.endDate).getTime() - new Date(travel.startDate).getTime()) / (1000 * 60 * 60 * 24))}일`,
-          time: travel.schedules[0]?.time || "",
-          location: travel.address.split(" ")[0],
-          reviews: travel.reviews?.length || 0,
-          wishlist: travel.likes?.length || 0,
-          user: {
-            id: travel.user.id,
-            nickname: travel.user.nickname,
-            profileImage: travel.user.profileImageUrl
-          }
-        }));
-
-        setTrips(prev => pageNum === 0 ? mappedTrips : [...prev, ...mappedTrips]);
-        setHasMore(response.data.data.content.length === 10);
-        setPage(pageNum);
+      } catch (error) {
+        console.error("여행 목록 조회 실패:", error);
+        setHasMore(false); // 에러 발생 시 더 이상 로드하지 않도록 설정
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('여행 목록 조회 실패:', error);
-      setHasMore(false);  // 에러 발생 시 더 이상 로드하지 않도록 설정
-    } finally {
-      setLoading(false);
-    }
-  }, [params.id, loading]);
+    },
+    [params.id, loading]
+  );
 
   // Intersection Observer 설정
   useEffect(() => {
-    let isFetching = false;  // API 호출 중복 방지를 위한 플래그
+    let isFetching = false; // API 호출 중복 방지를 위한 플래그
 
     const observer = new IntersectionObserver(
       async (entries) => {
@@ -211,7 +226,7 @@ export default function ThemePageClient({
       },
       {
         root: null,
-        rootMargin: "100px",  // 더 일찍 로딩 시작
+        rootMargin: "100px", // 더 일찍 로딩 시작
         threshold: 0.1,
       }
     );
@@ -570,7 +585,10 @@ export default function ThemePageClient({
             onTripClick={(tripId) => router.push(`/trip/${tripId}`)}
           />
           {/* 무한 스크롤 감지 요소 */}
-          <div ref={observerTarget} className="h-10 flex items-center justify-center">
+          <div
+            ref={observerTarget}
+            className="h-10 flex items-center justify-center"
+          >
             {loading && (
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
             )}

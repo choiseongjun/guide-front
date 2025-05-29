@@ -49,9 +49,9 @@ export default function ThemeListPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-md mx-auto p-4">
         <h1 className="text-2xl font-bold mb-6">테마별 여행</h1>
-        
+
         <div className="space-y-4">
-          {themes.map(theme => (
+          {themes.map((theme) => (
             <div
               key={theme.id}
               onClick={() => router.push(`/theme/${theme.id}`)}
@@ -82,4 +82,4 @@ export default function ThemeListPage() {
       </div>
     </div>
   );
-} 
+}

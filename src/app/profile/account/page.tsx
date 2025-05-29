@@ -6,6 +6,7 @@ import Image from "next/image";
 import { HiOutlineArrowLeft, HiOutlineCamera } from "react-icons/hi2";
 import instance from "@/app/api/axios";
 import { useUser } from "@/hooks/useUser";
+import { getImageUrl } from "@/app/common/imgUtils";
 
 interface ProfileData {
   nickname: string;
@@ -76,12 +77,12 @@ export default function ProfileEditPage() {
         },
       });
 
-        console.log(response);
+      console.log(response);
       if (response.status === 200) {
         const imageUrl = response.data.fileUrl;
-        setProfileData(prev => ({
+        setProfileData((prev) => ({
           ...prev,
-          profileImageUrl: imageUrl
+          profileImageUrl: imageUrl,
         }));
 
         // await instance.put("/api/v1/users/me/profile", {
@@ -100,7 +101,9 @@ export default function ProfileEditPage() {
     if (!phoneNumber) return "";
     const cleaned = phoneNumber.replace(/-/g, "");
     if (cleaned.length === 11) {
-      return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7)}`;
+      return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(
+        7
+      )}`;
     }
     return phoneNumber;
   };
@@ -121,7 +124,7 @@ export default function ProfileEditPage() {
         email: profileData.email,
         phoneNumber: profileData.phoneNumber,
         introduction: profileData.introduction,
-        profileImageUrl: profileData.profileImageUrl
+        profileImageUrl: profileData.profileImageUrl,
       });
 
       if (response.data.status === 200) {
@@ -164,7 +167,12 @@ export default function ProfileEditPage() {
           <div className="flex flex-col items-center">
             <div className="relative w-24 h-24 rounded-full overflow-hidden bg-gray-100">
               <Image
-                src={profileData.profileImageUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60"}
+                src={
+                  (profileData.profileImageUrl
+                    ? getImageUrl(profileData.profileImageUrl)
+                    : null) ||
+                  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60"
+                }
                 alt="프로필 이미지"
                 fill
                 className="object-cover"
@@ -188,14 +196,22 @@ export default function ProfileEditPage() {
 
           {/* 닉네임 */}
           <div>
-            <label htmlFor="nickname" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="nickname"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               닉네임
             </label>
             <input
               type="text"
               id="nickname"
               value={profileData.nickname}
-              onChange={(e) => setProfileData(prev => ({ ...prev, nickname: e.target.value }))}
+              onChange={(e) =>
+                setProfileData((prev) => ({
+                  ...prev,
+                  nickname: e.target.value,
+                }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -203,14 +219,19 @@ export default function ProfileEditPage() {
 
           {/* 이메일 */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               이메일
             </label>
             <input
               type="email"
               id="email"
               value={profileData.email}
-              onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+              onChange={(e) =>
+                setProfileData((prev) => ({ ...prev, email: e.target.value }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -218,17 +239,22 @@ export default function ProfileEditPage() {
 
           {/* 전화번호 */}
           <div>
-            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="phoneNumber"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               전화번호
             </label>
             <input
               type="tel"
               id="phoneNumber"
               value={formatPhoneNumber(profileData.phoneNumber)}
-              onChange={(e) => setProfileData(prev => ({ 
-                ...prev, 
-                phoneNumber: removeHyphens(e.target.value)
-              }))}
+              onChange={(e) =>
+                setProfileData((prev) => ({
+                  ...prev,
+                  phoneNumber: removeHyphens(e.target.value),
+                }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
               placeholder="01012345678"
@@ -237,7 +263,10 @@ export default function ProfileEditPage() {
 
           {/* 생년월일 (읽기 전용) */}
           <div>
-            <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="birthDate"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               생년월일
             </label>
             <input
@@ -247,18 +276,29 @@ export default function ProfileEditPage() {
               readOnly
               className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
             />
-            <p className="text-xs text-gray-500 mt-1">생년월일은 변경할 수 없습니다</p>
+            <p className="text-xs text-gray-500 mt-1">
+              생년월일은 변경할 수 없습니다
+            </p>
           </div>
 
           {/* 성별 (읽기 전용) */}
           <div>
-            <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="gender"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               성별
             </label>
             <input
               type="text"
               id="gender"
-              value={profileData.gender === 'MALE' ? '남자' : profileData.gender === 'FEMALE' ? '여자' : profileData.gender}
+              value={
+                profileData.gender === "MALE"
+                  ? "남자"
+                  : profileData.gender === "FEMALE"
+                  ? "여자"
+                  : profileData.gender
+              }
               readOnly
               className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
             />
@@ -266,7 +306,10 @@ export default function ProfileEditPage() {
 
           {/* 국적 (읽기 전용) */}
           <div>
-            <label htmlFor="nationality" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="nationality"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               국적
             </label>
             <input
@@ -280,13 +323,21 @@ export default function ProfileEditPage() {
 
           {/* 자기소개 */}
           <div>
-            <label htmlFor="introduction" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="introduction"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               자기소개
             </label>
             <textarea
               id="introduction"
               value={profileData.introduction || ""}
-              onChange={(e) => setProfileData(prev => ({ ...prev, introduction: e.target.value }))}
+              onChange={(e) =>
+                setProfileData((prev) => ({
+                  ...prev,
+                  introduction: e.target.value,
+                }))
+              }
               rows={4}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="자기소개를 입력해주세요"

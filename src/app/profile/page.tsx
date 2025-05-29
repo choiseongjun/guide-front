@@ -26,6 +26,7 @@ import instance from "@/app/api/axios";
 import Link from "next/link";
 import { useUser } from "@/hooks/useUser";
 import PortOne from "@portone/browser-sdk/v2";
+import { getImageUrl } from "../common/imgUtils";
 // 임시 사용자 데이터
 const userData = {
   isLoggedIn: true,
@@ -241,7 +242,7 @@ export default function ProfilePage() {
               <div className="relative w-20 h-20 rounded-full overflow-hidden bg-gray-100">
                 {user?.profileImageUrl ? (
                   <Image
-                    src={user.profileImageUrl}
+                    src={getImageUrl(user.profileImageUrl)}
                     alt={user.nickname}
                     fill
                     className="object-cover"

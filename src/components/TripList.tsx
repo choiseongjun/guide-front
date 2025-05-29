@@ -140,7 +140,11 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
     if (!url) {
       return "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60";
     }
-    return url;
+    if (url.includes("http")) {
+      return url;
+    } else {
+      return getImageUrl(url);
+    }
   };
 
   const getParticipantStatus = (participants: Trip["participants"]) => {

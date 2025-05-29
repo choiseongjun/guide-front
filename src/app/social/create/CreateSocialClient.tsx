@@ -274,7 +274,7 @@ export default function CreateSocialClient({
         {/* 이미지 업로드 */}
         <div className="px-4 py-3 border-b border-gray-200">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            이미지12
+            이미지
           </label>
           <div className="flex flex-wrap gap-2">
             {images.map((image, index) => (
