@@ -32,6 +32,7 @@ export default function RootLayout({
             <Footer />
           </ClientLayout>
         </ServerStatusProvider>
+
       </body>
     </html>
   );
