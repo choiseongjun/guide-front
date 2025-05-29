@@ -1,82 +1,83 @@
 "use client";
 
-import { useEffect, Suspense } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import instance from "@/app/api/axios";
+import { useUser } from "@/hooks/useUser";
 
-function PaymentRedirectContent() {
+export default function PaymentRedirectPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const tripId = searchParams.get("tripId");
+  const { user } = useUser();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const handlePaymentRedirect = async () => {
+      if (!tripId) return;
+
       try {
-        // URL 파라미터에서 필요한 정보 추출
-        const paymentId = searchParams.get("paymentId");
-        const status = searchParams.get("status");
-        const errorCode = searchParams.get("errorCode");
-        const errorMessage = searchParams.get("errorMessage");
-        const tripId = searchParams.get("tripId");
-
-        console.log(
-          "전체 URL 파라미터:",
-          Object.fromEntries(searchParams.entries())
+        // 결제 정보 조회
+        const response = await instance.get(
+          `/api/payments/latest?tripId=${tripId}`
         );
-        console.log("tripId=", tripId);
-        console.log("status===", status);
-        console.log("errorCode===", errorCode);
-
-        if (!tripId) {
-          console.error("tripId를 찾을 수 없습니다.");
-          return;
-        }
-
-        // 결제 취소 또는 실패 시 바로 결제 페이지로 이동
-        if (
-          status !== "DONE" ||
-          errorCode === "FAILURE_TYPE_PG" ||
-          errorCode === "PAY_PROCESS_CANCELED"
-        ) {
-          const errorMsg = errorMessage || "결제가 취소되었습니다.";
-          alert(errorMsg);
-          router.push(`/trip/${tripId}/payment`);
-          return;
-        }
-
-        // 결제 성공 처리
-        const response = await instance.post("/api/v1/payments/complete", {
-          paymentId,
-          tripId,
-        });
-
         if (response.data.status === 200) {
-          // 결제 성공 후 여행 상세 페이지로 이동
-          router.push(`/trip/${tripId}`);
+          const payment = response.data.data;
+
+          // 결제 성공 시
+          if (payment?.transactionType === "PAYMENT") {
+            // 결제 정보 저장
+            const paymentData = {
+              paymentId: payment.paymentId,
+              transactionType: payment.transactionType,
+              txId: payment.txId,
+              userId: user?.id,
+              productId: tripId,
+              productName: payment.orderName,
+              amount: payment.totalAmount,
+              currency: "KRW",
+              paymentMethod: "SIMPLE",
+              paymentStatus: "COMPLETED",
+              paymentDate: new Date().toISOString(),
+              hostUserKey: payment.customData?.hostUserKey,
+              cardInfo: "****-****-****-****",
+            };
+
+            const saveResponse = await instance.post(
+              "/api/payments",
+              paymentData
+            );
+            if (saveResponse.status === 200) {
+              console.log("결제 정보 저장 성공");
+              router.push(`/payment/complete?tripId=${tripId}`);
+            } else {
+              throw new Error("결제 정보 저장 실패");
+            }
+          } else {
+            // 결제 실패 시
+            alert("결제에 실패했습니다.");
+            router.push(`/trip/${tripId}`);
+          }
         }
       } catch (error) {
-        console.error("결제 처리 중 오류 발생:", error);
-        alert("결제 처리 중 오류가 발생했습니다.");
-        router.push("/");
+        console.error("결제 정보 조회/저장 실패:", error);
+        alert("결제 정보를 처리하는데 실패했습니다.");
+        router.push(`/trip/${tripId}`);
+      } finally {
+        setLoading(false);
       }
     };
 
     handlePaymentRedirect();
-  }, [router, searchParams]);
+  }, [tripId, router, user?.id]);
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-        <p className="text-gray-600">결제를 처리중입니다...</p>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-export default function PaymentRedirect() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <PaymentRedirectContent />
-    </Suspense>
-  );
+  return null;
 }

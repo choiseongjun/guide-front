@@ -96,6 +96,7 @@ export default function PaymentPage({
         tripId: trip.id,
       },
     });
+    console.log("결제 결과:", payment);
     if (payment?.transactionType === "PAYMENT") {
       try {
         const paymentData = {
