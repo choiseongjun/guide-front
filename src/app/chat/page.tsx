@@ -51,7 +51,7 @@ interface ChatRoomStats {
 
 export default function ChatListPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isLoading } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"group" | "direct">("group");
   const [chatRooms, setChatRooms] = useState<ChatRoomResponse["data"]>({
@@ -68,13 +68,13 @@ export default function ChatListPage() {
 
   // 로그인 체크
   useEffect(() => {
-    if (!user) {
+    if (!isLoading && !user) {
       router.push("/login");
     }
-  }, [user, router]);
+  }, [user, isLoading, router]);
 
   useEffect(() => {
-    if (!user) return; // 로그인되지 않은 경우 API 호출하지 않음
+    if (!user || isLoading) return; // 로그인되지 않았거나 로딩 중인 경우 API 호출하지 않음
 
     const fetchData = async () => {
       try {
