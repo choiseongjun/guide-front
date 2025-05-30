@@ -14,66 +14,10 @@ import instance from "@/app/api/axios";
 import { useUser } from "@/hooks/useUser";
 import { useRouter } from "next/navigation";
 import { getImageUrl, getProfileImage } from "@/app/common/imgUtils";
-
-interface Trip {
-  id: number;
-  title: string;
-  image: string;
-  price: number;
-  discountPrice: number;
-  duration: string;
-  time: string;
-  location: string;
-  reviews: number;
-  wishlist: number;
-  participantsPhotos?: string[];
-  transport?: string;
-  highlight?: string;
-  startDate?: string;
-  endDate?: string;
-  discountRate: number;
-  originalPrice: number;
-  facilities: string[];
-  maxParticipants: number;
-  minParticipants: number;
-  currentParticipants: number | null;
-  participants: {
-    id: number;
-    travelId: number;
-    status: string;
-    message: string;
-    createdAt: string;
-    updatedAt: string;
-    user: {
-      id: number;
-      nickname: string;
-      profileImageUrl: string | null;
-    };
-  }[];
-  user: {
-    id: number;
-    nickname: string;
-    profileImage: string;
-  };
-  images?: {
-    id: number;
-    imageUrl: string;
-    displayOrder: number;
-  }[];
-  likes: {
-    id: number;
-    user: {
-      id: number;
-      nickname: string;
-      profileImageUrl: string | null;
-    };
-    createdAt: string;
-  }[];
-  liked: boolean;
-}
+import { ProcessedTravel } from "@/app/common/travelUtils";
 
 interface TripListProps {
-  trips: Trip[];
+  trips: ProcessedTravel[];
   onTripClick: (tripId: number) => void;
 }
 
@@ -89,17 +33,14 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
 
   // 초기 상태 설정
   useEffect(() => {
-    console.log("trips data:", trips);
     const initialWishlistStatus: { [key: number]: boolean } = {};
     const initialWishlistCounts: { [key: number]: number } = {};
 
     trips.forEach((trip) => {
-      console.log(`Trip ${trip.id} liked:`, trip.liked);
       initialWishlistStatus[trip.id] = trip.liked;
       initialWishlistCounts[trip.id] = trip.likes?.length || 0;
     });
 
-    console.log("Initial wishlist status:", initialWishlistStatus);
     setWishlistStatus(initialWishlistStatus);
     setWishlistCounts(initialWishlistCounts);
   }, [trips, user?.id]);
@@ -137,9 +78,10 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
     }
   };
 
-  const getParticipantStatus = (participants: Trip["participants"]) => {
+  const getParticipantStatus = (
+    participants: ProcessedTravel["participants"]
+  ) => {
     if (!participants) return { pendingCount: 0, approvedCount: 0 };
-    // Ensure participants is an array
     const participantsArray = Array.isArray(participants) ? participants : [];
     const pendingCount = participantsArray.filter(
       (p) => p.status === "PENDING"
@@ -149,8 +91,6 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
     ).length;
     return { pendingCount, approvedCount };
   };
-
-  console.log("trips==", trips);
 
   return (
     <div className="space-y-4">
@@ -162,12 +102,11 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
           ? trip.participants.filter((p) => p.status === "APPROVED").slice(0, 3)
           : [];
 
-        console.log("trip==", trip);
         return (
           <div
             key={trip.id}
-            onClick={() => onTripClick(trip.id)}
             className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => onTripClick(trip.id)}
           >
             <div className="relative h-48">
               <Image
@@ -194,14 +133,16 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
             </div>
             <div className="p-4">
               {/* 가이드 프로필 */}
-              <div className="flex items-center gap-2 mb-2">
+              <div
+                className="flex items-center gap-2 mb-2 cursor-pointer hover:opacity-80"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/guide/${trip.user.id}`);
+                }}
+              >
                 <div className="relative w-6 h-6 rounded-full overflow-hidden">
                   <Image
-                    src={
-                      trip.user.profileImage
-                        ? getProfileImage(trip.user.profileImage)
-                        : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60"
-                    }
+                    src={getProfileImage(trip.user.profileImage)}
                     alt={`${trip.user.nickname}의 프로필`}
                     fill
                     className="object-cover"
@@ -329,7 +270,7 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
                 {trip.discountRate > 0 && (
                   <>
                     <span className="text-xs text-gray-500 line-through">
-                      {trip.originalPrice.toLocaleString()}원
+                      {trip.originalPrice?.toLocaleString()}원
                     </span>
                     <span className="text-xs text-red-500">
                       {trip.discountRate}% 할인
