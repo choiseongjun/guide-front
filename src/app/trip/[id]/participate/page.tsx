@@ -31,7 +31,11 @@ interface Trip {
   };
 }
 
-export default function ParticipatePage({ params }: { params: Promise<{ id: string }> }) {
+export default function ParticipatePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const router = useRouter();
   const { user } = useUser();
   const [trip, setTrip] = useState<Trip | null>(null);
@@ -42,7 +46,9 @@ export default function ParticipatePage({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     const fetchTrip = async () => {
       try {
-        const response = await instance.get(`/api/v1/travels/${resolvedParams.id}`);
+        const response = await instance.get(
+          `/api/v1/travels/${resolvedParams.id}`
+        );
         if (response.data.status === 200) {
           setTrip(response.data.data);
         }
@@ -61,24 +67,31 @@ export default function ParticipatePage({ params }: { params: Promise<{ id: stri
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!trip) return;
-
-    setLoading(true);
-    try {
-      const response = await instance.post(`/api/v1/travels/${resolvedParams.id}/participants`, {
+    router.push(
+      `/trip/${resolvedParams.id}/payment?message=${encodeURIComponent(
         message
-      });
+      )}`
+    );
+    // setLoading(true);
+    // try {
+    //   const response = await instance.post(
+    //     `/api/v1/travels/${resolvedParams.id}/participants`,
+    //     {
+    //       message,
+    //     }
+    //   );
 
-      if (response.data.status === 200) {
-        router.push(`/trip/${resolvedParams.id}/payment`);
-      } else {
-        alert('참여 신청에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('참여 신청 실패:', error);
-      alert('참여 신청에 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
+    //   if (response.data.status === 200) {
+    //     router.push(`/trip/${resolvedParams.id}/payment`);
+    //   } else {
+    //     alert("참여 신청에 실패했습니다.");
+    //   }
+    // } catch (error) {
+    //   console.error("참여 신청 실패:", error);
+    //   alert("참여 신청에 실패했습니다.");
+    // } finally {
+    //   setLoading(false);
+    // }
   };
 
   if (!trip) {
@@ -107,7 +120,7 @@ export default function ParticipatePage({ params }: { params: Promise<{ id: stri
         {/* 여행 정보 요약 */}
         <div className="bg-white rounded-lg p-4 mb-4">
           <h2 className="text-lg font-semibold mb-3">{trip.title}</h2>
-          
+
           <div className="space-y-3">
             {/* 여행 기간 */}
             <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -127,7 +140,9 @@ export default function ParticipatePage({ params }: { params: Promise<{ id: stri
             {/* 참가 인원 */}
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <HiOutlineUserGroup className="w-5 h-5 text-gray-400" />
-              <span>{trip.minParticipants}~{trip.maxParticipants}명</span>
+              <span>
+                {trip.minParticipants}~{trip.maxParticipants}명
+              </span>
             </div>
           </div>
         </div>
@@ -140,7 +155,9 @@ export default function ParticipatePage({ params }: { params: Promise<{ id: stri
               <p>• 가이드의 승인이 필요한 여행입니다.</p>
             )}
             {trip.minAge > 0 && (
-              <p>• 참가 가능 연령: {trip.minAge}세 ~ {trip.maxAge}세</p>
+              <p>
+                • 참가 가능 연령: {trip.minAge}세 ~ {trip.maxAge}세
+              </p>
             )}
           </div>
         </div>
@@ -171,4 +188,4 @@ export default function ParticipatePage({ params }: { params: Promise<{ id: stri
       </main>
     </div>
   );
-} 
+}

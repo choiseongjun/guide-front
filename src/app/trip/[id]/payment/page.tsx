@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useUser } from "@/hooks/useUser";
 import {
@@ -53,7 +53,9 @@ export default function PaymentPage({
     "simple"
   );
   const resolvedParams = use(params);
+  const searchParams = useSearchParams();
 
+  const message = searchParams.get("message");
   useEffect(() => {
     const fetchTrip = async () => {
       try {
@@ -76,57 +78,83 @@ export default function PaymentPage({
       .map((word) => word.toString(16).padStart(8, "0"))
       .join("");
   }
+
+  const sendParticipant = async () => {
+    try {
+      const response = await instance.post(
+        `/api/v1/travels/${resolvedParams.id}/participants`,
+        {
+          message,
+        }
+      );
+
+      if (response.data.status === 200) {
+        // router.push(`/trip/${resolvedParams.id}/payment`);
+        router.push(`/payment/complete?tripId=${resolvedParams.id}`);
+      } else {
+        alert("참여 신청에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("참여 신청 실패:", error);
+      alert("참여 신청에 실패했습니다.");
+    }
+  };
   const handlePayment = async () => {
     if (!trip) return;
 
     const orderName = trip.title;
     const totalAmount = finalPrice;
 
-    console.log("결제 진행:", paymentMethod);
-    const payment = await PortOne.requestPayment({
-      storeId: process.env.NEXT_PUBLIC_PG_STORE_ID as string,
-      channelKey: process.env.NEXT_PUBLIC_PG_PAY_CHANNEL_ID as string,
-      paymentId: randomId(),
-      orderName: orderName,
-      totalAmount: totalAmount,
-      currency: "KRW" as any,
-      payMethod: "CARD",
-      redirectUrl: `${window.location.origin}/payment/redirect?tripId=${trip.id}&totalAmount=${finalPrice}`,
-      customData: {
-        tripId: trip.id,
-        totalAmount: finalPrice,
-      },
-    });
-    console.log("결제 결과:", payment);
-    if (payment?.transactionType === "PAYMENT") {
-      try {
-        const paymentData = {
-          paymentId: payment.paymentId,
-          transactionType: payment.transactionType,
-          txId: payment.txId,
-          userId: user?.id,
-          productId: trip.id,
-          productName: trip.title,
-          amount: finalPrice,
-          currency: "KRW",
-          paymentMethod: paymentMethod === "simple" ? "SIMPLE" : "SIMPLE",
-          paymentStatus: "COMPLETED",
-          paymentDate: new Date().toISOString(),
-          hostUserKey: trip.user.id.toString(),
-          cardInfo: "****-****-****-****",
-        };
+    if (totalAmount > 0) {
+      console.log("결제 진행:", paymentMethod);
+      const payment = await PortOne.requestPayment({
+        storeId: process.env.NEXT_PUBLIC_PG_STORE_ID as string,
+        channelKey: process.env.NEXT_PUBLIC_PG_PAY_CHANNEL_ID as string,
+        paymentId: randomId(),
+        orderName: orderName,
+        totalAmount: totalAmount,
+        currency: "KRW" as any,
+        payMethod: "CARD",
+        redirectUrl: `${window.location.origin}/payment/redirect?tripId=${trip.id}&totalAmount=${finalPrice}`,
+        customData: {
+          tripId: trip.id,
+          totalAmount: finalPrice,
+        },
+      });
+      console.log("결제 결과:", payment);
+      if (payment?.transactionType === "PAYMENT") {
+        sendParticipant();
+        try {
+          const paymentData = {
+            paymentId: payment.paymentId,
+            transactionType: payment.transactionType,
+            txId: payment.txId,
+            userId: user?.id,
+            productId: trip.id,
+            productName: trip.title,
+            amount: finalPrice,
+            currency: "KRW",
+            paymentMethod: paymentMethod === "simple" ? "SIMPLE" : "SIMPLE",
+            paymentStatus: "COMPLETED",
+            paymentDate: new Date().toISOString(),
+            hostUserKey: trip.user.id.toString(),
+            cardInfo: "****-****-****-****",
+          };
 
-        const response = await instance.post("/api/payments", paymentData);
-        if (response.status === 200) {
-          console.log("결제 정보 저장 성공");
-          router.push(`/payment/complete?tripId=${trip.id}`);
+          const response = await instance.post("/api/payments", paymentData);
+          if (response.status === 200) {
+            console.log("결제 정보 저장 성공");
+            router.push(`/payment/complete?tripId=${trip.id}`);
+          }
+        } catch (error) {
+          console.error("결제 정보 저장 실패:", error);
+          alert("결제 정보 저장에 실패했습니다.");
         }
-      } catch (error) {
-        console.error("결제 정보 저장 실패:", error);
-        alert("결제 정보 저장에 실패했습니다.");
       }
+      console.log("결제 결과:", payment);
+    } else {
+      sendParticipant();
     }
-    console.log("결제 결과:", payment);
   };
 
   if (!trip) {
@@ -248,7 +276,7 @@ export default function PaymentPage({
               />
               <span>간편결제</span>
             </label>
-            <label className="flex items-center space-x-3">
+            {/* <label className="flex items-center space-x-3">
               <input
                 type="radio"
                 name="payment"
@@ -258,7 +286,7 @@ export default function PaymentPage({
                 className="w-4 h-4 text-blue-600"
               />
               <span>카드결제</span>
-            </label>
+            </label> */}
           </div>
         </div>
 
@@ -267,7 +295,9 @@ export default function PaymentPage({
           onClick={handlePayment}
           className="w-full bg-blue-600 text-white py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
         >
-          {finalPrice.toLocaleString()}원 결제하기
+          {finalPrice > 0
+            ? finalPrice.toLocaleString() + "원 결제하기"
+            : "참여하기"}
         </button>
       </div>
     </div>
