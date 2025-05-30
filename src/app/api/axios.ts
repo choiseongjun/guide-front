@@ -11,8 +11,17 @@ const instance = axios.create({
 // 토큰 갱신 관련 변수
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
-let lastRefreshTime = 0;
 const REFRESH_INTERVAL = 30 * 60 * 1000; // 30분
+
+// 마지막 갱신 시간을 로컬 스토리지에서 관리
+const getLastRefreshTime = () => {
+  const time = localStorage.getItem('lastRefreshTime');
+  return time ? parseInt(time) : 0;
+};
+
+const setLastRefreshTime = (time: number) => {
+  localStorage.setItem('lastRefreshTime', time.toString());
+};
 
 // 토큰 갱신 구독자 관리
 const subscribeTokenRefresh = (cb: (token: string) => void) => {
@@ -41,7 +50,7 @@ const refreshToken = async () => {
       const { accessToken, refreshToken: newRefreshToken } = response.data.data;
       localStorage.setItem("at", accessToken);
       localStorage.setItem("rt", newRefreshToken);
-      lastRefreshTime = Date.now();
+      setLastRefreshTime(Date.now());
       return accessToken;
     }
     throw new Error("Token refresh failed");
@@ -49,7 +58,7 @@ const refreshToken = async () => {
     console.error("Token refresh failed:", error);
     localStorage.removeItem("at");
     localStorage.removeItem("rt");
-    // window.location.href = "/login";
+    localStorage.removeItem("lastRefreshTime");
     throw error;
   }
 };
@@ -61,6 +70,8 @@ instance.interceptors.request.use(
     if (at) {
       // 마지막 갱신으로부터 30분이 지났는지 확인
       const now = Date.now();
+      const lastRefreshTime = getLastRefreshTime();
+      
       if (now - lastRefreshTime >= REFRESH_INTERVAL) {
         if (!isRefreshing) {
           isRefreshing = true;
