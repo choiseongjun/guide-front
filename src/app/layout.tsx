@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist } from "next/font/google";
 import "./globals.css";
+import ClientLayout from "./ClientLayout";
+import ServerStatusProvider from "./ServerStatusProvider";
 import Footer from "@/components/Footer";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Geist({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "트래블윗미 - 함께하는 여행의 시작",
@@ -48,21 +50,31 @@ export const metadata: Metadata = {
     width: "device-width",
     initialScale: 1,
   },
-  verification: {
-    google: "your-google-site-verification", // Google Search Console 인증 코드
-  },
+  // verification: {
+  //   google: "your-google-site-verification", // Google Search Console 인증 코드
+  // },
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="ko">
+      <head>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+        />
+      </head>
       <body className={inter.className}>
-        {children}
-        <Footer />
+        <ServerStatusProvider>
+          <ClientLayout>
+            {children}
+            <Footer />
+          </ClientLayout>
+        </ServerStatusProvider>
       </body>
     </html>
   );
