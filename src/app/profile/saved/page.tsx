@@ -18,7 +18,7 @@ interface Trip {
   wishlist: number;
   participantsPhotos?: string[];
   transport?: string;
-  highlight?: string;
+  highlight: string;
   startDate?: string;
   endDate?: string;
   discountRate: number;
@@ -59,6 +59,7 @@ interface Trip {
     createdAt: string;
   }[];
   liked: boolean;
+  minParticipants: number;
 }
 
 export default function SavedTripsPage() {
@@ -79,19 +80,29 @@ export default function SavedTripsPage() {
           {
             params: {
               page,
-              size: 10
-            }
+              size: 10,
+            },
           }
         );
         if (response.data.status === 200) {
           const newTrips = response.data.data.content.map((travel: any) => ({
             id: travel.id,
             title: travel.title,
-            image: travel.images.length > 0 ? travel.images[0].imageUrl : "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&auto=format&fit=crop&q=60",
-            price: travel.discountedPrice > 0 ? travel.discountedPrice : travel.price,
+            image:
+              travel.images.length > 0
+                ? travel.images[0].imageUrl
+                : "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&auto=format&fit=crop&q=60",
+            price:
+              travel.discountedPrice > 0
+                ? travel.discountedPrice
+                : travel.price,
             discountPrice: travel.discountedPrice,
             originalPrice: travel.price,
-            duration: `${Math.ceil((new Date(travel.endDate).getTime() - new Date(travel.startDate).getTime()) / (1000 * 60 * 60 * 24))}일`,
+            duration: `${Math.ceil(
+              (new Date(travel.endDate).getTime() -
+                new Date(travel.startDate).getTime()) /
+                (1000 * 60 * 60 * 24)
+            )}일`,
             time: travel.schedules[0]?.time || "",
             location: travel.address.split(" ")[0],
             reviews: travel.reviews?.length || 0,
@@ -108,25 +119,28 @@ export default function SavedTripsPage() {
             user: {
               id: travel.user.id,
               nickname: travel.user.nickname,
-              profileImage: travel.user.profileImageUrl || ""
+              profileImage: travel.user.profileImageUrl || "",
             },
             images: travel.images,
-            likes: travel.likes || []
+            likes: travel.likes || [],
+            minParticipants: travel.minParticipants,
           }));
 
           if (page === 0) {
             setLikedTrips(newTrips);
           } else {
-            setLikedTrips(prev => [...prev, ...newTrips]);
+            setLikedTrips((prev) => [...prev, ...newTrips]);
           }
           setHasMore(!response.data.data.last);
         }
       } catch (error: any) {
-        console.error('찜한 여행 조회 실패:', error);
-        if (error.message === 'Network Error') {
-          setError('서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요.');
+        console.error("찜한 여행 조회 실패:", error);
+        if (error.message === "Network Error") {
+          setError("서버 연결이 불안정합니다. 잠시 후 다시 시도해주세요.");
         } else {
-          setError('데이터를 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요.');
+          setError(
+            "데이터를 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요."
+          );
         }
       } finally {
         setLoading(false);
@@ -142,7 +156,7 @@ export default function SavedTripsPage() {
 
   const handleLoadMore = () => {
     if (!loading && hasMore) {
-      setPage(prev => prev + 1);
+      setPage((prev) => prev + 1);
     }
   };
 
@@ -167,10 +181,7 @@ export default function SavedTripsPage() {
           </div>
         ) : likedTrips.length > 0 ? (
           <div className="space-y-4">
-            <TripList
-              trips={likedTrips}
-              onTripClick={handleTripClick}
-            />
+            <TripList trips={likedTrips} onTripClick={handleTripClick} />
             {hasMore && (
               <button
                 onClick={handleLoadMore}
