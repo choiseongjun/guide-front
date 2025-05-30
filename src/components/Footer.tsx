@@ -1,8 +1,13 @@
-"use client"
-import Link from 'next/link';
-import { HiOutlineEnvelope, HiOutlineClock, HiOutlinePhone, HiOutlineChevronDown } from 'react-icons/hi2';
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+"use client";
+import Link from "next/link";
+import {
+  HiOutlineEnvelope,
+  HiOutlineClock,
+  HiOutlinePhone,
+  HiOutlineChevronDown,
+} from "react-icons/hi2";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Footer() {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -40,22 +45,26 @@ export default function Footer() {
                 <div className="px-6 py-4 space-y-6">
                   {/* 회사 정보 */}
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-3">회사 정보</h4>
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">
+                      회사 정보
+                    </h4>
                     <ul className="space-y-2 text-sm text-gray-600">
                       <li>회사명: 트윗</li>
                       <li>대표이사: 최성준</li>
                       <li>사업자등록번호: 880-05-02957</li>
                       <li>주소: 서울시 동작구 상도동 211-114 201호</li>
-                      <li className="flex items-center gap-2">
+                      {/* <li className="flex items-center gap-2">
                         <HiOutlineEnvelope className="w-4 h-4" />
                         <span>tripcsj2702@gmail.com</span>
-                      </li>
+                      </li> */}
                     </ul>
                   </div>
 
                   {/* 고객센터 */}
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-3">고객센터</h4>
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">
+                      고객센터
+                    </h4>
                     <ul className="space-y-2 text-sm text-gray-600">
                       <li className="flex items-center gap-2">
                         <HiOutlineClock className="w-4 h-4" />
@@ -68,27 +77,38 @@ export default function Footer() {
                       <li>주말 및 공휴일 휴무</li>
                       <li className="flex items-center gap-2">
                         <HiOutlineEnvelope className="w-4 h-4" />
-                        <span>문의메일: tripcsj2702@gmail.com</span>
+                        <span>문의메일: travelwithmemaster@gmail.com</span>
                       </li>
                     </ul>
                   </div>
 
                   {/* 서비스 정보 */}
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-3">서비스</h4>
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">
+                      서비스
+                    </h4>
                     <ul className="space-y-2 text-sm text-gray-600">
                       <li>
-                        <Link href="/terms" className="hover:text-blue-600 transition-colors">
+                        <Link
+                          href="/terms"
+                          className="hover:text-blue-600 transition-colors"
+                        >
                           이용약관
                         </Link>
                       </li>
                       <li>
-                        <Link href="/privacy" className="hover:text-blue-600 transition-colors">
+                        <Link
+                          href="/privacy"
+                          className="hover:text-blue-600 transition-colors"
+                        >
                           개인정보처리방침
                         </Link>
                       </li>
                       <li>
-                        <Link href="/faq" className="hover:text-blue-600 transition-colors">
+                        <Link
+                          href="/faq"
+                          className="hover:text-blue-600 transition-colors"
+                        >
                           자주 묻는 질문
                         </Link>
                       </li>
@@ -109,4 +129,4 @@ export default function Footer() {
       </div>
     </footer>
   );
-} 
+}

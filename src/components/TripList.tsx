@@ -35,6 +35,7 @@ interface Trip {
   originalPrice: number;
   facilities: string[];
   maxParticipants: number;
+  minParticipants: number;
   currentParticipants: number | null;
   participants: {
     id: number;
@@ -193,8 +194,8 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
             </div>
             <div className="p-4">
               {/* 가이드 프로필 */}
-              <div className="flex items-center gap-2 mb-3">
-                <div className="relative w-8 h-8 rounded-full overflow-hidden">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="relative w-6 h-6 rounded-full overflow-hidden">
                   <Image
                     src={
                       trip.user.profileImage
@@ -206,65 +207,97 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
                     className="object-cover"
                   />
                 </div>
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-xs font-medium text-gray-600">
                   {trip.user.nickname}
                 </span>
               </div>
 
               {/* 여행 제목 */}
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-base font-semibold text-gray-800 mb-1.5">
                 {trip.title}
               </h3>
 
               {/* 하이라이트 */}
               {trip.highlight && (
-                <p className="text-sm text-gray-600 mb-3">{trip.highlight}</p>
+                <p className="text-xs text-gray-500 mb-2">{trip.highlight}</p>
               )}
 
               {/* 여행 정보 */}
-              <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
+              <div className="grid grid-cols-2 gap-1.5 text-xs text-gray-500 mb-2">
                 <div className="flex items-center gap-1">
-                  <HiOutlineCalendar className="w-4 h-4" />
+                  <HiOutlineCalendar className="w-3.5 h-3.5" />
                   <span>{trip.startDate}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <HiOutlineCalendar className="w-4 h-4" />
+                  <HiOutlineCalendar className="w-3.5 h-3.5" />
                   <span>{trip.endDate}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <HiOutlineCalendar className="w-4 h-4" />
+                  <HiOutlineCalendar className="w-3.5 h-3.5" />
                   <span>{trip.duration}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <HiOutlineClock className="w-4 h-4" />
+                  <HiOutlineClock className="w-3.5 h-3.5" />
                   <span>{trip.time}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <HiOutlineMapPin className="w-4 h-4" />
+                  <HiOutlineMapPin className="w-3.5 h-3.5" />
                   <span>{trip.location}</span>
                 </div>
               </div>
 
               {/* 참여자 정보 */}
-              <div className="flex flex-col gap-2 text-sm text-gray-600 mb-3">
-                <div className="flex items-center gap-1">
-                  <HiOutlineUserGroup className="w-4 h-4" />
-                  <span>
-                    참여자: {approvedCount}명 / 최대 {trip.maxParticipants}명
-                  </span>
+              <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+                <HiOutlineUserGroup className="w-3.5 h-3.5" />
+                <span>
+                  참여자: {approvedCount}명 / 최소 {trip.minParticipants || 1}명
+                  / 최대 {trip.maxParticipants}명
+                </span>
+              </div>
+              <div className="flex flex-col gap-1.5 pl-5 mb-2">
+                {/* 승인된 참여자 */}
+                <div className="flex items-center gap-2">
+                  <div className="flex -space-x-2">
+                    {trip.participants &&
+                      trip.participants
+                        .filter((p) => p.status === "APPROVED")
+                        .slice(0, 4)
+                        .map((participant) => (
+                          <div
+                            key={participant.id}
+                            className="relative w-5 h-5 rounded-full border-2 border-white overflow-hidden"
+                          >
+                            <Image
+                              src={getProfileImage(
+                                participant.user.profileImageUrl
+                              )}
+                              alt={participant.user.nickname}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ))}
+                    {approvedCount > 4 && (
+                      <div className="relative w-5 h-5 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] font-medium text-gray-600">
+                        +{approvedCount - 4}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex flex-col gap-2 pl-5">
-                  {/* 승인된 참여자 */}
+
+                {/* 대기 중인 참여자 */}
+                {pendingCount > 0 && (
                   <div className="flex items-center gap-2">
+                    <span className="text-blue-600 text-[10px]">대기중:</span>
                     <div className="flex -space-x-2">
                       {trip.participants &&
                         trip.participants
-                          .filter((p) => p.status === "APPROVED")
+                          .filter((p) => p.status === "PENDING")
                           .slice(0, 4)
                           .map((participant) => (
                             <div
                               key={participant.id}
-                              className="relative w-6 h-6 rounded-full border-2 border-white overflow-hidden"
+                              className="relative w-5 h-5 rounded-full border-2 border-white overflow-hidden"
                             >
                               <Image
                                 src={getProfileImage(
@@ -276,75 +309,42 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
                               />
                             </div>
                           ))}
-                      {approvedCount > 4 && (
-                        <div className="relative w-6 h-6 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
-                          +{approvedCount - 4}
+                      {pendingCount > 4 && (
+                        <div className="relative w-5 h-5 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] font-medium text-gray-600">
+                          +{pendingCount - 4}
                         </div>
                       )}
                     </div>
                   </div>
-
-                  {/* 대기 중인 참여자 */}
-                  {pendingCount > 0 && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-blue-600 text-xs">대기중:</span>
-                      <div className="flex -space-x-2">
-                        {trip.participants &&
-                          trip.participants
-                            .filter((p) => p.status === "PENDING")
-                            .slice(0, 4)
-                            .map((participant) => (
-                              <div
-                                key={participant.id}
-                                className="relative w-6 h-6 rounded-full border-2 border-white overflow-hidden"
-                              >
-                                <Image
-                                  src={getProfileImage(
-                                    participant.user.profileImageUrl
-                                  )}
-                                  alt={participant.user.nickname}
-                                  fill
-                                  className="object-cover"
-                                />
-                              </div>
-                            ))}
-                        {pendingCount > 4 && (
-                          <div className="relative w-6 h-6 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
-                            +{pendingCount - 4}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
 
               {/* 가격 정보 */}
               <div className="flex items-baseline gap-2">
-                <span className="text-lg font-bold text-blue-600">
+                <span className="text-base font-bold text-blue-600">
                   {trip.price === 0
                     ? "무료"
                     : `${trip.price.toLocaleString()}원`}
                 </span>
                 {trip.discountRate > 0 && (
                   <>
-                    <span className="text-sm text-gray-500 line-through">
+                    <span className="text-xs text-gray-500 line-through">
                       {trip.originalPrice.toLocaleString()}원
                     </span>
-                    <span className="text-sm text-red-500">
+                    <span className="text-xs text-red-500">
                       {trip.discountRate}% 할인
                     </span>
                   </>
                 )}
               </div>
-              <div className="flex items-center gap-3 text-sm text-gray-500 justify-end mt-2">
+              <div className="flex items-center gap-3 text-xs text-gray-500 justify-end mt-1.5">
                 <div className="flex items-center gap-1">
-                  <HiOutlineChatBubbleLeft className="w-4 h-4" />
+                  <HiOutlineChatBubbleLeft className="w-3.5 h-3.5" />
                   <span>{trip.reviews}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <HiOutlineHeart
-                    className={`w-4 h-4 ${
+                    className={`w-3.5 h-3.5 ${
                       wishlistStatus[trip.id] ? "text-red-500 fill-current" : ""
                     }`}
                   />

@@ -9,6 +9,7 @@ import { HiPlus as HiPlusIcon } from "react-icons/hi2";
 import TripList from "@/components/TripList";
 import { useState, useEffect } from "react";
 import instance from "@/app/api/axios";
+import { useUser } from "@/hooks/useUser";
 
 interface Travel {
   id: number;
@@ -47,6 +48,7 @@ interface Travel {
 
 export default function Home() {
   const router = useRouter();
+  const { user } = useUser();
   const [recommendedTrips, setRecommendedTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -310,12 +312,14 @@ export default function Home() {
         )}
       </section>
 
-      <button
-        onClick={() => router.push("/trip/create")}
-        className="floating-button"
-      >
-        <HiPlusIcon className="w-6 h-6" />
-      </button>
+      {user && (
+        <button
+          onClick={() => router.push("/trip/create")}
+          className="floating-button"
+        >
+          <HiPlusIcon className="w-6 h-6" />
+        </button>
+      )}
     </main>
   );
 }
