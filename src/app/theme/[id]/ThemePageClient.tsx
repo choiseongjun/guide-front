@@ -138,6 +138,8 @@ export default function ThemePageClient({
     rating: "",
     wishlist: "",
   });
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [sort, setSort] = useState('');
 
   // 카테고리 ID가 변경될 때 상태 초기화
@@ -157,9 +159,13 @@ export default function ThemePageClient({
     async (pageNum: number = 0) => {
       if (loading) return;
 
-      console.log("sortBy===",sortBy)
+      console.log("sortBy===", sortBy);
+      console.log("Selected filters:", selectedFilters); // 디버깅용 로그
       try {
         setLoading(true);
+        // const [startDate, endDate] = selectedFilters.date;
+        console.log('Parsed dates:', { startDate, endDate }); // 디버깅용 로그
+
         const response = await instance.get<TravelResponse>(
           `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels`,
           {
@@ -169,7 +175,20 @@ export default function ThemePageClient({
               categoryId: params.id,
               sort: sortBy === 'startDate' ? 'startDate,desc' : 
                     sortBy === 'price' ? 'price,asc' : 
-                    sortBy === 'popular' ? 'likes,desc' : ""
+                    sortBy === 'popular' ? 'likes,desc' : "",
+              // 가격 범위
+              minPrice: selectedFilters.priceRange.split('-')[0] || undefined,
+              maxPrice: selectedFilters.priceRange.split('-')[1] || undefined,
+              // 여행 기간
+              startDate: startDate || undefined,
+              endDate: endDate || undefined,
+              // 남은 인원수
+              minParticipants: selectedFilters.participants ? 
+                parseInt(selectedFilters.participants.split('-')[0]) : undefined,
+              maxParticipants: selectedFilters.participants ? 
+                parseInt(selectedFilters.participants.split('-')[1]) : undefined,
+              // 지역
+              location: selectedFilters.location || undefined
             },
           }
         );
@@ -215,7 +234,7 @@ export default function ThemePageClient({
         setLoading(false);
       }
     },
-    [params.id, loading, sortBy]
+    [params.id, loading, sortBy, selectedFilters]
   );
 
   // Intersection Observer 설정
@@ -273,6 +292,46 @@ export default function ThemePageClient({
     setPage(0);   // 페이지 초기화
     setHasMore(true); // 더 불러올 수 있도록 설정
     // fetchTravels(0); // 정렬된 데이터 새로 불러오기
+  };
+
+  // 검색 버튼 클릭 핸들러
+  const handleSearch = () => {
+    setTrips([]); // 기존 데이터 초기화
+    setPage(0);   // 페이지 초기화
+    setHasMore(true); // 더 불러올 수 있도록 설정
+    setShowFilters(false); // 필터 모달 닫기
+    fetchTravels(0); // 필터 적용하여 데이터 새로 불러오기
+  };
+
+  // 날짜 선택 핸들러
+  const handleDateChange = (type: 'start' | 'end', value: string) => {
+    if (!value) return;
+
+    if (type === 'start') {
+      setStartDate(value);
+      setSelectedFilters(prev => ({
+        ...prev,
+        date: endDate ? `${value}-${endDate}` : value
+      }));
+    } else {
+      setEndDate(value);
+      setSelectedFilters(prev => ({
+        ...prev,
+        date: startDate ? `${startDate}-${value}` : value
+      }));
+    }
+  };
+
+  // 날짜 포맷팅 함수
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    try {
+      const [year, month, day] = dateString.split('-');
+      if (!year || !month || !day) return '';
+      return `${year}년 ${parseInt(month)}월 ${parseInt(day)}일`;
+    } catch (error) {
+      return '';
+    }
   };
 
   return (
@@ -401,37 +460,57 @@ export default function ThemePageClient({
                     <label className="block text-sm text-gray-600 mb-1">
                       시작일
                     </label>
-                    <input
-                      type="date"
-                      value={selectedFilters.date.split("-")[0] || ""}
-                      onChange={(e) =>
-                        setSelectedFilters((prev) => ({
-                          ...prev,
-                          date: `${e.target.value}-${
-                            prev.date.split("-")[1] || ""
-                          }`,
-                        }))
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <div 
+                      className="relative cursor-pointer"
+                      onClick={() => {
+                        const input = document.getElementById('startDate') as HTMLInputElement;
+                        input?.showPicker();
+                      }}
+                    >
+                      <input
+                        id="startDate"
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => {
+                          console.log('Start date input:', e.target.value);
+                          handleDateChange('start', e.target.value);
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <div className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
+                        <span className="text-gray-700">
+                          {formatDate(startDate) || '시작일 선택'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm text-gray-600 mb-1">
                       종료일
                     </label>
-                    <input
-                      type="date"
-                      value={selectedFilters.date.split("-")[1] || ""}
-                      onChange={(e) =>
-                        setSelectedFilters((prev) => ({
-                          ...prev,
-                          date: `${prev.date.split("-")[0] || ""}-${
-                            e.target.value
-                          }`,
-                        }))
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <div 
+                      className="relative cursor-pointer"
+                      onClick={() => {
+                        const input = document.getElementById('endDate') as HTMLInputElement;
+                        input?.showPicker();
+                      }}
+                    >
+                      <input
+                        id="endDate"
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => {
+                          console.log('End date input:', e.target.value);
+                          handleDateChange('end', e.target.value);
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <div className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
+                        <span className="text-gray-700">
+                          {formatDate(endDate) || '종료일 선택'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -498,7 +577,7 @@ export default function ThemePageClient({
               </div>
 
               {/* 시작 시간 */}
-              <div>
+              {/* <div>
                 <h3 className="font-medium mb-3">시작 시간</h3>
                 <div className="flex flex-wrap gap-2">
                   {["오전", "오후"].map((period) => (
@@ -520,10 +599,10 @@ export default function ThemePageClient({
                     </button>
                   ))}
                 </div>
-              </div>
+              </div> */}
 
               {/* 리뷰 평점 */}
-              <div>
+              {/* <div>
                 <h3 className="font-medium mb-3">리뷰 평점</h3>
                 <div className="flex flex-wrap gap-2">
                   {["4.5점 이상", "4.0점 이상", "3.5점 이상", "3.0점 이상"].map(
@@ -544,10 +623,10 @@ export default function ThemePageClient({
                     )
                   )}
                 </div>
-              </div>
+              </div> */}
 
               {/* 찜 수 */}
-              <div>
+              {/* <div>
                 <h3 className="font-medium mb-3">찜 수</h3>
                 <div className="flex flex-wrap gap-2">
                   {["100개 이상", "50개 이상", "30개 이상", "10개 이상"].map(
@@ -568,15 +647,12 @@ export default function ThemePageClient({
                     )
                   )}
                 </div>
-              </div>
+              </div> */}
 
               {/* 검색 버튼 */}
               <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
                 <button
-                  onClick={() => {
-                    // 필터 적용 로직
-                    setShowFilters(false);
-                  }}
+                  onClick={handleSearch}
                   className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors"
                 >
                   검색하기
