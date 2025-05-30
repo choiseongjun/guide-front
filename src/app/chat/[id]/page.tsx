@@ -3,7 +3,11 @@
 import { useState, useEffect, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { HiOutlineArrowLeft, HiOutlinePaperAirplane, HiOutlineUserGroup } from "react-icons/hi2";
+import {
+  HiOutlineArrowLeft,
+  HiOutlinePaperAirplane,
+  HiOutlineUserGroup,
+} from "react-icons/hi2";
 import { HiStar } from "react-icons/hi";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
@@ -59,7 +63,11 @@ interface ChatMessageResponse {
   message: string;
 }
 
-export default function ChatRoomPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ChatRoomPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const resolvedParams = use(params);
   const router = useRouter();
   const { user } = useUser();
@@ -78,9 +86,11 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
   useEffect(() => {
     const fetchChatRoom = async () => {
       try {
-        const response = await instance.get(`/api/v1/chat-rooms/${resolvedParams.id}`);
+        const response = await instance.get(
+          `/api/v1/chat-rooms/${resolvedParams.id}`
+        );
         if (response.data.status === 200) {
-          console.log('채팅방 데이터:', response.data.data);
+          console.log("채팅방 데이터:", response.data.data);
           setChatRoom(response.data.data);
           // 채팅방 정보를 받자마자 읽음 처리 요청
           markMessagesAsRead();
@@ -93,28 +103,34 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
     fetchChatRoom();
   }, [resolvedParams.id]);
 
-  console.log("user==",user)
+  console.log("user==", user);
   // 메시지 조회
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const response = await instance.get<ChatMessageResponse>(`/api/v1/chat-rooms/${resolvedParams.id}/messages`, {
-          params: {
-            page,
-            size: 20
+        const response = await instance.get<ChatMessageResponse>(
+          `/api/v1/chat-rooms/${resolvedParams.id}/messages`,
+          {
+            params: {
+              page,
+              size: 20,
+            },
           }
-        });
-        console.log('response==',response)
+        );
+        console.log("response==", response);
         if (response.data.status === 200) {
           const { content, totalPages, number } = response.data.data;
           // 시간순으로 정렬하여 최신 메시지가 아래에 오도록
-          const sortedContent = [...content].sort((a, b) => 
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          const sortedContent = [...content].sort(
+            (a, b) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
           );
           // 중복 메시지 제거
-          setMessages(prev => {
-            const existingIds = new Set(prev.map(msg => msg.id));
-            const newMessages = sortedContent.filter(msg => !existingIds.has(msg.id));
+          setMessages((prev) => {
+            const existingIds = new Set(prev.map((msg) => msg.id));
+            const newMessages = sortedContent.filter(
+              (msg) => !existingIds.has(msg.id)
+            );
             return [...prev, ...newMessages];
           });
           setHasMore(number < totalPages - 1);
@@ -132,61 +148,86 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
   // STOMP 연결
   useEffect(() => {
     const connectWebSocket = () => {
-      const wsUrl = process.env.NEXT_PUBLIC_BASE_URL + '/ws';
+      const wsUrl = process.env.NEXT_PUBLIC_BASE_URL + "/ws";
       const socket = new SockJS(wsUrl);
       const client = new Client({
         webSocketFactory: () => socket,
         connectHeaders: {
-          Authorization: `Bearer ${localStorage.getItem('at')}`
+          Authorization: `Bearer ${localStorage.getItem("at")}`,
         },
         debug: function (str) {
-          console.log('STOMP Debug:', str);
+          console.log("STOMP Debug:", str);
         },
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
         onConnect: () => {
-          console.log('Connected to STOMP');
+          console.log("Connected to STOMP");
           setIsConnected(true);
-          
+
           // 채팅방 메시지 구독
-          client.subscribe(`/topic/chat.room.${resolvedParams.id}`, (message) => {
-            console.log('Received message:', message);
-            const newMessage = JSON.parse(message.body);
-            setMessages(prev => [...prev, newMessage]);
-          });
+          client.subscribe(
+            `/topic/chat.room.${resolvedParams.id}`,
+            (message) => {
+              console.log("Received message:", message);
+              const newMessage = JSON.parse(message.body);
+              setMessages((prev) => {
+                // 중복 메시지 체크
+                const isDuplicate = prev.some(
+                  (msg) => msg.id === newMessage.id
+                );
+                if (isDuplicate) return prev;
+                return [...prev, newMessage];
+              });
+              // 메시지 수신 시 읽음 처리
+              markMessagesAsRead();
+            }
+          );
 
           // 읽지 않은 메시지 알림 구독
           client.subscribe(`/user/queue/chat.unread`, (message) => {
-            console.log('Received unread message:', message);
+            console.log("Received unread message:", message);
             const newMessage = JSON.parse(message.body);
-            setMessages(prev => [...prev, newMessage]);
+            setMessages((prev) => {
+              // 중복 메시지 체크
+              const isDuplicate = prev.some((msg) => msg.id === newMessage.id);
+              if (isDuplicate) return prev;
+              return [...prev, newMessage];
+            });
+            // 메시지 수신 시 읽음 처리
+            markMessagesAsRead();
           });
 
           // 메시지 읽음 상태 구독
-          client.subscribe(`/topic/chat.room.${resolvedParams.id}.read`, (message) => {
-            console.log('Message read status updated:', message);
-            const userId = JSON.parse(message.body);
-            // 여기서 필요한 경우 UI 업데이트 로직 추가
-          });
+          client.subscribe(
+            `/topic/chat.room.${resolvedParams.id}.read`,
+            (message) => {
+              console.log("Message read status updated:", message);
+              const userId = JSON.parse(message.body);
+              // 여기서 필요한 경우 UI 업데이트 로직 추가
+            }
+          );
         },
         onDisconnect: () => {
-          console.log('Disconnected from STOMP');
+          console.log("Disconnected from STOMP");
           setIsConnected(false);
+          // 연결이 끊어지면 5초 후 재연결 시도
           setTimeout(connectWebSocket, 5000);
         },
         onStompError: (frame) => {
-          console.error('STOMP error:', frame);
+          console.error("STOMP error:", frame);
           setIsConnected(false);
+          // 에러 발생 시 5초 후 재연결 시도
           setTimeout(connectWebSocket, 5000);
-        }
+        },
       });
 
       try {
         client.activate();
         stompClient.current = client;
       } catch (error) {
-        console.error('Failed to activate STOMP client:', error);
+        console.error("Failed to activate STOMP client:", error);
+        // 활성화 실패 시 5초 후 재시도
         setTimeout(connectWebSocket, 5000);
       }
     };
@@ -203,17 +244,17 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
   // 메시지 읽음 처리 요청
   const markMessagesAsRead = () => {
     if (!stompClient.current?.connected) {
-      console.log('WebSocket not connected, retrying in 1 second...');
+      console.log("WebSocket not connected, retrying in 1 second...");
       setTimeout(markMessagesAsRead, 1000);
       return;
     }
 
-    console.log('Sending read status request...');
+    console.log("Sending read status request...");
     stompClient.current.publish({
       destination: `/app/chat.room.${resolvedParams.id}.read`,
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('at')}`
-      }
+        Authorization: `Bearer ${localStorage.getItem("at")}`,
+      },
     });
   };
 
@@ -227,21 +268,37 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
   // 스크롤 자동 이동
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   };
 
-  // 메시지가 추가될 때마다 스크롤
+  // 메시지가 추가될 때만 스크롤
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      // 새 메시지가 추가된 경우에만 스크롤
+      if (lastMessage.sender.id === user?.id) {
+        scrollToBottom();
+      }
+    }
+  }, [messages, user?.id]);
 
+  // 초기 스크롤 위치 설정
+  useEffect(() => {
+    // 컴포넌트 마운트 시에만 상단으로 스크롤
+    window.scrollTo({
+      top: 0,
+      behavior: "instant",
+    });
+  }, []);
+
+  // 메시지 전송 함수 수정
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !stompClient.current || !isConnected) {
-      console.log('Cannot send message:', { 
-        hasClient: !!stompClient.current, 
-        isConnected, 
-        hasMessage: !!newMessage.trim() 
+      console.log("Cannot send message:", {
+        hasClient: !!stompClient.current,
+        isConnected,
+        hasMessage: !!newMessage.trim(),
       });
       return;
     }
@@ -249,30 +306,38 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
     try {
       // STOMP로 메시지 전송
       if (stompClient.current.connected) {
+        const messageData = {
+          chatRoomId: parseInt(resolvedParams.id),
+          content: newMessage,
+        };
+
         stompClient.current.publish({
-          destination: '/app/chat.send',
-          body: JSON.stringify({
-            chatRoomId: parseInt(resolvedParams.id),
-            content: newMessage
-          }),
+          destination: "/app/chat.send",
+          body: JSON.stringify(messageData),
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('at')}`
-          }
+            Authorization: `Bearer ${localStorage.getItem("at")}`,
+          },
         });
+
         setNewMessage("");
-        // 메시지 전송 후 스크롤
-        setTimeout(scrollToBottom, 100);
       } else {
-        console.error('STOMP client is not connected');
+        console.error("STOMP client is not connected");
         setIsConnected(false);
+        // 연결이 끊어진 경우 재연결 시도
+        setTimeout(() => {
+          if (stompClient.current) {
+            stompClient.current.activate();
+          }
+        }, 5000);
       }
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error("Failed to send message:", error);
+      alert("메시지 전송에 실패했습니다. 다시 시도해주세요.");
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
@@ -280,9 +345,9 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('ko-KR', {
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleTimeString("ko-KR", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -290,17 +355,20 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
   const renderMessage = (message: ChatMessage) => {
     // 현재 로그인한 사용자가 보낸 메시지인지 확인
     const isMyMessage = message.sender.id === user?.id;
-    
+
     return (
       <div
         key={message.id}
-        className={`flex ${isMyMessage ? 'justify-end' : 'justify-start'} mb-4`}
+        className={`flex ${isMyMessage ? "justify-end" : "justify-start"} mb-4`}
       >
         {!isMyMessage && (
           <div className="flex items-center mr-3">
             <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-gray-100">
               <Image
-                src={message.sender.profileImageUrl || "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=60"}
+                src={
+                  message.sender.profileImageUrl ||
+                  "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=60"
+                }
                 alt={`${message.sender.nickname}의 프로필 이미지`}
                 fill
                 className="object-cover"
@@ -310,21 +378,23 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
         )}
         <div className="flex flex-col max-w-[70%]">
           {!isMyMessage && (
-            <div className="text-sm font-semibold text-gray-700 mb-1.5">{message.sender.nickname}</div>
+            <div className="text-sm font-semibold text-gray-700 mb-1.5">
+              {message.sender.nickname}
+            </div>
           )}
           <div className="flex items-end gap-2">
-            <div 
+            <div
               className={`rounded-2xl p-3.5 ${
-                isMyMessage 
-                  ? 'bg-blue-500 text-white rounded-tr-none' 
-                  : 'bg-white text-gray-900 rounded-tl-none shadow-sm'
+                isMyMessage
+                  ? "bg-blue-500 text-white rounded-tr-none"
+                  : "bg-white text-gray-900 rounded-tl-none shadow-sm"
               }`}
             >
               <div className="text-sm leading-relaxed">{message.content}</div>
             </div>
-            <div 
+            <div
               className={`text-xs ${
-                isMyMessage ? 'text-gray-500' : 'text-gray-500'
+                isMyMessage ? "text-gray-500" : "text-gray-500"
               }`}
             >
               {formatTime(message.createdAt)}
@@ -338,12 +408,12 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
   // 모달이 열릴 때 body 스크롤 방지
   useEffect(() => {
     if (showMemberList) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [showMemberList]);
 
@@ -352,42 +422,50 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] bg-gray-50">
+    <div className="flex flex-col h-[80vh] bg-gray-50" id="chat-container">
       {/* 헤더 */}
-      <header className="bg-white border-b border-gray-200 flex-shrink-0">
-        <div className="max-w-md mx-auto px-4 py-3">
+      <header className="bg-white border-b border-gray-200 flex-shrink-0 sticky top-0 z-10">
+        <div className="max-w-md mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <button
                 onClick={() => router.back()}
-                className="p-2 hover:bg-gray-100 rounded-full"
+                className="p-1.5 hover:bg-gray-100 rounded-full"
               >
-                <HiOutlineArrowLeft className="w-6 h-6" />
+                <HiOutlineArrowLeft className="w-5 h-5" />
               </button>
-              <div className="ml-4 flex items-center">
-                <div className="relative w-8 h-8 rounded-full overflow-hidden">
+              <div className="ml-3 flex items-center">
+                <div className="relative w-7 h-7 rounded-full overflow-hidden">
                   <Image
-                    src={chatRoom?.thumbnailUrl || "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=60"}
-                    alt={`${chatRoom?.name || '채팅방'} 썸네일`}
+                    src={
+                      chatRoom?.thumbnailUrl ||
+                      "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=60"
+                    }
+                    alt={`${chatRoom?.name || "채팅방"} 썸네일`}
                     fill
                     className="object-cover"
                   />
                 </div>
-                <h1 className="text-lg font-semibold ml-3">{chatRoom?.name}</h1>
+                <h1 className="text-base font-semibold ml-2">
+                  {chatRoom?.name}
+                </h1>
               </div>
             </div>
             <button
               onClick={() => setShowMemberList(true)}
-              className="p-2 hover:bg-gray-100 rounded-full"
+              className="p-1.5 hover:bg-gray-100 rounded-full"
             >
-              <HiOutlineUserGroup className="w-6 h-6" />
+              <HiOutlineUserGroup className="w-5 h-5" />
             </button>
           </div>
         </div>
       </header>
 
       {/* 메시지 목록 */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 min-h-0">
+      <div
+        className="flex-1 overflow-y-auto px-3 py-2"
+        style={{ scrollBehavior: "smooth" }}
+      >
         {!isConnected && (
           <div className="text-center text-sm text-red-500 mb-2">
             연결이 끊어졌습니다. 재연결 중...
@@ -398,7 +476,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
       </div>
 
       {/* 메시지 입력 */}
-      <div className="bg-white border-t border-gray-200 p-4 flex-shrink-0">
+      <div className="bg-white border-t border-gray-200 p-2 flex-shrink-0 sticky bottom-0">
         <div className="max-w-md mx-auto flex items-center gap-2">
           <input
             type="text"
@@ -407,29 +485,31 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
             onKeyPress={handleKeyPress}
             placeholder={isConnected ? "메시지를 입력하세요" : "연결 중..."}
             disabled={!isConnected}
-            className={`flex-1 h-10 px-4 rounded-full border ${
-              isConnected ? 'border-gray-200 focus:border-blue-500' : 'border-gray-300 bg-gray-100'
+            className={`flex-1 h-9 px-3 rounded-full border ${
+              isConnected
+                ? "border-gray-200 focus:border-blue-500"
+                : "border-gray-300 bg-gray-100"
             } focus:ring-2 focus:ring-blue-200 transition-all outline-none text-sm`}
           />
           <button
             onClick={handleSendMessage}
             disabled={!isConnected}
-            className={`p-2 rounded-full ${
-              isConnected ? 'text-blue-500 hover:bg-blue-50' : 'text-gray-400'
+            className={`p-1.5 rounded-full ${
+              isConnected ? "text-blue-500 hover:bg-blue-50" : "text-gray-400"
             }`}
           >
-            <HiOutlinePaperAirplane className="w-6 h-6" />
+            <HiOutlinePaperAirplane className="w-5 h-5" />
           </button>
         </div>
       </div>
 
       {/* 멤버 리스트 모달 */}
       {showMemberList && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/70 flex items-end z-50"
           onClick={() => setShowMemberList(false)}
         >
-          <div 
+          <div
             className="bg-white w-full h-[50vh] rounded-t-2xl p-4 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
@@ -447,7 +527,10 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
                 <div key={index} className="flex items-center gap-3">
                   <div className="relative w-10 h-10 rounded-full overflow-hidden">
                     <Image
-                      src={participant.profileImageUrl || "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=60"}
+                      src={
+                        participant.profileImageUrl ||
+                        "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=60"
+                      }
                       alt={`${participant.nickname}의 프로필 이미지`}
                       fill
                       className="object-cover"
@@ -469,4 +552,4 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
       )}
     </div>
   );
-} 
+}

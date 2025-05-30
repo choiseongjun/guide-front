@@ -92,7 +92,10 @@ export default function CreateTripClient() {
   const [maxParticipants, setMaxParticipants] = useState(2);
   const [minParticipants, setMinParticipants] = useState(2);
   const [price, setPrice] = useState("");
+  const [discountedPrice, setDiscountedPrice] = useState("");
+  const [discountRate, setDiscountRate] = useState<number>(0);
   const [isFree, setIsFree] = useState(false);
+  const [isDiscounted, setIsDiscounted] = useState(false);
   const [providedItems, setProvidedItems] = useState<string[]>([]);
   const [notProvidedItems, setNotProvidedItems] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
@@ -111,7 +114,6 @@ export default function CreateTripClient() {
   const [providedInput, setProvidedInput] = useState("");
   const [notProvidedInput, setNotProvidedInput] = useState("");
   const [tagInput, setTagInput] = useState("");
-  const [discountRate, setDiscountRate] = useState<number>(0);
   const [schedules, setSchedules] = useState<
     {
       day: number;
@@ -137,6 +139,7 @@ export default function CreateTripClient() {
     isPaid: false,
     price: 0,
     discountRate: 0,
+    discountedPrice: 0,
     providedItems: "",
     notProvidedItems: "",
     requiresApproval: false,
@@ -438,7 +441,7 @@ export default function CreateTripClient() {
     setMaxAge(60);
     setIsScheduleEnabled(true);
     setTags(["제주도", "3박4일", "일출", "시티투어"]);
-    setDiscountRate(10);
+    setDiscountRate(0);
 
     // 일정 초기값 설정
     setSchedules([
@@ -462,13 +465,43 @@ export default function CreateTripClient() {
     ]);
   }, []);
 
-  // 할인율 10%로 설정
-  useEffect(() => {
-    setFormData((prev) => ({
-      ...prev,
-      discountRate: 10,
-    }));
-  }, []);
+  // 할인율 계산 함수
+  const calculateDiscountRate = (
+    originalPrice: number,
+    discountedPrice: number
+  ) => {
+    if (originalPrice <= 0 || discountedPrice <= 0) return 0;
+    const rate = ((originalPrice - discountedPrice) / originalPrice) * 100;
+    return Math.round(rate); // 소수점 반올림
+  };
+
+  // 가격 변경 핸들러
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPrice = e.target.value;
+    setPrice(newPrice);
+    if (discountedPrice) {
+      const rate = calculateDiscountRate(
+        Number(newPrice),
+        Number(discountedPrice)
+      );
+      setDiscountRate(rate);
+    }
+  };
+
+  // 할인가 변경 핸들러
+  const handleDiscountedPriceChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const newDiscountedPrice = e.target.value;
+    setDiscountedPrice(newDiscountedPrice);
+    if (price) {
+      const rate = calculateDiscountRate(
+        Number(price),
+        Number(newDiscountedPrice)
+      );
+      setDiscountRate(rate);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -493,7 +526,8 @@ export default function CreateTripClient() {
       maxParticipants,
       isPaid: !isFree,
       price: isFree ? 0 : Number(price),
-      discountRate,
+      discountRate: isFree ? 0 : discountRate,
+      discountedPrice: isFree ? 0 : isDiscounted ? Number(discountedPrice) : 0,
       providedItems: providedItems.join(","),
       notProvidedItems: notProvidedItems.join(","),
       requiresApproval: approvalType === "manual",
@@ -1225,18 +1259,63 @@ export default function CreateTripClient() {
               </label>
             </div>
             {!isFree && (
-              <div className="relative">
-                <input
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="가격을 입력하세요"
-                  required
-                />
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                  ₩
-                </span>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <input
+                    type="checkbox"
+                    id="isDiscounted"
+                    checked={isDiscounted}
+                    onChange={(e) => {
+                      setIsDiscounted(e.target.checked);
+                      if (!e.target.checked) {
+                        setDiscountedPrice("");
+                        setDiscountRate(0);
+                      }
+                    }}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label
+                    htmlFor="isDiscounted"
+                    className="text-sm text-gray-600"
+                  >
+                    할인 적용
+                  </label>
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={price}
+                    onChange={handlePriceChange}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="정상가를 입력하세요"
+                    required
+                  />
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    ₩
+                  </span>
+                </div>
+                {isDiscounted && (
+                  <>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={discountedPrice}
+                        onChange={handleDiscountedPriceChange}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="할인가를 입력하세요"
+                        required
+                      />
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                        ₩
+                      </span>
+                    </div>
+                    {discountRate > 0 && (
+                      <div className="text-sm text-red-500">
+                        {discountRate}% 할인
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>

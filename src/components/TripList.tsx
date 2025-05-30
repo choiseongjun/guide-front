@@ -199,9 +199,9 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
                     src={
                       trip.user.profileImage
                         ? getProfileImage(trip.user.profileImage)
-                        : ""
+                        : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60"
                     }
-                    alt={trip.user.nickname}
+                    alt={`${trip.user.nickname}의 프로필`}
                     fill
                     className="object-cover"
                   />
