@@ -297,7 +297,7 @@ export default function PaymentPage({
         >
           {finalPrice > 0
             ? finalPrice.toLocaleString() + "원 결제하기"
-            : "참여하기"}
+            : "무료로 참여하기"}
         </button>
       </div>
     </div>

@@ -18,37 +18,52 @@ interface User {
   gender: string;
 }
 
+let userCache: User | null = null;
+let isLoading = false;
+let pendingCallbacks: ((user: User | null) => void)[] = [];
+
+const fetchUserData = async (): Promise<User | null> => {
+  const at = localStorage.getItem("at");
+  if (!at) {
+    userCache = null;
+    return null;
+  }
+
+  try {
+    const response = await instance.get("/api/v1/users/me");
+    if (response.data.status === 200) {
+      userCache = response.data.data;
+      return userCache;
+    }
+    return null;
+  } catch (error) {
+    console.error("사용자 정보 조회 실패:", error);
+    userCache = null;
+    return null;
+  }
+};
+
 export function useUser() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchUser = async () => {
-    const at = localStorage.getItem("at");
-    if (!at) {
-      setUser(null);
-      setLoading(false);
-      return null;
-    }
-
-    try {
-      setLoading(true);
-      const response = await instance.get("/api/v1/users/me");
-
-      if (response.data.status === 200) {
-        setUser(response.data.data);
-        return response.data.data;
-      }
-    } catch (error) {
-      console.error("사용자 정보 조회 실패:", error);
-      setUser(null);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [user, setUser] = useState<User | null>(userCache);
 
   useEffect(() => {
-    fetchUser();
+    if (userCache) {
+      setUser(userCache);
+      return;
+    }
+
+    if (isLoading) {
+      pendingCallbacks.push(setUser);
+      return;
+    }
+
+    isLoading = true;
+    fetchUserData().then((userData) => {
+      setUser(userData);
+      pendingCallbacks.forEach((callback) => callback(userData));
+      isLoading = false;
+      pendingCallbacks = [];
+    });
   }, []);
 
   // 로컬 스토리지 변경 감지
@@ -57,10 +72,17 @@ export function useUser() {
       if (e.key === "at") {
         if (!e.newValue) {
           // 토큰이 삭제되었을 때 (로그아웃)
+          userCache = null;
           setUser(null);
         } else {
           // 토큰이 새로 설정되었을 때 (로그인)
-          fetchUser();
+          isLoading = true;
+          fetchUserData().then((userData) => {
+            setUser(userData);
+            pendingCallbacks.forEach((callback) => callback(userData));
+            isLoading = false;
+            pendingCallbacks = [];
+          });
         }
       }
     };
@@ -73,13 +95,23 @@ export function useUser() {
   useEffect(() => {
     const at = localStorage.getItem("at");
     if (!at && user) {
+      userCache = null;
       setUser(null);
     }
   }, [user]);
 
+  const refreshUser = async () => {
+    isLoading = true;
+    const userData = await fetchUserData();
+    setUser(userData);
+    pendingCallbacks.forEach((callback) => callback(userData));
+    isLoading = false;
+    pendingCallbacks = [];
+  };
+
   return {
     user,
-    isLoading: loading,
-    refreshUser: fetchUser,
+    isLoading,
+    refreshUser,
   };
 }
