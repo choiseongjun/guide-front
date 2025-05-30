@@ -285,11 +285,11 @@ export default function ChatRoomPage({
 
   // 초기 스크롤 위치 설정
   useEffect(() => {
-    // 컴포넌트 마운트 시에만 상단으로 스크롤
-    window.scrollTo({
-      top: 0,
-      behavior: "instant",
-    });
+    // 채팅 컨테이너만 상단으로 스크롤
+    const chatContainer = document.getElementById("chat-container");
+    if (chatContainer) {
+      chatContainer.scrollTop = 0;
+    }
   }, []);
 
   // 메시지 전송 함수 수정
@@ -424,8 +424,8 @@ export default function ChatRoomPage({
   return (
     <div className="flex flex-col h-[80vh] bg-gray-50" id="chat-container">
       {/* 헤더 */}
-      <header className="bg-white border-b border-gray-200 flex-shrink-0 sticky top-0 z-10">
-        <div className="max-w-md mx-auto px-4 py-2">
+      <header className="bg-white border-b border-gray-200 flex-shrink-0">
+        <div className="w-full px-4 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <button
@@ -476,8 +476,8 @@ export default function ChatRoomPage({
       </div>
 
       {/* 메시지 입력 */}
-      <div className="bg-white border-t border-gray-200 p-2 flex-shrink-0 sticky bottom-0">
-        <div className="max-w-md mx-auto flex items-center gap-2">
+      <div className="bg-white border-t border-gray-200 p-2 flex-shrink-0">
+        <div className="w-full flex items-center gap-2">
           <input
             type="text"
             value={newMessage}
@@ -552,4 +552,22 @@ export default function ChatRoomPage({
       )}
     </div>
   );
+}
+
+// 푸터를 숨기기 위한 스타일 추가
+const styles = `
+  #chat-container {
+    position: relative;
+    z-index: 1;
+  }
+  #chat-container ~ footer {
+    display: none !important;
+  }
+`;
+
+// 스타일 태그 추가
+if (typeof document !== "undefined") {
+  const styleSheet = document.createElement("style");
+  styleSheet.textContent = styles;
+  document.head.appendChild(styleSheet);
 }
