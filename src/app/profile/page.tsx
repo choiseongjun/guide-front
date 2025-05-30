@@ -139,6 +139,7 @@ export default function ProfilePage() {
   const { user } = useUser();
   const [activeSection, setActiveSection] = useState("profile");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showCertification, setShowCertification] = useState(false);
 
   useEffect(() => {
     const at = localStorage.getItem("at");
@@ -150,21 +151,53 @@ export default function ProfilePage() {
   };
 
   const certification = async () => {
-    // 모바일 환경 체크
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    try {
+      const response = await PortOne.requestIdentityVerification({
+        storeId: "store-0d664ae7-e67d-4bb7-b891-2a9003c6b9bb",
+        identityVerificationId: `identity-verification-${crypto.randomUUID()}`,
+        channelKey: "channel-key-e997c286-fdb5-4239-9583-991a7bbf5cee",
+        redirectUrl: `${window.location.origin}/profile/certification/complete`
+      });
 
-    // 본인인증 진행
-    const response: any = await PortOne.requestIdentityVerification({
-      storeId: "store-0d664ae7-e67d-4bb7-b891-2a9003c6b9bb",
-      identityVerificationId: `identity-verification-${crypto.randomUUID()}`,
-      channelKey: "channel-key-e997c286-fdb5-4239-9583-991a7bbf5cee",
-      redirectUrl: `${window.location.origin}/profile/certification/complete`,
+      if (response?.code !== undefined) {
+        return alert(response.message);
+      }
+      if (response?.identityVerificationId) {
+        handleVerificationComplete(response.identityVerificationId);
+      }
+      console.log(response);
+    } catch (error) {
+      console.error("본인인증 요청 실패:", error);
+      alert("본인인증 요청에 실패했습니다.");
+    }
+  };
+
+  const handleCertificationComplete = (data: any) => {
+    console.log("인증 결과:", data);
+    // data에는 다음과 같은 정보가 포함됩니다:
+    // - name: 이름
+    // - birthDate: 생년월일
+    // - gender: 성별
+    // - phoneNumber: 전화번호
+    // - nationality: 국적
+    
+    // 서버에 사용자 정보 업데이트 요청
+    instance.put('/api/v1/users/me/verification', {
+      name: data.name,
+      birthDate: data.birthDate,
+      gender: data.gender,
+      phoneNumber: data.phoneNumber
+    }).then(response => {
+      if (response.data.status === 200) {
+        alert('본인인증이 완료되었습니다.');
+        window.location.reload();
+      }
+    }).catch(error => {
+      console.error("인증 결과 처리 실패:", error);
+      alert('본인인증 결과 처리에 실패했습니다.');
     });
 
-    if (response.code !== undefined) {
-      return alert(response.message);
-    }
-    console.log(response);
+    setShowCertification(false);
   };
 
   const handleLogout = async () => {
@@ -246,37 +279,58 @@ export default function ProfilePage() {
   };
 
   const checkVerificationResult = async (identityVerificationId: string) => {
-    const PORTONE_API_SECRET = "ZUhPSzQzQUpCN1dLa1I0RFd3Y1VuQT09";
     try {
+      // 1. 먼저 토큰 발급
+      const tokenResponse = await instance.post(
+        'https://api.portone.io/login/api-secret',
+        {
+          apiSecret: "ZUhPSzQzQUpCN1dLa1I0RFd3Y1VuQT09"
+        }
+      );
+      
+      const accessToken = tokenResponse.data.accessToken;
+
+      // 2. 본인인증 결과 조회
       const response = await instance.get(
         `https://api.portone.io/identity-verifications/${encodeURIComponent(identityVerificationId)}`,
         {
           headers: { 
-            "Authorization": `Bearer ${PORTONE_API_SECRET}`
+            "Authorization": `Bearer ${accessToken}`
           }
         }
       );
 
       console.log("인증 결과:", response.data);
       return response.data;
-    } catch (error) {
-      console.error("인증 결과 조회 실패:", error);
+    } catch (error: any) {
+      console.error("인증 결과 조회 실패:", error.response?.data || error);
       throw error;
     }
   };
 
   // 본인인증 완료 후 리다이렉트되는 페이지에서 호출할 함수
-  const handleVerificationComplete = async () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    // const identityVerificationId = urlParams.get('identityVerificationId');
-    const identityVerificationId ="identity-verification-d73ec821-435f-4430-aa75-58513cede58c"
+  const handleVerificationComplete = async (identityVerificationId: string) => {
     if (identityVerificationId) {
       try {
+        console.log("인증 ID:", identityVerificationId);
         const result = await checkVerificationResult(identityVerificationId);
-        // 여기서 받은 정보를 서버에 저장하거나 처리할 수 있습니다
         console.log("인증 완료:", result);
-      } catch (error) {
-        console.error("인증 결과 처리 실패:", error);
+        
+        // 서버에 사용자 정보 업데이트 요청
+        const updateResponse = await instance.put('/api/v1/users/me/verification', {
+          name: result.name,
+          birthDate: result.birthDate,
+          gender: result.gender,
+          phoneNumber: result.phoneNumber
+        });
+
+        if (updateResponse.data.status === 200) {
+          alert('본인인증이 완료되었습니다.');
+          window.location.reload();
+        }
+      } catch (error: any) {
+        console.error("인증 결과 처리 실패:", error.response?.data || error);
+        alert('본인인증 결과 처리에 실패했습니다.');
       }
     }
   };
@@ -284,12 +338,38 @@ export default function ProfilePage() {
   // 페이지 로드 시 인증 완료 여부 확인
   useEffect(() => {
     if (window.location.pathname === '/profile/certification/complete') {
-      handleVerificationComplete();
+      const urlParams = new URLSearchParams(window.location.search);
+      const id = urlParams.get('identity_verification_id');
+      if (id) {
+        handleVerificationComplete(id);
+      }
     }
   }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
+      {/* 본인인증 모달 */}
+      {showCertification && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-4 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">본인인증</h3>
+              <button 
+                onClick={() => setShowCertification(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <iframe
+              src={`https://cert.danal.co.kr/cert?CP_CD=CPID&CP_ID=CPID&CP_PWD=CPPWD&CP_DST=CPDST&CP_RET_URL=${encodeURIComponent(window.location.origin + '/profile/certification/complete')}`}
+              className="w-full h-[500px] border-0"
+              title="본인인증"
+            />
+          </div>
+        </div>
+      )}
+
       {/* 프로필 헤더 */}
       {isLoggedIn && (
         <div className="bg-white border-b border-gray-200">
@@ -334,8 +414,12 @@ export default function ProfilePage() {
                   <p className="text-sm text-gray-500 mt-1">
                     {(user as any)?.introduction || ""}
                   </p>
-                  <button onClick={certification}>본인인증 하기</button>
-                  <button onClick={handleVerificationComplete}>테스트본인인증</button>
+                  <button 
+                    onClick={certification}
+                    className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  >
+                    본인인증 하기
+                  </button>
                 </div>
               </div>
             </div>

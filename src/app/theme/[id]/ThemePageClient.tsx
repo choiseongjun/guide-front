@@ -15,7 +15,7 @@ import {
   HiOutlineArrowsUpDown,
   HiXMark,
 } from "react-icons/hi2";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import TripList from "@/components/TripList";
 import instance from "@/app/api/axios";
 import { log } from "console";
@@ -108,7 +108,7 @@ interface SelectedFilters {
   wishlist: string;
 }
 
-type SortOption = "date" | "price" | "popular";
+type SortOption = "startDate" | "price" | "popular";
 
 export default function ThemePageClient({
   params,
@@ -117,9 +117,10 @@ export default function ThemePageClient({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
   const [showSort, setShowSort] = useState(false);
-  const [sortBy, setSortBy] = useState<SortOption>("date");
+  const [sortBy, setSortBy] = useState<SortOption>("startDate");
   const [trips, setTrips] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
@@ -137,6 +138,7 @@ export default function ThemePageClient({
     rating: "",
     wishlist: "",
   });
+  const [sort, setSort] = useState('');
 
   // 카테고리 ID가 변경될 때 상태 초기화
   useEffect(() => {
@@ -148,13 +150,14 @@ export default function ThemePageClient({
 
     // 새로운 데이터 로드
     fetchTravels(0);
-  }, [params.id]);
+  }, [params.id,sortBy]);
 
   // fetchTravels 함수를 useCallback으로 메모이제이션
   const fetchTravels = useCallback(
     async (pageNum: number = 0) => {
-      if (loading) return; // 이미 로딩 중이면 중복 호출 방지
+      if (loading) return;
 
+      console.log("sortBy===",sortBy)
       try {
         setLoading(true);
         const response = await instance.get<TravelResponse>(
@@ -164,6 +167,9 @@ export default function ThemePageClient({
               page: pageNum,
               size: 10,
               categoryId: params.id,
+              sort: sortBy === 'startDate' ? 'startDate,desc' : 
+                    sortBy === 'price' ? 'price,asc' : 
+                    sortBy === 'popular' ? 'likes,desc' : ""
             },
           }
         );
@@ -204,12 +210,12 @@ export default function ThemePageClient({
         }
       } catch (error) {
         console.error("여행 목록 조회 실패:", error);
-        setHasMore(false); // 에러 발생 시 더 이상 로드하지 않도록 설정
+        setHasMore(false);
       } finally {
         setLoading(false);
       }
     },
-    [params.id, loading]
+    [params.id, loading, sortBy]
   );
 
   // Intersection Observer 설정
@@ -263,6 +269,10 @@ export default function ThemePageClient({
   const handleSort = (option: SortOption) => {
     setSortBy(option);
     setShowSort(false);
+    setTrips([]); // 기존 데이터 초기화
+    setPage(0);   // 페이지 초기화
+    setHasMore(true); // 더 불러올 수 있도록 설정
+    // fetchTravels(0); // 정렬된 데이터 새로 불러오기
   };
 
   return (
@@ -289,9 +299,9 @@ export default function ThemePageClient({
                 {showSort && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                     <button
-                      onClick={() => handleSort("date")}
+                      onClick={() => handleSort("startDate")}
                       className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${
-                        sortBy === "date"
+                        sortBy === "startDate"
                           ? "text-blue-500 font-medium"
                           : "text-gray-700"
                       }`}
