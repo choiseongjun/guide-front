@@ -12,6 +12,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import instance from "@/app/api/axios";
 import { getImageUrl } from "../common/imgUtils";
+import { useUser } from "@/hooks/useUser";
 
 interface Post {
   id: number;
@@ -46,6 +47,7 @@ type FilterState = {
 
 function SocialContent() {
   const router = useRouter();
+  const { user } = useUser();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "all");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -224,16 +226,18 @@ function SocialContent() {
             >
               전체 피드
             </button>
-            <button
-              className={`py-4 px-2 font-medium text-sm ${
-                activeTab === "my"
-                  ? "text-blue-500 border-b-2 border-blue-500"
-                  : "text-gray-500"
-              }`}
-              onClick={() => handleTabChange("my")}
-            >
-              내 게시글
-            </button>
+            {user && (
+              <button
+                className={`py-4 px-2 font-medium text-sm ${
+                  activeTab === "my"
+                    ? "text-blue-500 border-b-2 border-blue-500"
+                    : "text-gray-500"
+                }`}
+                onClick={() => handleTabChange("my")}
+              >
+                내 게시글
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -1,9 +1,16 @@
 "use client";
 
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { HiOutlineArrowLeft, HiOutlinePhone, HiOutlineLockClosed, HiOutlineUserGroup, HiOutlineMap, HiOutlineCalendar } from "react-icons/hi2";
+import {
+  HiOutlineArrowLeft,
+  HiOutlinePhone,
+  HiOutlineLockClosed,
+  HiOutlineUserGroup,
+  HiOutlineMap,
+  HiOutlineCalendar,
+} from "react-icons/hi2";
 import { log } from "console";
 import axios from "axios";
 import instance from "../api/axios";
@@ -21,10 +28,10 @@ export default function LoginClient({ params }: LoginClientProps) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const code = searchParams.get('code');
-    
-    console.log("code==",code);
-    
+    const code = searchParams.get("code");
+
+    console.log("code==", code);
+
     if (code) {
       handleKakaoLogin(code);
     }
@@ -39,28 +46,31 @@ export default function LoginClient({ params }: LoginClientProps) {
   const handleKakaoLogin = async (code: string) => {
     try {
       const response = await instance.post(`/api/auth/kakao`, {
-        code: code
+        code: code,
       });
 
       if (response.status === 200) {
         const { accessToken, refreshToken, user } = response.data;
         console.log("user=", user);
-        
+
         // 토큰 저장 (at, rt로 키 이름 변경)
-        localStorage.setItem('at', accessToken);
-        localStorage.setItem('rt', refreshToken);
-        localStorage.setItem('user', JSON.stringify(user));
-        
+        localStorage.setItem("at", accessToken);
+        localStorage.setItem("rt", refreshToken);
+        localStorage.setItem("user", JSON.stringify(user));
+
         // 메인 페이지로 리다이렉션
-        router.push('/');
+        router.push("/");
       }
     } catch (error) {
-      console.error('카카오 로그인 에러:', error);
-      alert('로그인 중 오류가 발생했습니다.');
+      console.error("카카오 로그인 에러:", error);
+      alert("로그인 중 오류가 발생했습니다.");
     }
   };
   const handleKakaoLoginClick = () => {
-    console.log("process.env.NEXT_PUBLIC_BASE_URL==", process.env.NEXT_PUBLIC_BASE_URL);
+    console.log(
+      "process.env.NEXT_PUBLIC_BASE_URL==",
+      process.env.NEXT_PUBLIC_BASE_URL
+    );
     // 임시로 하드코딩된 URL 사용
     window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/login/page`;
   };
@@ -72,58 +82,62 @@ export default function LoginClient({ params }: LoginClientProps) {
 
     try {
       // 전화번호 형식 정리 (하이픈 제거)
-      const cleanPhone = phone.replace(/-/g, '');
-      
-      console.log('로그인 요청 데이터:', {
+      const cleanPhone = phone.replace(/-/g, "");
+
+      console.log("로그인 요청 데이터:", {
         phone: cleanPhone,
-        password: password
+        password: password,
       });
 
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/users/login`, {
-        phoneNumber: cleanPhone,  // phone -> phoneNumber로 변경
-        password: password
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/users/login`,
+        {
+          phoneNumber: cleanPhone, // phone -> phoneNumber로 변경
+          password: password,
         },
-        withCredentials: true  // 쿠키 포함
-      });
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          withCredentials: true, // 쿠키 포함
+        }
+      );
 
-      console.log('로그인 응답:', response.data);
+      console.log("로그인 응답:", response.data);
 
       if (response.status === 200) {
         const { accessToken, refreshToken, user } = response.data;
-        
+
         // 토큰 저장
-        localStorage.setItem('at', accessToken);
-        localStorage.setItem('rt', refreshToken);
-        localStorage.setItem('user', JSON.stringify(user));
-        
+        localStorage.setItem("at", accessToken);
+        localStorage.setItem("rt", refreshToken);
+        localStorage.setItem("user", JSON.stringify(user));
+
         // 메인 페이지로 리다이렉션
-        router.push('/');
+        router.push("/");
       }
     } catch (error: any) {
-      console.error('로그인 에러:', error);
+      console.error("로그인 에러:", error);
       if (error.response) {
         // 서버에서 응답이 왔지만 에러인 경우
-        console.error('에러 응답 데이터:', error.response.data);
-        console.error('에러 응답 상태:', error.response.status);
-        console.error('에러 응답 헤더:', error.response.headers);
-        setError(error.response.data.message || '로그인에 실패했습니다.');
+        console.error("에러 응답 데이터:", error.response.data);
+        console.error("에러 응답 상태:", error.response.status);
+        console.error("에러 응답 헤더:", error.response.headers);
+        setError(error.response.data.message || "로그인에 실패했습니다.");
       } else if (error.request) {
         // 요청은 보냈지만 응답이 없는 경우
-        console.error('요청 에러:', error.request);
-        setError('서버와 통신할 수 없습니다.');
+        console.error("요청 에러:", error.request);
+        setError("서버와 통신할 수 없습니다.");
       } else {
         // 요청 설정 중 에러가 발생한 경우
-        console.error('에러 메시지:', error.message);
-        setError('로그인 중 오류가 발생했습니다.');
+        console.error("에러 메시지:", error.message);
+        setError("로그인 중 오류가 발생했습니다.");
       }
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -168,13 +182,20 @@ export default function LoginClient({ params }: LoginClientProps) {
               </div>
             </div>
           </div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">함께하는 여행</h1>
-          <p className="text-gray-600 mt-2">여러분의 특별한 여행을 함께 만들어요</p>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
+            함께하는 여행
+          </h1>
+          <p className="text-gray-600 mt-2">
+            여러분의 특별한 여행을 함께 만들어요
+          </p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="phone"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               전화번호
             </label>
             <div className="relative">
@@ -194,7 +215,10 @@ export default function LoginClient({ params }: LoginClientProps) {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               비밀번호
             </label>
             <div className="relative">
@@ -214,9 +238,7 @@ export default function LoginClient({ params }: LoginClientProps) {
           </div>
 
           {error && (
-            <div className="text-red-500 text-sm text-center">
-              {error}
-            </div>
+            <div className="text-red-500 text-sm text-center">{error}</div>
           )}
 
           <div className="flex items-center justify-between text-sm">
@@ -250,7 +272,16 @@ export default function LoginClient({ params }: LoginClientProps) {
             disabled={isLoading}
             className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:bg-blue-400"
           >
-            {isLoading ? '로그인 중...' : '로그인'}
+            {isLoading ? "로그인 중..." : "로그인"}
+          </button>
+
+          {/* 둘러보기 버튼 */}
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="w-full mt-3 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+          >
+            둘러보기
           </button>
         </form>
 
@@ -260,7 +291,7 @@ export default function LoginClient({ params }: LoginClientProps) {
             소셜 계정으로 로그인
           </h2>
           <div className="flex justify-center">
-            <button 
+            <button
               className="w-full h-[45px] p-1 rounded-lg focus:outline-none transition-colors"
               onClick={handleKakaoLoginClick}
             >
@@ -270,7 +301,7 @@ export default function LoginClient({ params }: LoginClientProps) {
                 width={300}
                 height={45}
                 className="w-full h-[45px] object-cover rounded-lg"
-                style={{ height: '45px', width: '100%' }}
+                style={{ height: "45px", width: "100%" }}
               />
             </button>
           </div>
@@ -278,4 +309,4 @@ export default function LoginClient({ params }: LoginClientProps) {
       </div>
     </div>
   );
-} 
+}

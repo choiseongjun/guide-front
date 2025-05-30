@@ -82,8 +82,17 @@ export default function ChatRoomPage({
   const stompClient = useRef<Client | null>(null);
   const [showMemberList, setShowMemberList] = useState(false);
 
+  // 로그인 체크
+  useEffect(() => {
+    if (!user) {
+      router.push("/login");
+    }
+  }, [user, router]);
+
   // 채팅방 정보 조회
   useEffect(() => {
+    if (!user) return; // 로그인되지 않은 경우 API 호출하지 않음
+
     const fetchChatRoom = async () => {
       try {
         const response = await instance.get(
@@ -101,11 +110,13 @@ export default function ChatRoomPage({
     };
 
     fetchChatRoom();
-  }, [resolvedParams.id]);
+  }, [resolvedParams.id, user]);
 
   console.log("user==", user);
   // 메시지 조회
   useEffect(() => {
+    if (!user) return; // 로그인되지 않은 경우 API 호출하지 않음
+
     const fetchMessages = async () => {
       try {
         const response = await instance.get<ChatMessageResponse>(
@@ -143,10 +154,12 @@ export default function ChatRoomPage({
     };
 
     fetchMessages();
-  }, [resolvedParams.id, page]);
+  }, [resolvedParams.id, page, user]);
 
   // STOMP 연결
   useEffect(() => {
+    if (!user) return; // 로그인되지 않은 경우 WebSocket 연결하지 않음
+
     const connectWebSocket = () => {
       const wsUrl = process.env.NEXT_PUBLIC_BASE_URL + "/ws";
       const socket = new SockJS(wsUrl);
@@ -239,7 +252,7 @@ export default function ChatRoomPage({
         stompClient.current.deactivate();
       }
     };
-  }, [resolvedParams.id]);
+  }, [resolvedParams.id, user]);
 
   // 메시지 읽음 처리 요청
   const markMessagesAsRead = () => {
