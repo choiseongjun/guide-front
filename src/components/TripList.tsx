@@ -320,22 +320,22 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
               </div>
 
               {/* 가격 정보 */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-lg font-bold text-blue-600">
-                    {trip.price.toLocaleString()}원
-                  </span>
-                  {trip.discountRate > 0 && (
-                    <>
-                      <span className="text-sm text-gray-500 line-through">
-                        {trip.originalPrice.toLocaleString()}원
-                      </span>
-                      <span className="text-sm text-red-500">
-                        {trip.discountRate}% 할인
-                      </span>
-                    </>
-                  )}
-                </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-lg font-bold text-blue-600">
+                  {trip.price === 0
+                    ? "무료"
+                    : `${trip.price.toLocaleString()}원`}
+                </span>
+                {trip.discountRate > 0 && (
+                  <>
+                    <span className="text-sm text-gray-500 line-through">
+                      {trip.originalPrice.toLocaleString()}원
+                    </span>
+                    <span className="text-sm text-red-500">
+                      {trip.discountRate}% 할인
+                    </span>
+                  </>
+                )}
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-500 justify-end mt-2">
                 <div className="flex items-center gap-1">
