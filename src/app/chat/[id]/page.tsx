@@ -265,32 +265,28 @@ export default function ChatRoomPage({
     }
   }, [isConnected]);
 
+  // 초기 스크롤 위치 설정
+  useEffect(() => {
+    // 채팅 컨테이너를 맨 아래로 스크롤
+    const chatContainer = document.getElementById("chat-container");
+    if (chatContainer) {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+  }, []);
+
+  // 메시지가 추가될 때만 스크롤
+  useEffect(() => {
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
+  }, [messages]);
+
   // 스크롤 자동 이동
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   };
-
-  // 메시지가 추가될 때만 스크롤
-  useEffect(() => {
-    if (messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
-      // 새 메시지가 추가된 경우에만 스크롤
-      if (lastMessage.sender.id === user?.id) {
-        scrollToBottom();
-      }
-    }
-  }, [messages, user?.id]);
-
-  // 초기 스크롤 위치 설정
-  useEffect(() => {
-    // 채팅 컨테이너만 상단으로 스크롤
-    const chatContainer = document.getElementById("chat-container");
-    if (chatContainer) {
-      chatContainer.scrollTop = 0;
-    }
-  }, []);
 
   // 메시지 전송 함수 수정
   const handleSendMessage = async () => {

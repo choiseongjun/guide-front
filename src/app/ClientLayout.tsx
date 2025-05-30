@@ -96,7 +96,7 @@ export default function ClientLayout({
               <div className="absolute left-1/2 transform -translate-x-1/2">
                 <div className="flex items-center gap-1">
                   <h1 className="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-                    TripWithMe
+                    TravelWithMe
                   </h1>
                   <HiOutlineMapPin className="w-5 h-5 text-pink-500" />
                 </div>
@@ -133,7 +133,7 @@ export default function ClientLayout({
 
         <div className="content">{children}</div>
 
-        {!isNotificationsPage && !pathname.startsWith('/login') && (
+        {!isNotificationsPage && !pathname.startsWith("/login") && (
           <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
             <div className="max-w-md mx-auto">
               <div className="flex items-center justify-around h-16">
@@ -172,9 +172,7 @@ export default function ClientLayout({
                 <Link
                   href="/profile"
                   className={`flex flex-col items-center flex-1 ${
-                    pathname === "/profile"
-                      ? "text-blue-500"
-                      : "text-gray-600"
+                    pathname === "/profile" ? "text-blue-500" : "text-gray-600"
                   }`}
                 >
                   <HiOutlineUser className="w-6 h-6" />
@@ -231,7 +229,7 @@ export default function ClientLayout({
                   </div>
                   <div>
                     <p className="font-medium text-gray-800">카카오톡 문의</p>
-                    <p className="text-sm text-gray-600">@TripWithMe</p>
+                    <p className="text-sm text-gray-600">@TravelWithMe</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
@@ -241,7 +239,7 @@ export default function ClientLayout({
                   <div>
                     <p className="font-medium text-gray-800">이메일 문의</p>
                     <p className="text-sm text-gray-600">
-                      support@tripwithme.com
+                      TravelWithMeMaster@gmail.com
                     </p>
                   </div>
                 </div>
@@ -257,4 +255,4 @@ export default function ClientLayout({
       </div>
     </>
   );
-} 
+}
