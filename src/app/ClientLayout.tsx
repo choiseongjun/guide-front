@@ -164,11 +164,11 @@ export default function ClientLayout({
                     pathname === "/chat" ? "text-blue-500" : "text-gray-600"
                   }`}
                 >
-                  {totalUnreadChats > 0 && (
+                  {/* {totalUnreadChats > 0 && (
                     <span className="absolute -top-[0.5rem] -right-[-1.8rem] bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
                       {totalUnreadChats}
                     </span>
-                  )}
+                  )} */}
                   <HiOutlineChatBubbleLeftRight className="w-6 h-6" />
                   <span className="text-xs mt-1">채팅</span>
                 </Link>

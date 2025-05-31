@@ -21,11 +21,14 @@ import {
   HiOutlinePhoto,
   HiOutlineTrash,
   HiOutlineShare,
+  HiMinus,
 } from "react-icons/hi2";
 import { HiOutlineChatBubbleLeft } from "react-icons/hi2";
 import instance from "@/app/api/axios";
 import { useUser } from "@/hooks/useUser";
 import { getImageUrl, getProfileImage } from "@/app/common/imgUtils";
+import { GiSiren } from "react-icons/gi";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface Participant {
   id: number;
@@ -101,6 +104,16 @@ interface ImageFile {
   fileUrl: string;
 }
 
+interface ParticipantEvaluation {
+  id: number;
+  evaluatorId: number;
+  evaluatedId: number;
+  rating: number;
+  content: string;
+  isBadManner: boolean;
+  createdAt: string;
+}
+
 // 가데이터 리뷰 목록
 const sampleReviews: Review[] = [
   {
@@ -164,6 +177,18 @@ export default function TripDetailPage({
   const [reviewToDelete, setReviewToDelete] = useState<number | null>(null);
   const [isWishlist, setIsWishlist] = useState(false);
   const [wishlistCount, setWishlistCount] = useState(0);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [showEvaluationModal, setShowEvaluationModal] = useState(false);
+  const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
+  const [evaluationRating, setEvaluationRating] = useState(5);
+  const [isNegativeRating, setIsNegativeRating] = useState(false);
+  const [evaluationContent, setEvaluationContent] = useState("");
+  const [evaluations, setEvaluations] = useState<ParticipantEvaluation[]>([]);
+  const [isBadManner, setIsBadManner] = useState(false);
+  const [badMannerReason, setBadMannerReason] = useState("");
 
   useEffect(() => {
     const fetchTrip = async () => {
@@ -487,6 +512,93 @@ export default function TripDetailPage({
     }
   };
 
+  const handleReportTrip = async () => {
+    if (!reportReason.trim()) {
+      alert("신고 사유를 입력해주세요.");
+      return;
+    }
+
+    try {
+      const response = await instance.post("/api/v1/reports", {
+        reportedUserId: trip?.user.id,
+        category: "TRAVEL",
+        content: reportReason.trim(),
+        targetId: parseInt(resolvedParams.id)
+      });
+
+      if (response.status === 200) {
+        setShowReportModal(false);
+        setReportReason("");
+        showSuccessToast("신고가 접수되었습니다.");
+      }
+    } catch (error) {
+      console.error('신고 실패:', error);
+      alert('신고 처리 중 오류가 발생했습니다.');
+    }
+  };
+
+  const showSuccessToast = (message: string) => {
+    setToastMessage(message);
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+    }, 2000);
+  };
+
+  const handleEvaluationSubmit = async () => {
+    if (!selectedParticipant || !evaluationContent.trim()) {
+      alert("평가 내용을 입력해주세요.");
+      return;
+    }
+
+    if (isBadManner && !badMannerReason.trim()) {
+      alert("비매너 신고 사유를 입력해주세요.");
+      return;
+    }
+
+    try {
+      const response = await instance.post(`/api/v1/travels/${resolvedParams.id}/evaluations`, {
+        evaluatedUserId: selectedParticipant.user.id,
+        rating: isNegativeRating ? -evaluationRating : evaluationRating,
+        content: evaluationContent.trim(),
+        isBadManner: isBadManner,
+        badMannerReason: isBadManner ? badMannerReason.trim() : null
+      });
+
+      if (response.status === 200) {
+        setShowEvaluationModal(false);
+        setSelectedParticipant(null);
+        setEvaluationContent("");
+        setEvaluationRating(5);
+        setIsNegativeRating(false);
+        setIsBadManner(false);
+        setBadMannerReason("");
+        showSuccessToast("평가가 등록되었습니다.");
+        fetchEvaluations();
+      }
+    } catch (error) {
+      console.error("평가 등록 실패:", error);
+      alert("평가 등록에 실패했습니다.");
+    }
+  };
+
+  const fetchEvaluations = async () => {
+    try {
+      const response = await instance.get(`/api/v1/travels/${resolvedParams.id}/evaluations`);
+      if (response.status === 200) {
+        setEvaluations(response.data.data || []);
+      }
+    } catch (error) {
+      console.error("평가 목록 조회 실패:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (trip) {
+      fetchEvaluations();
+    }
+  }, [trip]);
+
   if (userLoading || !trip || loading) {
     return null;
   }
@@ -522,6 +634,12 @@ export default function TripDetailPage({
                     {wishlistCount}
                   </span>
                 )}
+              </button>
+              <button
+                onClick={() => setShowReportModal(true)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <GiSiren className="w-6 h-6 text-gray-600" />
               </button>
             </div>
           </div>
@@ -720,7 +838,7 @@ export default function TripDetailPage({
 
         {/* 여행 설명 */}
         <div className="bg-white p-4 mb-4">
-          <h2 className="text-lg font-semibold mb-2">여행 설명11</h2>
+          <h2 className="text-lg font-semibold mb-2">여행 설명</h2>
           {/* <p className="text-gray-600 whitespace-pre-line">
             {trip.description}
           </p> */}
@@ -818,16 +936,25 @@ export default function TripDetailPage({
                   <div className="flex-1">
                     <h4 className="font-medium">{participant.user.nickname}</h4>
                     <p className="text-sm text-gray-500">
-                      {new Date(participant.createdAt).toLocaleDateString()}{" "}
-                      참여
+                      {new Date(participant.createdAt).toLocaleDateString()} 참여
                     </p>
                   </div>
-                  {user?.id === participant.user.id && (
+                  {user?.id === participant.user.id ? (
                     <button
                       onClick={() => handleCancelClick(participant.id)}
                       className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
                     >
                       <HiOutlineXCircle className="w-5 h-5" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setSelectedParticipant(participant);
+                        setShowEvaluationModal(true);
+                      }}
+                      className="p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors"
+                    >
+                      <HiOutlinePencil className="w-5 h-5" />
                     </button>
                   )}
                 </div>
@@ -862,8 +989,7 @@ export default function TripDetailPage({
                   <div className="flex-1">
                     <h4 className="font-medium">{participant.user.nickname}</h4>
                     <p className="text-sm text-gray-500">
-                      {new Date(participant.createdAt).toLocaleDateString()}{" "}
-                      신청
+                      {new Date(participant.createdAt).toLocaleDateString()} 신청
                     </p>
                     {participant.message && (
                       <p className="text-sm text-gray-600 mt-1">
@@ -1207,6 +1333,20 @@ export default function TripDetailPage({
             )}
           </div>
         </div>
+
+        {/* 동행자 평가 섹션 */}
+        <div className="bg-white p-4 mt-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">동행자 평가</h2>
+            <button
+              onClick={() => setShowEvaluationModal(true)}
+              className="flex items-center gap-1 text-blue-500 hover:text-blue-600"
+            >
+              <HiOutlinePencil className="w-5 h-5" />
+              <span>평가 작성</span>
+            </button>
+          </div>
+        </div>
       </main>
 
       {/* 리뷰 삭제 확인 모달 */}
@@ -1237,6 +1377,304 @@ export default function TripDetailPage({
           </div>
         </div>
       )}
+
+      {/* 신고 모달 */}
+      <AnimatePresence>
+        {showReportModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-sm bg-white rounded-2xl p-6"
+            >
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <GiSiren className="w-6 h-6 text-red-500" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  여행 상품 신고
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  신고 사유를 입력해주세요.
+                </p>
+                <textarea
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  className="w-full p-3 border rounded-lg text-sm"
+                  rows={3}
+                  placeholder="신고 사유를 입력하세요..."
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setReportReason("");
+                  }}
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleReportTrip}
+                  className="flex-1 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium"
+                >
+                  신고하기
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 평가 작성 모달 */}
+      <AnimatePresence>
+        {showEvaluationModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-md bg-white rounded-2xl shadow-xl my-8 max-h-[90vh] flex flex-col"
+            >
+              {/* 모달 헤더 */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-white rounded-t-2xl">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  동행자 평가
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowEvaluationModal(false);
+                    setSelectedParticipant(null);
+                    setEvaluationContent("");
+                    setEvaluationRating(5);
+                    setIsNegativeRating(false);
+                    setIsBadManner(false);
+                    setBadMannerReason("");
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <HiOutlineXMark className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* 모달 컨텐츠 */}
+              <div className="p-6 space-y-6 overflow-y-auto flex-1">
+                {/* 평가할 동행자 선택 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    평가할 동행자
+                  </label>
+                  <div className="space-y-2">
+                    {trip?.participants
+                      .filter(p => p.status === "APPROVED" && p.user.id !== user?.id)
+                      .map((participant) => (
+                        <button
+                          key={participant.id}
+                          onClick={() => setSelectedParticipant(participant)}
+                          className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                            selectedParticipant?.id === participant.id
+                              ? "border-blue-500 bg-blue-50 shadow-sm"
+                              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-offset-2 ring-white">
+                            <Image
+                              src={getProfileImage(participant.user.profileImageUrl || "")}
+                              alt={participant.user.nickname}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <span className="font-medium">{participant.user.nickname}</span>
+                        </button>
+                      ))}
+                  </div>
+                </div>
+
+                {/* 별점 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    평가 점수
+                  </label>
+                  <div className="flex flex-col gap-4">
+                    {/* 점수 타입 선택 */}
+                    <div className="flex gap-4">
+                      <button
+                        onClick={() => setIsNegativeRating(false)}
+                        className={`flex-1 py-2.5 px-4 rounded-xl border transition-all ${
+                          !isNegativeRating
+                            ? "border-blue-500 bg-blue-50 text-blue-500 shadow-sm"
+                            : "border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        좋은 평가
+                      </button>
+                      <button
+                        onClick={() => setIsNegativeRating(true)}
+                        className={`flex-1 py-2.5 px-4 rounded-xl border transition-all ${
+                          isNegativeRating
+                            ? "border-red-500 bg-red-50 text-red-500 shadow-sm"
+                            : "border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        나쁜 평가
+                      </button>
+                    </div>
+
+                    {/* 별점 표시 */}
+                    <div className="flex items-center justify-center gap-1 bg-gray-50 p-4 rounded-xl">
+                      {isNegativeRating && (
+                        <HiMinus className="w-6 h-6 text-red-500" />
+                      )}
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          onClick={() => setEvaluationRating(star)}
+                          className="text-2xl transition-transform hover:scale-110"
+                        >
+                          {star <= evaluationRating ? (
+                            <HiStar
+                              className={`w-8 h-8 ${
+                                isNegativeRating ? "text-red-500" : "text-yellow-400"
+                              }`}
+                            />
+                          ) : (
+                            <HiOutlineStar
+                              className={`w-8 h-8 ${
+                                isNegativeRating ? "text-red-200" : "text-gray-300"
+                              }`}
+                            />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="text-center text-sm font-medium text-gray-600">
+                      {isNegativeRating
+                        ? `-${evaluationRating}점`
+                        : `+${evaluationRating}점`}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 비매너 체크박스 */}
+                <div>
+                  <label className="flex items-center gap-2 cursor-pointer p-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={isBadManner}
+                      onChange={(e) => {
+                        setIsBadManner(e.target.checked);
+                        if (!e.target.checked) {
+                          setBadMannerReason("");
+                        }
+                      }}
+                      className="w-4 h-4 text-blue-500 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                      비매너 동행자로 신고
+                    </span>
+                  </label>
+                  {isBadManner && (
+                    <div className="mt-4 space-y-3 bg-red-50 p-4 rounded-xl">
+                      <p className="text-sm text-red-600 font-medium">
+                        * 비매너 신고는 신중하게 해주세요. 허위 신고 시 제재를 받을 수 있습니다.
+                      </p>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          비매너 신고 사유
+                        </label>
+                        <textarea
+                          value={badMannerReason}
+                          onChange={(e) => setBadMannerReason(e.target.value)}
+                          className="w-full p-3 border border-red-200 rounded-xl text-sm focus:ring-red-500 focus:border-red-500 bg-white"
+                          rows={3}
+                          placeholder="비매너 행동의 구체적인 사유를 작성해주세요..."
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 평가 내용 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    평가 내용
+                  </label>
+                  <textarea
+                    value={evaluationContent}
+                    onChange={(e) => setEvaluationContent(e.target.value)}
+                    className="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    rows={4}
+                    placeholder={isNegativeRating ? "개선이 필요한 점을 작성해주세요..." : "좋았던 점을 작성해주세요..."}
+                  />
+                </div>
+              </div>
+
+              {/* 모달 푸터 */}
+              <div className="p-6 border-t border-gray-100 bg-white rounded-b-2xl">
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowEvaluationModal(false);
+                      setSelectedParticipant(null);
+                      setEvaluationContent("");
+                      setEvaluationRating(5);
+                      setIsNegativeRating(false);
+                      setIsBadManner(false);
+                      setBadMannerReason("");
+                    }}
+                    className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium transition-colors"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={handleEvaluationSubmit}
+                    disabled={!selectedParticipant || !evaluationContent.trim()}
+                    className={`flex-1 py-3 rounded-xl font-medium transition-all ${
+                      selectedParticipant && evaluationContent.trim()
+                        ? isNegativeRating
+                          ? "bg-red-500 text-white hover:bg-red-600 shadow-sm"
+                          : "bg-blue-500 text-white hover:bg-blue-600 shadow-sm"
+                        : "bg-gray-100 text-gray-400"
+                    }`}
+                  >
+                    평가하기
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 토스트 알림 */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50"
+          >
+            <div className="bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm">
+              {toastMessage}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
