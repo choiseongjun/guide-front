@@ -19,6 +19,7 @@ import { BsHeadset } from "react-icons/bs";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import GlobalLoading from "@/components/GlobalLoading";
+import { useNotificationCount } from "@/hooks/useNotificationCount";
 
 // 임시 알림 데이터
 const notifications = [
@@ -45,13 +46,14 @@ export default function ClientLayout({
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [totalUnreadChats, setTotalUnreadChats] = useState(0);
   const [showSupportModal, setShowSupportModal] = useState(false);
+  const { count } = useNotificationCount();
 
   useEffect(() => {
     setIsNotificationsPage(pathname === "/notifications");
 
     // 읽지 않은 알림 개수 계산
-    const unreadCount = notifications.filter((n) => !n.read).length;
-    setUnreadNotifications(unreadCount);
+    // const unreadCount = notifications.filter((n) => !n.read).length;
+    setUnreadNotifications(count);
 
     // 읽지 않은 채팅 메시지 총 개수 계산
     const totalUnread = chats.reduce((sum, chat) => sum + chat.unreadCount, 0);
@@ -115,8 +117,9 @@ export default function ClientLayout({
                 >
                   <HiOutlineBell className="w-6 h-6" />
                   {unreadNotifications > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
                       {unreadNotifications}
+                      {/* 50 */}
                     </span>
                   )}
                 </Link>

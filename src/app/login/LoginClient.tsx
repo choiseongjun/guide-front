@@ -58,6 +58,9 @@ export default function LoginClient({ params }: LoginClientProps) {
         localStorage.setItem("rt", refreshToken);
         localStorage.setItem("user", JSON.stringify(user));
 
+        // 로그인 성공 후 사용자 정보 갱신을 위해 storage 이벤트 발생
+        window.dispatchEvent(new Event('storage'));
+
         // 메인 페이지로 리다이렉션
         router.push("/");
       }
@@ -113,6 +116,9 @@ export default function LoginClient({ params }: LoginClientProps) {
         localStorage.setItem("at", accessToken);
         localStorage.setItem("rt", refreshToken);
         localStorage.setItem("user", JSON.stringify(user));
+
+        // 로그인 성공 후 사용자 정보 갱신을 위해 storage 이벤트 발생
+        window.dispatchEvent(new Event('storage'));
 
         // 메인 페이지로 리다이렉션
         router.push("/");

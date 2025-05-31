@@ -21,6 +21,8 @@ import {
   HiOutlineCreditCard,
   HiOutlineUserGroup,
   HiOutlineBanknotes,
+  HiOutlineQuestionMarkCircle,
+  HiOutlineChatBubbleLeftRight,
 } from "react-icons/hi2";
 import instance from "@/app/api/axios";
 import Link from "next/link";
@@ -670,16 +672,11 @@ export default function ProfilePage() {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
-                onClick={() => router.push("/profile/settlement")}
+                onClick={() => router.push("/profile/suggestion")}
               >
                 <div className="flex items-center">
-                  <HiOutlineBanknotes className="w-6 h-6 text-green-500 mr-3" />
-                  <div>
-                    <h4 className="font-medium text-gray-800">건의 사항</h4>
-                    {/* <p className="text-sm text-gray-600">
-                      정산 대기 2건 • 정산 완료 5건
-                    </p> */}
-                  </div>
+                  <HiOutlineChatBubbleLeftRight className="w-6 h-6 text-gray-600" />
+                  <span className="ml-3 text-gray-900">건의사항</span>
                 </div>
                 <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
               </motion.button>

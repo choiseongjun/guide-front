@@ -1,194 +1,148 @@
 "use client";
-import { useState } from "react";
-import Image from "next/image";
-import { HiOutlineBell, HiOutlineChatBubbleLeftRight, HiOutlineHeart, HiOutlineUserGroup, HiOutlineArrowLeft } from "react-icons/hi2";
-import { motion } from "framer-motion";
+
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { HiXMark, HiOutlineBell, HiOutlineCheck } from "react-icons/hi2";
+import Image from "next/image";
+import instance from "@/app/api/axios";
+import { useNotificationCount } from "@/hooks/useNotificationCount";
 
-// 임시 알림 데이터
-const notifications = [
-  {
-    id: 1,
-    type: "like",
-    user: {
-      name: "김여행",
-      avatar: "https://i.pravatar.cc/150?img=1"
-    },
-    content: "귀하의 게시물을 좋아합니다",
-    timeAgo: "5분 전",
-    post: {
-      image: "https://picsum.photos/seed/post1/200/120"
-    },
-    isRead: false
-  },
-  {
-    id: 2,
-    type: "comment",
-    user: {
-      name: "이여행러",
-      avatar: "https://i.pravatar.cc/150?img=2"
-    },
-    content: "멋진 여행이네요! 다음에 같이 가요!",
-    timeAgo: "1시간 전",
-    post: {
-      image: "https://picsum.photos/seed/post2/200/120"
-    },
-    isRead: true
-  },
-  {
-    id: 3,
-    type: "follow",
-    user: {
-      name: "박여행러",
-      avatar: "https://i.pravatar.cc/150?img=3"
-    },
-    content: "회원님을 팔로우하기 시작했습니다",
-    timeAgo: "3시간 전",
-    isRead: false
-  },
-  {
-    id: 4,
-    type: "group",
-    user: {
-      name: "서울여행그룹",
-      avatar: "https://i.pravatar.cc/150?img=4"
-    },
-    content: "새로운 그룹 활동이 있습니다",
-    timeAgo: "1일 전",
-    isRead: true
-  }
-];
+interface Notification {
+  id: number;
+  title: string;
+  content: string;
+  type: string;
+  read: boolean;
+  createdAt: string;
+  imageUrl?: string;
+}
 
-// 알림 타입에 따른 아이콘 컴포넌트
-const NotificationIcon = ({ type }: { type: string }) => {
-  switch (type) {
-    case "like":
-      return <HiOutlineHeart className="w-5 h-5 text-pink-500" />;
-    case "comment":
-      return <HiOutlineChatBubbleLeftRight className="w-5 h-5 text-blue-500" />;
-    case "follow":
-      return <HiOutlineUserGroup className="w-5 h-5 text-green-500" />;
-    case "group":
-      return <HiOutlineBell className="w-5 h-5 text-purple-500" />;
-    default:
-      return <HiOutlineBell className="w-5 h-5 text-gray-500" />;
-  }
-};
-
-export default function NotificationsPage() {
-  const [activeTab, setActiveTab] = useState("all");
-  const [notificationsList, setNotificationsList] = useState(notifications);
+export default function NotificationPage() {
   const router = useRouter();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { decrementCount } = useNotificationCount();
 
-  const filteredNotifications = activeTab === "all" 
-    ? notificationsList 
-    : notificationsList.filter(notification => !notification.isRead);
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
 
-  const handleNotificationClick = (id: number) => {
-    setNotificationsList(prevNotifications =>
-      prevNotifications.map(notification =>
-        notification.id === id
-          ? { ...notification, isRead: true }
-          : notification
-      )
-    );
+  const fetchNotifications = async () => {
+    try {
+      const response = await instance.get("/api/v1/notifications/me");
+      console.log("response==", response.data);
+      if (response.data.status === 200) {
+        setNotifications(response.data.data.content);
+      }
+    } catch (error) {
+      console.error("알림 목록 조회 실패:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const handleNotificationClick = async (notification: Notification) => {
+    if (notification.read) return;
+
+    try {
+      const response = await instance.patch(`/api/v1/notifications/${notification.id}/read`);
+      if (response.data.status === 200) {
+        setNotifications(prevNotifications =>
+          prevNotifications.map(n =>
+            n.id === notification.id ? { ...n, read: true } : n
+          )
+        );
+        decrementCount();
+      }
+    } catch (error) {
+      console.error("알림 읽음 처리 실패:", error);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+
+    if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
+    if (diffInMinutes < 24 * 60) return `${Math.floor(diffInMinutes / 60)}시간 전`;
+    return `${Math.floor(diffInMinutes / (24 * 60))}일 전`;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      {/* 헤더 */}
+    <div className="min-h-screen bg-gray-50">
       <div className="sticky top-0 bg-white border-b border-gray-200 z-10">
-        <div className="max-w-md mx-auto">
-          <div className="flex items-center px-4 ">
+        <div className="max-w-md mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
             <button
               onClick={() => router.back()}
-              className="p-2 -ml-2 text-gray-600 hover:text-blue-500 transition-colors"
+              className="text-gray-600 hover:text-blue-500 transition-colors"
             >
-              <HiOutlineArrowLeft className="w-6 h-6" />
+              <HiXMark className="w-6 h-6" />
             </button>
-            <h1 className="flex-1 text-center text-lg font-semibold">알림</h1>
-            <div className="w-10" /> {/* 오른쪽 여백을 위한 더미 요소 */}
+            <h1 className="text-lg font-semibold">알림</h1>
+            <div className="w-6" />
           </div>
         </div>
       </div>
 
-      {/* 탭 메뉴 */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-md mx-auto">
-          <div className="flex">
-            <button
-              className={`flex-1 py-3 text-sm font-medium ${
-                activeTab === "all" ? "text-blue-500 border-b-2 border-blue-500" : "text-gray-500"
-              }`}
-              onClick={() => setActiveTab("all")}
-            >
-              전체
-            </button>
-            <button
-              className={`flex-1 py-3 text-sm font-medium ${
-                activeTab === "unread" ? "text-blue-500 border-b-2 border-blue-500" : "text-gray-500"
-              }`}
-              onClick={() => setActiveTab("unread")}
-            >
-              읽지 않음
-            </button>
+      <div className="max-w-md mx-auto px-4 py-6">
+        {notifications.length === 0 ? (
+          <div className="text-center py-12">
+            <HiOutlineBell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">새로운 알림이 없습니다.</p>
           </div>
-        </div>
-      </div>
-
-      {/* 알림 리스트 */}
-      <div className="max-w-md mx-auto">
-        <div className="divide-y divide-gray-200">
-          {filteredNotifications.map((notification) => (
-            <motion.div
-              key={notification.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`p-4 ${notification.isRead ? 'bg-white' : 'bg-blue-50'} hover:bg-gray-50 transition-colors cursor-pointer`}
-              onClick={() => handleNotificationClick(notification.id)}
-            >
-              <div className="flex items-start gap-3">
-                {/* 알림 아이콘 */}
-                <div className="flex-shrink-0">
-                  <NotificationIcon type={notification.type} />
-                </div>
-
-                {/* 알림 내용 */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <Image
-                      src={notification.user.avatar}
-                      alt={notification.user.name}
-                      width={32}
-                      height={32}
-                      className="rounded-full"
-                    />
-                    <div>
-                      <p className="text-sm">
-                        <span className="font-medium">{notification.user.name}</span>
-                        <span className="text-gray-600"> {notification.content}</span>
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">{notification.timeAgo}</p>
+        ) : (
+          <div className="space-y-4">
+            {notifications?.map((notification) => (
+              <div
+                key={notification.id}
+                onClick={() => !notification.read && handleNotificationClick(notification)}
+                className={`bg-white rounded-lg shadow p-4 ${
+                  !notification.read 
+                    ? "cursor-pointer hover:bg-blue-50 border-l-4 border-blue-500" 
+                    : "opacity-60 cursor-default"
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-medium text-gray-900">{notification.title}</h3>
+                      {notification.read && (
+                        <HiOutlineCheck className="w-4 h-4 text-green-500" />
+                      )}
                     </div>
+                    <p className="text-sm text-gray-600 mt-1">{notification.content}</p>
+                    <p className="text-xs text-gray-400 mt-2">
+                      {formatDate(notification.createdAt)}
+                    </p>
+                    {notification.imageUrl && (
+                      <div className="mt-3 relative w-full h-40 rounded-lg overflow-hidden">
+                        <Image
+                          src={notification.imageUrl}
+                          alt="알림 이미지"
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
                   </div>
-
-                  {/* 게시물 이미지 (있는 경우) */}
-                  {notification.post?.image && (
-                    <div className="mt-2">
-                      <Image
-                        src={notification.post.image}
-                        alt="게시물 이미지"
-                        width={200}
-                        height={120}
-                        className="rounded-lg object-cover"
-                      />
-                    </div>
+                  {!notification.read && (
+                    <span className="ml-2 w-2 h-2 bg-blue-500 rounded-full"></span>
                   )}
                 </div>
               </div>
-            </motion.div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

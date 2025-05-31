@@ -3,87 +3,53 @@ import instance from "@/app/api/axios";
 
 interface User {
   id: number;
-  email: string | null;
+  email: string;
   nickname: string;
   profileImageUrl: string | null;
-  role: string;
-  createdAt: string;
-  updatedAt: string;
+  gender: string;
   age: number;
   nationality: string;
+  introduction: string;
   tripLevel: number;
   followers: number;
   following: number;
   reviews: number;
-  gender: string;
 }
 
-let userCache: User | null = null;
-let isLoading = false;
-let pendingCallbacks: ((user: User | null) => void)[] = [];
-
-const fetchUserData = async (): Promise<User | null> => {
-  const at = localStorage.getItem("at");
-  if (!at) {
-    userCache = null;
-    return null;
-  }
-
-  try {
-    const response = await instance.get("/api/v1/users/me");
-    if (response.data.status === 200) {
-      userCache = response.data.data;
-      return userCache;
-    }
-    return null;
-  } catch (error) {
-    console.error("사용자 정보 조회 실패:", error);
-    userCache = null;
-    return null;
-  }
-};
-
 export function useUser() {
-  const [user, setUser] = useState<User | null>(userCache);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchUser = async () => {
+    try {
+      const at = localStorage.getItem("at");
+      if (!at) {
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await instance.get("/api/v1/users/me");
+      if (response.data.status === 200) {
+        setUser(response.data.data);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("사용자 정보 조회 실패:", error);
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (userCache) {
-      setUser(userCache);
-      return;
-    }
+    fetchUser();
 
-    if (isLoading) {
-      pendingCallbacks.push(setUser);
-      return;
-    }
-
-    isLoading = true;
-    fetchUserData().then((userData) => {
-      setUser(userData);
-      pendingCallbacks.forEach((callback) => callback(userData));
-      isLoading = false;
-      pendingCallbacks = [];
-    });
-  }, []);
-
-  // 로컬 스토리지 변경 감지
-  useEffect(() => {
+    // 로그인 상태 변경 이벤트 리스너 추가
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "at") {
-        if (!e.newValue) {
-          // 토큰이 삭제되었을 때 (로그아웃)
-          userCache = null;
-          setUser(null);
-        } else {
-          // 토큰이 새로 설정되었을 때 (로그인)
-          isLoading = true;
-          fetchUserData().then((userData) => {
-            setUser(userData);
-            pendingCallbacks.forEach((callback) => callback(userData));
-            isLoading = false;
-            pendingCallbacks = [];
-          });
-        }
+        fetchUser();
       }
     };
 
@@ -91,27 +57,10 @@ export function useUser() {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  // 현재 토큰 확인
-  useEffect(() => {
-    const at = localStorage.getItem("at");
-    if (!at && user) {
-      userCache = null;
-      setUser(null);
-    }
-  }, [user]);
-
-  const refreshUser = async () => {
-    isLoading = true;
-    const userData = await fetchUserData();
-    setUser(userData);
-    pendingCallbacks.forEach((callback) => callback(userData));
-    isLoading = false;
-    pendingCallbacks = [];
+  // 로그인/로그아웃 시 강제로 사용자 정보 갱신
+  const refreshUser = () => {
+    fetchUser();
   };
 
-  return {
-    user,
-    isLoading,
-    refreshUser,
-  };
+  return { user, isLoading, refreshUser };
 }
