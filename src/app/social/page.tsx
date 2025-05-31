@@ -49,7 +49,7 @@ function SocialContent() {
   const router = useRouter();
   const { user } = useUser();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "all");
+  const [activeTab, setActiveTab] = useState(searchParams?.get("tab") || "all");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showFilter, setShowFilter] = useState(false);
   const [showSort, setShowSort] = useState(false);
@@ -70,7 +70,7 @@ function SocialContent() {
 
   // URL 쿼리 파라미터가 변경될 때 탭 상태 업데이트
   useEffect(() => {
-    const tab = searchParams.get("tab");
+    const tab = searchParams?.get("tab");
     if (tab) {
       setActiveTab(tab);
     }

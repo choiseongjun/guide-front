@@ -28,12 +28,13 @@ export default function LoginClient({ params }: LoginClientProps) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const code = searchParams.get("code");
+    if (searchParams) {
+      const code = searchParams.get("code");
+      console.log("code==", code);
 
-    console.log("code==", code);
-
-    if (code) {
-      handleKakaoLogin(code);
+      if (code) {
+        handleKakaoLogin(code);
+      }
     }
 
     // 환경 변수 디버깅

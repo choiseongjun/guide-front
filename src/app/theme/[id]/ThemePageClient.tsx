@@ -270,7 +270,7 @@ export default function ThemePageClient({
 
   // 현재 경로가 여행 관련 페이지인지 확인
   useEffect(() => {
-    if (pathname.startsWith("/theme/")) {
+    if (pathname && pathname.startsWith("/theme/")) {
       // 하단 탭의 여행 아이콘을 활성화하는 이벤트 발생
       window.dispatchEvent(new CustomEvent("updateTab", { detail: "travel" }));
     }

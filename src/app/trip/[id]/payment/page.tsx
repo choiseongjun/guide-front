@@ -55,7 +55,7 @@ export default function PaymentPage({
   const resolvedParams = use(params);
   const searchParams = useSearchParams();
 
-  const message = searchParams.get("message");
+  const message = searchParams?.get("message");
   useEffect(() => {
     const fetchTrip = async () => {
       try {
@@ -66,7 +66,7 @@ export default function PaymentPage({
           setTrip(response.data.data);
         }
       } catch (error) {
-        console.error("여행 상세 정보 조회 실패:", error);
+        console.error("여행 정보 조회 실패:", error);
       }
     };
 

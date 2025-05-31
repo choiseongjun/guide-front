@@ -10,7 +10,7 @@ import instance from "../api/axios";
 function LoginContent() {
   const searchParams = useSearchParams();
   const params = {
-    id: searchParams.get('id') || ''
+    id: searchParams?.get('id') || ''
   };
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);

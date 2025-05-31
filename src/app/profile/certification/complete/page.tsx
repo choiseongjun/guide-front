@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, Suspense } from "react";
+import { useEffect, Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { HiOutlineCheckCircle } from "react-icons/hi2";
 import instance from "@/app/api/axios";
@@ -8,43 +8,43 @@ import instance from "@/app/api/axios";
 function CertificationCompleteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const handleCertificationComplete = async () => {
-      try {
-        const code = searchParams.get("code");
-        const identityVerificationId = searchParams.get(
-          "identityVerificationId"
-        );
+  if (!searchParams) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
-        console.log("identityVerificationId=", identityVerificationId);
-        if (!identityVerificationId) {
-          alert("본인인증 정보가 올바르지 않습니다.");
-          router.push("/profile");
-          return;
-        }
+  const handleCertificationComplete = async () => {
+    try {
+      const code = searchParams.get("code");
+      const identityVerificationId = searchParams.get("identityVerificationId");
 
-        // 본인인증 완료 처리 API 호출
-        const response = await instance.put(
-          "/api/v1/users/certification/complete",
-          {
-            identityVerificationId,
-          }
-        );
+      if (!code || !identityVerificationId) {
+        throw new Error("필수 파라미터가 누락되었습니다.");
+      }
 
-        if (response.status === 200) {
-          // 성공 메시지 표시 후 프로필 페이지로 이동
-          setTimeout(() => {
-            router.push("/profile");
-          }, 2000);
-        }
-      } catch (error) {
-        console.error("본인인증 완료 처리 실패:", error);
-        alert("본인인증 처리 중 오류가 발생했습니다.");
+      const response = await instance.post("/api/v1/users/identity-verification/complete", {
+        code,
+        identityVerificationId,
+      });
+
+      if (response.status === 200) {
         router.push("/profile");
       }
-    };
+    } catch (error) {
+      console.error("본인인증 완료 처리 실패:", error);
+      alert("본인인증 완료 처리에 실패했습니다.");
+      router.push("/profile");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     handleCertificationComplete();
   }, [router, searchParams]);
 

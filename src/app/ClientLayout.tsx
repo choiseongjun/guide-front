@@ -61,7 +61,7 @@ export default function ClientLayout({
   }, [pathname]);
 
   // 현재 경로가 여행 관련 페이지인지 확인
-  const isTravelPage = pathname === "/" || pathname.startsWith("/theme/");
+  const isTravelPage = pathname ? (pathname === "/" || pathname.startsWith("/theme/")) : false;
 
   return (
     <>
@@ -136,7 +136,7 @@ export default function ClientLayout({
 
         <div className="content">{children}</div>
 
-        {!isNotificationsPage && !pathname.startsWith("/login") && (
+        {!isNotificationsPage && pathname && !pathname.startsWith("/login") && (
           <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
             <div className="max-w-md mx-auto">
               <div className="flex items-center justify-around h-16">
@@ -164,11 +164,6 @@ export default function ClientLayout({
                     pathname === "/chat" ? "text-blue-500" : "text-gray-600"
                   }`}
                 >
-                  {/* {totalUnreadChats > 0 && (
-                    <span className="absolute -top-[0.5rem] -right-[-1.8rem] bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
-                      {totalUnreadChats}
-                    </span>
-                  )} */}
                   <HiOutlineChatBubbleLeftRight className="w-6 h-6" />
                   <span className="text-xs mt-1">채팅</span>
                 </Link>

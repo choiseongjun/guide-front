@@ -36,7 +36,7 @@ interface Trip {
 function PaymentCompleteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const tripId = searchParams.get("tripId");
+  const tripId = searchParams?.get("tripId");
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
 
