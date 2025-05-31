@@ -21,6 +21,7 @@ import {
   HiOutlinePhoto,
   HiOutlineTrash,
   HiOutlineShare,
+  HiOutlineLink,
   HiMinus,
 } from "react-icons/hi2";
 import { HiOutlineChatBubbleLeft } from "react-icons/hi2";
@@ -29,6 +30,9 @@ import { useUser } from "@/hooks/useUser";
 import { getImageUrl, getProfileImage } from "@/app/common/imgUtils";
 import { GiSiren } from "react-icons/gi";
 import { AnimatePresence, motion } from "framer-motion";
+import { FaInstagram } from "react-icons/fa";
+import { RiKakaoTalkFill } from "react-icons/ri";
+import { BsFacebook, BsTwitter } from "react-icons/bs";
 
 interface Participant {
   id: number;
@@ -149,6 +153,13 @@ const sampleReviews: Review[] = [
   },
 ];
 
+// 카카오 SDK 타입 선언
+declare global {
+  interface Window {
+    Kakao: any;
+  }
+}
+
 export default function TripDetailPage({
   params,
 }: {
@@ -189,6 +200,8 @@ export default function TripDetailPage({
   const [evaluations, setEvaluations] = useState<ParticipantEvaluation[]>([]);
   const [isBadManner, setIsBadManner] = useState(false);
   const [badMannerReason, setBadMannerReason] = useState("");
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const fetchTrip = async () => {
@@ -246,6 +259,37 @@ export default function TripDetailPage({
 
     fetchReviews();
   }, [resolvedParams.id]);
+
+  useEffect(() => {
+    // 모바일 환경 체크
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    // 카카오 SDK 초기화
+    const initializeKakao = () => {
+      if (window.Kakao && !window.Kakao.isInitialized()) {
+        window.Kakao.init(process.env.NEXT_PUBLIC_KAKAO_APP_KEY);
+      }
+    };
+
+    // SDK가 로드되었는지 확인
+    if (window.Kakao) {
+      initializeKakao();
+    } else {
+      // SDK가 로드되지 않았다면 로드될 때까지 대기
+      const script = document.querySelector('script[src*="kakao.js"]');
+      if (script) {
+        script.addEventListener('load', initializeKakao);
+        return () => script.removeEventListener('load', initializeKakao);
+      }
+    }
+  }, []);
 
   const nextImage = () => {
     if (trip && currentImageIndex < trip.images.length - 1) {
@@ -599,6 +643,75 @@ export default function TripDetailPage({
     }
   }, [trip]);
 
+  const handleShare = async (type: string) => {
+    const shareUrl = `${window.location.origin}/trip/${resolvedParams.id}`;
+    const shareTitle = trip?.title || '여행 상세';
+    const shareText = trip?.highlight || '';
+
+    try {
+      switch (type) {
+        case 'kakao':
+          if (window.Kakao) {
+            window.Kakao.Link.sendDefault({
+              objectType: 'feed',
+              content: {
+                title: shareTitle,
+                description: shareText,
+                imageUrl: trip?.images[0]?.imageUrl || '',
+                link: {
+                  mobileWebUrl: shareUrl,
+                  webUrl: shareUrl,
+                },
+              },
+              buttons: [
+                {
+                  title: '여행 상세 보기',
+                  link: {
+                    mobileWebUrl: shareUrl,
+                    webUrl: shareUrl,
+                  },
+                },
+              ],
+            });
+          }
+          break;
+
+        case 'facebook':
+          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`);
+          break;
+
+        case 'twitter':
+          window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(shareUrl)}`);
+          break;
+
+        case 'instagram':
+          // 인스타그램은 직접 공유가 불가능하므로 링크 복사
+          await navigator.clipboard.writeText(shareUrl);
+          showSuccessToast('인스타그램에 공유할 링크가 복사되었습니다.');
+          break;
+
+        case 'link':
+          await navigator.clipboard.writeText(shareUrl);
+          showSuccessToast('링크가 복사되었습니다.');
+          break;
+
+        case 'native':
+          if (navigator.share) {
+            await navigator.share({
+              title: shareTitle,
+              text: shareText,
+              url: shareUrl,
+            });
+          }
+          break;
+      }
+      setShowShareModal(false);
+    } catch (error) {
+      console.error('공유하기 실패:', error);
+      alert('공유하기에 실패했습니다.');
+    }
+  };
+
   if (userLoading || !trip || loading) {
     return null;
   }
@@ -617,7 +730,10 @@ export default function TripDetailPage({
             </button>
             <h1 className="text-xl font-bold ml-4">여행 상세</h1>
             <div className="ml-auto flex items-center gap-2">
-              <button className="p-2 hover:bg-gray-100 rounded-full">
+              <button 
+                onClick={() => setShowShareModal(true)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
                 <HiOutlineShare className="w-6 h-6" />
               </button>
               <button
@@ -1672,6 +1788,121 @@ export default function TripDetailPage({
             <div className="bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm">
               {toastMessage}
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 공유하기 모달 */}
+      <AnimatePresence>
+        {showShareModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-sm bg-white rounded-2xl shadow-xl"
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    공유하기
+                  </h3>
+                  <button
+                    onClick={() => setShowShareModal(false)}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <HiOutlineXMark className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-4 gap-4">
+                  {isMobile ? (
+                    <>
+                      <button
+                        onClick={() => handleShare('kakao')}
+                        className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-[#FEE500] flex items-center justify-center">
+                          <RiKakaoTalkFill className="w-6 h-6 text-[#3C1E1E]" />
+                        </div>
+                        <span className="text-xs text-gray-600">카카오톡</span>
+                      </button>
+                      <button
+                        onClick={() => handleShare('instagram')}
+                        className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 flex items-center justify-center">
+                          <FaInstagram className="w-6 h-6 text-white" />
+                        </div>
+                        <span className="text-xs text-gray-600">인스타그램</span>
+                      </button>
+                      <button
+                        onClick={() => handleShare('native')}
+                        className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                          <HiOutlineShare className="w-6 h-6 text-gray-600" />
+                        </div>
+                        <span className="text-xs text-gray-600">더보기</span>
+                      </button>
+                      <button
+                        onClick={() => handleShare('link')}
+                        className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                          <HiOutlineLink className="w-6 h-6 text-gray-600" />
+                        </div>
+                        <span className="text-xs text-gray-600">링크 복사</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handleShare('kakao')}
+                        className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-[#FEE500] flex items-center justify-center">
+                          <RiKakaoTalkFill className="w-6 h-6 text-[#3C1E1E]" />
+                        </div>
+                        <span className="text-xs text-gray-600">카카오톡</span>
+                      </button>
+                      <button
+                        onClick={() => handleShare('facebook')}
+                        className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center">
+                          <BsFacebook className="w-6 h-6 text-white" />
+                        </div>
+                        <span className="text-xs text-gray-600">페이스북</span>
+                      </button>
+                      <button
+                        onClick={() => handleShare('instagram')}
+                        className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 flex items-center justify-center">
+                          <FaInstagram className="w-6 h-6 text-white" />
+                        </div>
+                        <span className="text-xs text-gray-600">인스타그램</span>
+                      </button>
+                      <button
+                        onClick={() => handleShare('link')}
+                        className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                          <HiOutlineLink className="w-6 h-6 text-gray-600" />
+                        </div>
+                        <span className="text-xs text-gray-600">링크 복사</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
