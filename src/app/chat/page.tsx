@@ -10,13 +10,15 @@ import {
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import instance from "@/app/api/axios";
-import { getImageUrl } from "../common/imgUtils";
+import { getImageUrl, getProfileImage } from "../common/imgUtils";
 import { useUser } from "@/hooks/useUser";
 
 interface Participant {
-  userId: number;
+  id: number;
   nickname: string;
   profileImageUrl: string | null;
+  role: string;
+  thumbnailUrl:string|null;
 }
 
 interface ChatRoom {
@@ -25,8 +27,9 @@ interface ChatRoom {
   lastMessage: string | null;
   lastMessageTime: string | null;
   unreadCount: number;
-  thumbnailUrl: string;
+  thumbnailUrl: string | null;
   participants: Participant[];
+  type: string;
 }
 
 interface ChatRoomResponse {
@@ -65,6 +68,7 @@ export default function ChatListPage() {
     unreadGroupMessages: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
   // 로그인 체크
   useEffect(() => {
@@ -74,7 +78,8 @@ export default function ChatListPage() {
   }, [user, isLoading, router]);
 
   useEffect(() => {
-    if (!user || isLoading) return; // 로그인되지 않았거나 로딩 중인 경우 API 호출하지 않음
+    if (isLoading) return; // 로딩 중이면 API 호출하지 않음
+    if (!user) return; // 로그인되지 않았으면 API 호출하지 않음
 
     const fetchData = async () => {
       try {
@@ -87,6 +92,7 @@ export default function ChatListPage() {
           instance.get<ChatRoomStats>("/api/v1/chat-rooms/stats"),
         ]);
 
+        console.log("chatRoomsResponse===",chatRoomsResponse)
         if (chatRoomsResponse.data.status === 200) {
           setChatRooms(chatRoomsResponse.data.data);
         }
@@ -102,7 +108,22 @@ export default function ChatListPage() {
     };
 
     fetchData();
-  }, [activeTab]);
+  }, [activeTab, user, isLoading]);
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await instance.get('/api/v1/users/me');
+        if (response.data.status === 200) {
+          setCurrentUserId(response.data.data.id);
+        }
+      } catch (error) {
+        console.error("현재 사용자 정보 조회 실패:", error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
 
   const filteredChats =
     activeTab === "group"
@@ -137,9 +158,20 @@ export default function ChatListPage() {
     return `${Math.floor(diffInMinutes / (24 * 60))}일 전`;
   };
 
-  if (loading) {
+  if (loading || isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    router.push("/login");
     return null;
   }
+
+  console.log("filteredChats===",filteredChats)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -221,7 +253,6 @@ export default function ChatListPage() {
           </div>
         </div>
       </div>
-
       {/* 채팅 목록 */}
       <div className="max-w-md mx-auto">
         {filteredChats.map((chat) => (
@@ -230,17 +261,30 @@ export default function ChatListPage() {
             className="flex items-center p-4 bg-white border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
             onClick={() => router.push(`/chat/${chat.id}`)}
           >
+            
             {/* 채팅방 이미지 */}
-            <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
-              <Image
-                src={
-                  getImageUrl(chat.thumbnailUrl) ||
-                  "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=60"
-                }
-                alt={chat.name}
-                fill
-                className="object-cover"
-              />
+            <div className="relative w-12 h-12 rounded-lg overflow-hidden">
+              {chat.type === "DIRECT" ? (
+                <Image
+                  src={
+                    (getProfileImage(chat.thumbnailUrl ?? "")) ||
+                    "/images/default-profile.png"
+                  }
+                  alt={chat.name}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <Image
+                  src={
+                    (chat.thumbnailUrl && getImageUrl(chat.thumbnailUrl)) ||
+                    "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=60"
+                  }
+                  alt={chat.name}
+                  fill
+                  className="object-cover"
+                />
+              )}
             </div>
 
             {/* 채팅방 정보 */}

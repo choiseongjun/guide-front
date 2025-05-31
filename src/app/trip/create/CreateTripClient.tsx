@@ -607,17 +607,39 @@ export default function CreateTripClient() {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('pathType', 'trip');
 
-      const result = await uploadToS3(file, {
-        pathType: "trip",
-        maxSizeMB: 30,
-        allowedTypes: ["image/"],
+      console.log('Uploading file:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type
       });
 
-      if (result.success) {
-        setImages((prev) => [...prev, result.fileUrl]);
-      } else {
-        alert(result.error || "이미지 업로드에 실패했습니다.");
+      try {
+        const uploadResponse = await instance.post('/api/v1/s3/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        console.log('Upload response:', uploadResponse);
+
+        if (uploadResponse.status === 200) {
+          console.log('Upload successful, fileUrl:', uploadResponse.data.fileUrl);
+          setImages((prev) => [...prev, uploadResponse.data.fileUrl]);
+        } else {
+          console.error('Upload failed with status:', uploadResponse.status);
+          alert('이미지 업로드에 실패했습니다.');
+        }
+      } catch (error: any) {
+        console.error('Upload error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
+        alert(error.response?.data?.message || '이미지 업로드에 실패했습니다.');
       }
     }
 

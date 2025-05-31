@@ -79,9 +79,9 @@ function GuideProfileClient({ guideId }: { guideId: string }) {
 
   const handleChatRequest = async () => {
     try {
-      const response = await instance.post(`/api/v1/chats/request/${guideId}`);
-      if (response.data.status === 200) {
-        router.push(`/chat/${response.data.data.chatId}`);
+      const response = await instance.post(`/api/v1/chat-rooms/direct/${guideId}`);
+      if (response.data.status === "success") {
+        router.push(`/chat/${response.data.data.id}`);
       }
     } catch (error) {
       console.error("대화 신청 실패:", error);
