@@ -70,12 +70,7 @@ export default function ChatListPage() {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
-  // 로그인 체크
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/login");
-    }
-  }, [user, isLoading, router]);
+ 
 
   useEffect(() => {
     if (isLoading) return; // 로딩 중이면 API 호출하지 않음
@@ -111,6 +106,10 @@ export default function ChatListPage() {
   }, [activeTab, user, isLoading]);
 
   useEffect(() => {
+    // if (!isLoading && !user) {
+    //   router.push("/login");
+    //   return;
+    // }
     const fetchCurrentUser = async () => {
       try {
         const response = await instance.get('/api/v1/users/me');
@@ -123,7 +122,7 @@ export default function ChatListPage() {
     };
 
     fetchCurrentUser();
-  }, []);
+  }, [isLoading, user, router]);
 
   const filteredChats =
     activeTab === "group"
@@ -166,10 +165,7 @@ export default function ChatListPage() {
     );
   }
 
-  if (!user) {
-    router.push("/login");
-    return null;
-  }
+
 
   console.log("filteredChats===",filteredChats)
 
