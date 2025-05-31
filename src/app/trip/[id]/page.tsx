@@ -590,23 +590,19 @@ export default function TripDetailPage({
   };
 
   const handleEvaluationSubmit = async () => {
-    if (!selectedParticipant || !evaluationContent.trim()) {
+    if (!selectedParticipant || !evaluationContent.trim() || !trip) {
       alert("평가 내용을 입력해주세요.");
       return;
     }
 
-    if (isBadManner && !badMannerReason.trim()) {
-      alert("비매너 신고 사유를 입력해주세요.");
-      return;
-    }
-
     try {
-      const response = await instance.post(`/api/v1/travels/${resolvedParams.id}/evaluations`, {
-        evaluatedUserId: selectedParticipant.user.id,
+      const response = await instance.post("/api/v1/user-reviews", {
+        reviewedUserId: selectedParticipant.user.id,
         rating: isNegativeRating ? -evaluationRating : evaluationRating,
         content: evaluationContent.trim(),
-        isBadManner: isBadManner,
-        badMannerReason: isBadManner ? badMannerReason.trim() : null
+        badMannerContent: isBadManner ? badMannerReason.trim() : null,
+        travelId: trip.id,
+        isVerified: true
       });
 
       if (response.status === 200) {
@@ -618,7 +614,6 @@ export default function TripDetailPage({
         setIsBadManner(false);
         setBadMannerReason("");
         showSuccessToast("평가가 등록되었습니다.");
-        fetchEvaluations();
       }
     } catch (error) {
       console.error("평가 등록 실패:", error);
