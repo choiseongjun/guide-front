@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { HiXMark } from "react-icons/hi2";
+import { HiXMark, HiOutlineCheck } from "react-icons/hi2";
 import instance from "@/app/api/axios";
 
 interface SuggestionForm {
@@ -12,10 +12,10 @@ interface SuggestionForm {
 }
 
 const categories = [
-  { id: "service", label: "서비스 이용" },
-  { id: "bug", label: "버그 신고" },
-  { id: "feature", label: "기능 제안" },
-  { id: "other", label: "기타" },
+  { id: "SERVICE_USE", label: "서비스 이용" },
+  { id: "BUG_REPORT", label: "버그 신고" },
+  { id: "FEATURE_REQUEST", label: "기능 제안" },
+  { id: "ETC", label: "기타" },
 ];
 
 export default function SuggestionPage() {
@@ -26,6 +26,15 @@ export default function SuggestionPage() {
     email: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  const resetForm = () => {
+    setForm({
+      category: "",
+      content: "",
+      email: "",
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,8 +53,8 @@ export default function SuggestionPage() {
       });
 
       if (response.data.status === 200) {
-        alert("건의사항이 등록되었습니다.");
-        router.back();
+        setShowSuccessModal(true);
+        resetForm();
       }
     } catch (error) {
       console.error("건의사항 등록 실패:", error);
@@ -127,6 +136,32 @@ export default function SuggestionPage() {
           </button>
         </form>
       </div>
+
+      {/* 성공 모달 */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+            <div className="flex flex-col items-center">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <HiOutlineCheck className="w-6 h-6 text-green-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">건의사항을 주셔서 감사합니다</h3>
+              <p className="text-gray-600 text-center mb-6">
+                소중한 의견 감사합니다. 더 나은 서비스로 보답하겠습니다.
+              </p>
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  router.back();
+                }}
+                className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

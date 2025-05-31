@@ -673,7 +673,7 @@ export default function ProfilePage() {
                 whileHover={{ scale: 1.02 }}
                 className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
                 onClick={() => router.push("/profile/suggestion")}
-              >
+              > 
                 <div className="flex items-center">
                   <HiOutlineChatBubbleLeftRight className="w-6 h-6 text-gray-600" />
                   <span className="ml-3 text-gray-900">건의사항</span>
