@@ -562,7 +562,7 @@ export default function ProfilePage() {
                 <div className="flex items-center">
                   <HiOutlineCalendar className="w-6 h-6 text-blue-500 mr-3" />
                   <div>
-                    <h4 className="font-medium text-gray-800">나의 여행</h4>
+                    <h4 className="font-medium text-gray-800">내가 참여한 여행</h4>
                     <p className="text-sm text-gray-600">
                       예정된 여행 2개 • 완료된 여행 8개
                     </p>

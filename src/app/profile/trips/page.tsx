@@ -2,83 +2,50 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import {
-  HiOutlineArrowLeft,
-  HiOutlineCalendar,
-  HiOutlineMapPin,
-  HiOutlineUserGroup,
-  HiOutlineClock,
-} from "react-icons/hi2";
+import { HiOutlineArrowLeft } from "react-icons/hi2";
 import instance from "@/app/api/axios";
-import { getImageUrl } from "@/app/common/imgUtils";
-
-interface Participant {
-  userId: number;
-  nickname: string;
-  profileImageUrl: string | null;
-}
-
-interface ChatRoom {
-  id: number;
-  name: string;
-  lastMessage: string | null;
-  lastMessageTime: string | null;
-  unreadCount: number;
-  thumbnailUrl: string;
-  participants: Participant[];
-}
-
-interface ChatRoomResponse {
-  status: number;
-  data: {
-    directChats: ChatRoom[];
-    groupChats: ChatRoom[];
-  };
-  message: string;
-}
+import TripList from "@/components/TripList";
+import { ProcessedTravel, processTravelList } from "@/app/common/travelUtils";
 
 export default function TripsPage() {
   const router = useRouter();
-  const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
+  const [activeTab, setActiveTab] = useState<"pending" | "completed">("pending");
+  const [pendingTrips, setPendingTrips] = useState<ProcessedTravel[]>([]);
+  const [completedTrips, setCompletedTrips] = useState<ProcessedTravel[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"pending" | "completed">(
-    "pending"
-  );
 
   useEffect(() => {
-    const fetchChatRooms = async () => {
-      try {
-        const response = await instance.get<ChatRoomResponse>(
-          "/api/v1/chat-rooms/list",
-          {
-            params: {
-              type: "GROUP",
-            },
-          }
-        );
-        if (response.data.status === 200) {
-          setChatRooms(response.data.data.groupChats);
-        }
-      } catch (error) {
-        console.error("채팅방 목록 조회 실패:", error);
-        setChatRooms([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchChatRooms();
+    fetchTrips();
   }, []);
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+  const fetchTrips = async () => {
+    try {
+      setLoading(true);
+      const [pendingResponse, completedResponse] = await Promise.all([
+        instance.get("/api/v1/travels/participated", {
+          params: {
+            participantStatus: "PENDING",
+            page: 0,
+            size: 10
+          }
+        }),
+        instance.get("/api/v1/travels/participated", {
+          params: {
+            participantStatus: "APPROVED",
+            page: 0,
+            size: 10
+          }
+        })
+      ]);
+
+      console.log(pendingResponse);
+      setPendingTrips(processTravelList(pendingResponse.data.data.content || []));
+      setCompletedTrips(processTravelList(completedResponse.data.data.content || []));
+    } catch (error) {
+      console.error("여행 목록 조회 실패:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {
@@ -132,73 +99,7 @@ export default function TripsPage() {
 
       {/* 메인 컨텐츠 */}
       <main className="max-w-md mx-auto p-4">
-        <div className="space-y-4">
-          {chatRooms.map((chatRoom) => (
-            <div
-              key={chatRoom.id}
-              className="bg-white rounded-lg shadow-sm overflow-hidden"
-              onClick={() => router.push(`/chat/${chatRoom.id}`)}
-            >
-              <div className="relative h-48">
-                <Image
-                  src={
-                    getImageUrl(chatRoom.thumbnailUrl) ||
-                    "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=60"
-                  }
-                  alt={chatRoom.name}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="p-4">
-                <h3 className="text-lg font-semibold mb-2">{chatRoom.name}</h3>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <HiOutlineCalendar className="w-4 h-4" />
-                    <span>{formatDate(chatRoom.lastMessageTime)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <HiOutlineUserGroup className="w-4 h-4" />
-                    <span>참여자 {chatRoom.participants.length}명</span>
-                  </div>
-                  {chatRoom.unreadCount > 0 && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-blue-500">
-                        새 메시지 {chatRoom.unreadCount}개
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 참여자 프로필 사진 */}
-                <div className="mt-4 flex items-center">
-                  <span className="text-sm text-gray-600 mr-2">참여자:</span>
-                  <div className="flex -space-x-2">
-                    {chatRoom.participants.map((participant) => (
-                      <div
-                        key={participant.userId}
-                        className="relative w-6 h-6 rounded-full border-2 border-white overflow-hidden bg-black"
-                      >
-                        {participant.profileImageUrl ? (
-                          <Image
-                            src={participant.profileImageUrl}
-                            alt={participant.nickname}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-white text-xs">
-                            {participant.nickname.charAt(0)}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <TripList trips={activeTab === "pending" ? pendingTrips : completedTrips} onTripClick={(id) => router.push(`/trip/${id}`)} />
       </main>
     </div>
   );

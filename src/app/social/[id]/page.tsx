@@ -423,8 +423,11 @@ export default function SocialPage({ params }: PageProps) {
     }
 
     try {
-      const response = await instance.post(`/api/v1/social/replies/${reportCommentId}/report`, {
-        reason: reportReason.trim()
+      const response = await instance.post("/api/v1/reports", {
+        reportedUserId: reportCommentId === post?.id ? post.userId : comments.find(c => c.id === reportCommentId)?.userId,
+        category: "SOCIAL_POST",
+        content: reportReason.trim(),
+        targetId: reportCommentId
       });
 
       if (response.status === 200) {
@@ -434,7 +437,7 @@ export default function SocialPage({ params }: PageProps) {
         showSuccessToast("신고가 접수되었습니다.");
       }
     } catch (error) {
-      console.error('댓글 신고 실패:', error);
+      console.error('신고 실패:', error);
       alert('신고 처리 중 오류가 발생했습니다.');
     }
   };
