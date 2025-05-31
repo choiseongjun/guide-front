@@ -340,18 +340,29 @@ function SocialContent() {
 
               {/* 이미지 그리드 */}
               {post.imageUrls && post.imageUrls.length > 0 && (
-                <div className="grid grid-cols-2 gap-1">
-                  {post.imageUrls.map((image, index) => (
-                    <div key={index} className="relative aspect-square">
-                      <Image
-                        src={getImageUrl(image)}
-                        alt={`Post image ${index + 1}`}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    </div>
-                  ))}
+                <div className="mb-4">
+                  <div className="grid grid-cols-2 gap-1">
+                    {post.imageUrls.slice(0, 4).map((image, index) => (
+                      <div key={index} className="relative aspect-square">
+                        <Image
+                          src={getImageUrl(image)}
+                          alt={`Post image ${index + 1}`}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                        {/* 마지막 이미지이고 더 많은 이미지가 있을 경우 오버레이 표시 */}
+                        {index === 3 && post.imageUrls.length > 4 && (
+                          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                            <span className="text-white text-lg font-medium">
+                              더보기
+                              +{post.imageUrls.length - 4}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
