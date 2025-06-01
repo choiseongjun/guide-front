@@ -404,7 +404,7 @@ export default function ThemePageClient({
       {/* 필터 오버레이 */}
       {showFilters && (
         <div className="fixed inset-0 bg-transparent bg-opacity-50 z-50">
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[50vh] overflow-y-auto">
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[80vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 p-3 flex items-center justify-between">
               <h2 className="text-lg font-semibold">필터</h2>
               <button

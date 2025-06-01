@@ -289,7 +289,7 @@ export default function Home() {
         </button>
       </div>
 
-      <section className="max-w-md mx-auto px-4 py-6">
+      <section className="max-w-md mx-auto px-4 py-6 relative">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">추천 여행</h2>
           <Link
@@ -325,42 +325,42 @@ export default function Home() {
             ))}
           </div>
         )}
-      </section>
 
-      {user && (
-        <div className="fixed bottom-[105px] right-[170px] z-999" ref={menuRef}>
-          {showMenu && (
-            <div className="absolute bottom-16 right-0 w-48 bg-white rounded-lg shadow-lg py-2 mb-2">
-              <button
-                onClick={() => {
-                  router.push("/trip/create");
-                  setShowMenu(false);
-                }}
-                className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-              >
-                <HiPlusIcon className="w-5 h-5" />
-                여행 만들기
-              </button>
-              <button
-                onClick={() => {
-                  router.push("/trip");
-                  setShowMenu(false);
-                }}
-                className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-              >
-                <HiOutlineMap className="w-5 h-5" />
-                전체 여행 보기
-              </button>
-            </div>
-          )}
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="floating-button"
-          >
-            <HiPlusIcon className="w-6 h-6" />
-          </button>
-        </div>
-      )}
+        {user && (
+          <div className="fixed bottom-[100px]  z-50" style={{ right: 'calc((100% - 22rem) / 2 + 1rem)' }}>
+            {showMenu && (
+              <div className="absolute bottom-16 right-0 w-48 bg-white rounded-lg shadow-lg py-2 mb-2">
+                <button
+                  onClick={() => {
+                    router.push("/trip/create");
+                    setShowMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <HiPlusIcon className="w-5 h-5" />
+                  여행 만들기
+                </button>
+                <button
+                  onClick={() => {
+                    router.push("/trip");
+                    setShowMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <HiOutlineMap className="w-5 h-5" />
+                  전체 여행 보기
+                </button>
+              </div>
+            )}
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="floating-button"
+            >
+              <HiPlusIcon className="w-6 h-6" />
+            </button>
+          </div>
+        )}
+      </section>
     </main>
   );
 }
