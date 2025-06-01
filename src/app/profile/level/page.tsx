@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import { HiOutlineArrowLeft } from "react-icons/hi2";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useUser } from "@/hooks/useUser";
+import instance from "@/app/api/axios";
+import { HiOutlineUser, HiOutlineMap } from "react-icons/hi2";
 
 const travelerLevels = [
   {
@@ -75,15 +78,25 @@ const guideLevels = [
   }
 ];
 
-export default function LevelPage() {
+function LevelContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<"traveler" | "guide">("traveler");
+  const { user } = useUser();
+  const [activeTab, setActiveTab] = useState<"guide" | "traveler">("guide");
+  const [guideLevel, setGuideLevel] = useState<number>(0);
+  const [travelerLevel, setTravelerLevel] = useState<number>(0);
+  const [guideExp, setGuideExp] = useState<number>(0);
+  const [travelerExp, setTravelerExp] = useState<number>(0);
+  const [guideNextExp, setGuideNextExp] = useState<number>(0);
+  const [travelerNextExp] = useState<number>(1000);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const tab = searchParams.get("tab");
+    const tab = searchParams?.get("tab");
     if (tab === "guide") {
       setActiveTab("guide");
+    } else if (tab === "traveler") {
+      setActiveTab("traveler");
     }
   }, [searchParams]);
 
@@ -213,5 +226,17 @@ export default function LevelPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function LevelPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    }>
+      <LevelContent />
+    </Suspense>
   );
 } 

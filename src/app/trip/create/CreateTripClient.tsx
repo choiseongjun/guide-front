@@ -77,7 +77,12 @@ const travelCategories = [
   },
 ];
 
-export default function CreateTripClient() {
+interface CreateTripClientProps {
+  mode?: "create" | "edit";
+  initialData?: any;
+}
+
+export default function CreateTripClient({ mode = "create", initialData }: CreateTripClientProps) {
   const router = useRouter();
   const calendarRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -423,50 +428,106 @@ export default function CreateTripClient() {
 
   // 초기값 설정
   useEffect(() => {
-    setTitle("서울 3박 4일 여행");
-    setHighlight("아름다운 서울의 풍경을 만끽하세요");
-    setDescription(
-      "서울의 아름다운 풍경을 둘러보는 3박 4일 여행입니다.디테일내용입니다."
-    );
-    setAddress("서울특별시 동작시");
-    setDetailAddress("애월읍");
-    setLatitude(33.450701);
-    setLongitude(126.570667);
-    setDate([new Date("2024-03-01"), new Date("2024-03-04")]);
-    setMinParticipants(2);
-    setMaxParticipants(10);
-    setIsFree(false);
-    setPrice("500000");
-    setProvidedItems(["숙박", "식사", "교통"]);
-    setNotProvidedItems(["항공권", "개인경비"]);
-    setApprovalType("manual");
-    setMinAge(20);
-    setMaxAge(60);
-    setIsScheduleEnabled(true);
-    setTags(["제주도", "3박4일", "일출", "시티투어"]);
-    setDiscountRate(0);
+    if (mode === "edit" && initialData) {
+      setTitle(initialData.title || "");
+      setHighlight(initialData.highlight || "");
+      setDescription(initialData.description || "");
+      setAddress(initialData.address || "");
+      setDetailAddress(initialData.detailAddress || "");
+      setBuildingCode(initialData.buildingCode || "");
+      setLatitude(initialData.latitude || 0);
+      setLongitude(initialData.longitude || 0);
+      setDate([
+        initialData.startDate ? new Date(initialData.startDate) : null,
+        initialData.endDate ? new Date(initialData.endDate) : null,
+      ]);
+      setMinParticipants(initialData.minParticipants || 2);
+      setMaxParticipants(initialData.maxParticipants || 10);
+      setIsFree(!initialData.isPaid);
+      setPrice(initialData.price?.toString() || "");
+      setDiscountedPrice(initialData.discountedPrice?.toString() || "");
+      setDiscountRate(initialData.discountRate || 0);
+      setIsDiscounted(initialData.discountRate > 0);
+      setProvidedItems(initialData.providedItems?.split(",") || []);
+      setNotProvidedItems(initialData.notProvidedItems?.split(",") || []);
+      setApprovalType(initialData.requiresApproval ? "manual" : "auto");
+      setMinAge(initialData.minAge || 0);
+      setMaxAge(initialData.maxAge || 100);
+      setIsScheduleEnabled(initialData.hasSchedule);
+      setTags(initialData.tags?.map((tag: any) => tag.name) || []);
+      setImages(initialData.images?.map((img: any) => img.imageUrl) || []);
+      setSelectedCategory(initialData.categoryId);
 
-    // 일정 초기값 설정
-    setSchedules([
-      {
-        day: 1,
-        title: "제주도 도착 및 시티투어",
-        items: [
-          { time: "14:00", content: "제주도 도착 후 시티투어를 진행합니다." },
-        ],
-      },
-      {
-        day: 2,
-        title: "성산일출봉 관광",
-        items: [
-          {
-            time: "09:00",
-            content: "성산일출봉에서 아름다운 일출을 감상합니다.",
-          },
-        ],
-      },
-    ]);
-  }, []);
+      // 일정 설정
+      if (initialData.schedules) {
+        const scheduleMap = new Map();
+        initialData.schedules.forEach((schedule: any) => {
+          if (!scheduleMap.has(schedule.dayNumber)) {
+            scheduleMap.set(schedule.dayNumber, {
+              day: schedule.dayNumber,
+              title: schedule.title,
+              items: [],
+            });
+          }
+          scheduleMap.get(schedule.dayNumber).items.push({
+            time: schedule.time,
+            content: schedule.description,
+          });
+        });
+        setSchedules(Array.from(scheduleMap.values()));
+      }
+
+      // 에디터 내용 설정
+      if (editor) {
+        editor.commands.setContent(initialData.description || "");
+      }
+    } else {
+      // 기존의 초기값 설정 코드
+      setTitle("서울 3박 4일 여행");
+      setHighlight("아름다운 서울의 풍경을 만끽하세요");
+      setDescription(
+        "서울의 아름다운 풍경을 둘러보는 3박 4일 여행입니다.디테일내용입니다."
+      );
+      setAddress("서울특별시 동작시");
+      setDetailAddress("애월읍");
+      setLatitude(33.450701);
+      setLongitude(126.570667);
+      setDate([new Date("2024-03-01"), new Date("2024-03-04")]);
+      setMinParticipants(2);
+      setMaxParticipants(10);
+      setIsFree(false);
+      setPrice("500000");
+      setProvidedItems(["숙박", "식사", "교통"]);
+      setNotProvidedItems(["항공권", "개인경비"]);
+      setApprovalType("manual");
+      setMinAge(20);
+      setMaxAge(60);
+      setIsScheduleEnabled(true);
+      setTags(["제주도", "3박4일", "일출", "시티투어"]);
+      setDiscountRate(0);
+
+      // 일정 초기값 설정
+      setSchedules([
+        {
+          day: 1,
+          title: "제주도 도착 및 시티투어",
+          items: [
+            { time: "14:00", content: "제주도 도착 후 시티투어를 진행합니다." },
+          ],
+        },
+        {
+          day: 2,
+          title: "성산일출봉 관광",
+          items: [
+            {
+              time: "09:00",
+              content: "성산일출봉에서 아름다운 일출을 감상합니다.",
+            },
+          ],
+        },
+      ]);
+    }
+  }, [mode, initialData, editor]);
 
   // 할인율 계산 함수
   const calculateDiscountRate = (
@@ -556,35 +617,31 @@ export default function CreateTripClient() {
       categoryId: selectedCategory,
     };
 
-    console.log("formData==", formData);
-
     try {
-      const response = await instance.post(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      console.log("response==", response);
+      const url = mode === "edit" 
+        ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels/${initialData.id}`
+        : `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels`;
+      
+      const method = mode === "edit" ? "put" : "post";
+      
+      const response = await instance[method](url, formData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
       if (response.data.status === 200) {
-        alert("여행이 성공적으로 생성되었습니다.");
-        router.push("/"); // 메인 페이지로 이동
+        alert(mode === "edit" ? "여행이 성공적으로 수정되었습니다." : "여행이 성공적으로 생성되었습니다.");
+        router.push(mode === "edit" ? `/trip/${initialData.id}` : "/");
       }
     } catch (error: any) {
-      console.error("여행 생성 실패:", error);
+      console.error(mode === "edit" ? "여행 수정 실패:" : "여행 생성 실패:", error);
       if (error.response) {
-        // 서버에서 응답이 왔지만 에러인 경우
-        alert(error.response.data.message || "여행 생성에 실패했습니다.");
+        alert(error.response.data.message || (mode === "edit" ? "여행 수정에 실패했습니다." : "여행 생성에 실패했습니다."));
       } else if (error.request) {
-        // 요청은 보냈지만 응답이 없는 경우
         alert("서버와 통신할 수 없습니다.");
       } else {
-        // 요청 설정 중 에러가 발생한 경우
-        alert("여행 생성 중 오류가 발생했습니다.");
+        alert(mode === "edit" ? "여행 수정 중 오류가 발생했습니다." : "여행 생성 중 오류가 발생했습니다.");
       }
     }
   };
@@ -863,7 +920,9 @@ export default function CreateTripClient() {
             >
               <HiXMark className="w-6 h-6" />
             </button>
-            <h1 className="text-lg font-semibold">여행 만들기</h1>
+            <h1 className="text-lg font-semibold">
+              {mode === "edit" ? "여행 수정하기" : "여행 만들기"}
+            </h1>
             <div className="w-6" />
           </div>
         </div>
@@ -1736,7 +1795,7 @@ export default function CreateTripClient() {
           type="submit"
           className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
         >
-          여행 만들기
+          {mode === "edit" ? "여행 수정하기" : "여행 만들기"}
         </button>
       </form>
     </div>

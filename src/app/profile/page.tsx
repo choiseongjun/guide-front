@@ -148,10 +148,42 @@ export default function ProfilePage() {
   const [activeSection, setActiveSection] = useState("profile");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showCertification, setShowCertification] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
+  const [myTrips, setMyTrips] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const at = localStorage.getItem("at");
     setIsLoggedIn(!!at);
+  }, []);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await instance.get(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/users/me`
+        );
+        setUserData(response.data);
+      } catch (error) {
+        console.error("사용자 정보 조회 실패:", error);
+      }
+    };
+
+    const fetchMyTrips = async () => {
+      try {
+        const response = await instance.get(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels/my`
+        );
+        setMyTrips(response.data);
+      } catch (error) {
+        console.error("내 여행 목록 조회 실패:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+    fetchMyTrips();
   }, []);
 
   const handleLogin = () => {
@@ -353,6 +385,22 @@ export default function ProfilePage() {
       }
     }
   }, []);
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -615,6 +663,23 @@ export default function ProfilePage() {
           <div className="max-w-md mx-auto px-4 py-4">
             <h2 className="text-lg font-semibold mb-4">여행 컬렉션</h2>
             <div className="space-y-3">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
+                onClick={() => router.push("/trip/my")}
+              >
+                <div className="flex items-center">
+                  <HiOutlineCalendar className="w-6 h-6 text-blue-500 mr-3" />
+                  <div>
+                    <h4 className="font-medium text-gray-800">나의 여행</h4>
+                    <p className="text-sm text-gray-600">
+                      등록한 여행 {myTrips.length}개
+                    </p>
+                  </div>
+                </div>
+                <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
+              </motion.button>
+
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"

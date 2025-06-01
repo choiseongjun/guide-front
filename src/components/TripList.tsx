@@ -8,6 +8,7 @@ import {
   HiOutlineChatBubbleLeft,
   HiOutlineStar,
   HiOutlineMap,
+  HiOutlinePencil,
 } from "react-icons/hi2";
 import { useState, useEffect } from "react";
 import instance from "@/app/api/axios";
@@ -19,9 +20,10 @@ import { ProcessedTravel } from "@/app/common/travelUtils";
 interface TripListProps {
   trips: ProcessedTravel[];
   onTripClick: (tripId: number) => void;
+  showEditButton?: boolean;
 }
 
-export default function TripList({ trips, onTripClick }: TripListProps) {
+export default function TripList({ trips, onTripClick, showEditButton = false }: TripListProps) {
   const router = useRouter();
   const { user } = useUser();
   const [wishlistStatus, setWishlistStatus] = useState<{
@@ -117,19 +119,33 @@ export default function TripList({ trips, onTripClick }: TripListProps) {
                 priority
                 className="object-cover"
               />
-              {/* 찜하기 버튼 */}
-              <button
-                onClick={(e) => handleWishlistClick(e, trip.id)}
-                className="absolute top-2 right-2 p-2 bg-white bg-opacity-80 rounded-full hover:bg-opacity-100 transition-all"
-              >
-                <HiOutlineHeart
-                  className={`w-6 h-6 ${
-                    wishlistStatus[trip.id]
-                      ? "text-red-500 fill-red-500"
-                      : "text-gray-600"
-                  }`}
-                />
-              </button>
+              <div className="absolute top-2 right-2 flex gap-2">
+                {/* 찜하기 버튼 */}
+                <button
+                  onClick={(e) => handleWishlistClick(e, trip.id)}
+                  className="p-2 bg-white bg-opacity-80 rounded-full hover:bg-opacity-100 transition-all"
+                >
+                  <HiOutlineHeart
+                    className={`w-6 h-6 ${
+                      wishlistStatus[trip.id]
+                        ? "text-red-500 fill-red-500"
+                        : "text-gray-600"
+                    }`}
+                  />
+                </button>
+                {/* 수정 버튼 */}
+                {showEditButton && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/trip/${trip.id}/edit`);
+                    }}
+                    className="p-2 bg-white bg-opacity-80 rounded-full hover:bg-opacity-100 transition-all"
+                  >
+                    <HiOutlinePencil className="w-6 h-6 text-gray-600" />
+                  </button>
+                )}
+              </div>
             </div>
             <div className="p-4">
               {/* 가이드 프로필 */}
