@@ -23,6 +23,7 @@ import {
   HiOutlineBanknotes,
   HiOutlineQuestionMarkCircle,
   HiOutlineChatBubbleLeftRight,
+  HiOutlineCheck,
 } from "react-icons/hi2";
 import instance from "@/app/api/axios";
 import Link from "next/link";
@@ -486,14 +487,74 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {/* 가이드 레벨 */}
+      <div className="bg-white rounded-xl p-6 mb-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">가이드 레벨</h2>
+          <button 
+            onClick={() => router.push('/profile/level?tab=guide')}
+            className="text-sm text-blue-500 hover:text-blue-600"
+          >
+            레벨 안내
+          </button>
+        </div>
+        <div className="flex items-center gap-4 mb-4">
+          <div className="relative">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+              <span className="text-2xl font-bold text-blue-600">Lv.2</span>
+            </div>
+            <div className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+              +2
+            </div>
+          </div>
+          <div>
+            <h3 className="font-medium text-gray-900">프로 가이드</h3>
+            <div className="flex items-center gap-2">
+              <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-500 rounded-full" style={{ width: '80%' }}></div>
+              </div>
+              <span className="text-sm text-gray-500">8/10</span>
+            </div>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <h4 className="font-medium text-gray-900">획득한 뱃지</h4>
+          <div className="flex flex-wrap gap-2">
+            <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-sm">신뢰도 100%</span>
+            <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-sm">리뷰 마스터</span>
+            <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-sm">인기 가이드</span>
+          </div>
+        </div>
+        <div className="mt-4 space-y-2">
+          <h4 className="font-medium text-gray-900">특별 혜택</h4>
+          <ul className="space-y-1 text-sm text-gray-600">
+            <li className="flex items-center gap-2">
+              <HiOutlineCheck className="w-5 h-5 text-green-500" />
+              <span>프리미엄 가이드 배지</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <HiOutlineCheck className="w-5 h-5 text-green-500" />
+              <span>여행 상품 등록 수수료 20% 할인</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <HiOutlineCheck className="w-5 h-5 text-green-500" />
+              <span>프로필 상단 노출</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
       {/* 트립 레벨 */}
       {isLoggedIn && (
         <div className="mt-4 bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">트립 레벨</h2>
-            <span className="text-sm text-gray-500">
-              다음 레벨까지 3회 남음
-            </span>
+            <button 
+              onClick={() => router.push('/profile/level')}
+              className="text-sm text-blue-500 hover:text-blue-600"
+            >
+              레벨 안내
+            </button>
           </div>
           <div className="space-y-4">
             <div className="flex items-center gap-4">
