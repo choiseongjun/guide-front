@@ -28,6 +28,7 @@ import imageCompression from "browser-image-compression";
 import { uploadToS3 } from "@/utils/s3Upload";
 import { log } from "node:console";
 import { getImageUrl } from "@/app/common/imgUtils";
+import DaumPostcode from 'react-daum-postcode';
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
@@ -151,6 +152,8 @@ export default function CreateTripClient() {
     images: [],
   });
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [showPostcode, setShowPostcode] = useState(false);
+  const [buildingCode, setBuildingCode] = useState("");
 
   // 시간 옵션 생성 (30분 간격)
   const timeOptions = Array.from({ length: 48 }, (_, i) => {
@@ -512,6 +515,7 @@ export default function CreateTripClient() {
       description,
       address,
       detailAddress,
+      buildingCode,
       latitude,
       longitude,
       startDate:
@@ -762,6 +766,68 @@ export default function CreateTripClient() {
       year: "numeric",
       month: "long",
       day: "numeric",
+    });
+  };
+
+  // 다음 우편번호 서비스 콜백
+  const handlePostcodeComplete = (data: any) => {
+    console.log("Postcode data:", data);
+    
+    // 주소 설정
+    setAddress(data.address);
+    setDetailAddress(data.buildingName || "");
+    setBuildingCode(data.buildingCode || "");
+    
+    // 카카오맵 API 로드 체크
+    if (!window.kakao?.maps?.services) {
+      console.log("Waiting for Kakao Maps services to load...");
+      const checkServices = setInterval(() => {
+        if (window.kakao?.maps?.services) {
+          clearInterval(checkServices);
+          console.log("Kakao Maps services loaded, proceeding with geocoding...");
+          updateMapWithAddress(data.address);
+        }
+      }, 100);
+
+      // 5초 후에도 로드되지 않으면 인터벌 중지
+      setTimeout(() => {
+        clearInterval(checkServices);
+        console.error("Failed to load Kakao Maps services");
+      }, 5000);
+    } else {
+      updateMapWithAddress(data.address);
+    }
+    
+    // 모달 닫기
+    setShowPostcode(false);
+  };
+
+  // 지도 업데이트 함수
+  const updateMapWithAddress = (address: string) => {
+    const geocoder = new window.kakao.maps.services.Geocoder();
+    geocoder.addressSearch(address, (results: any, status: any) => {
+      if (status === window.kakao.maps.services.Status.OK) {
+        const result = results[0];
+        const coords = new window.kakao.maps.LatLng(result.y, result.x);
+
+        // 마커 생성
+        if (marker) {
+          marker.setMap(null);
+        }
+        const newMarker = new window.kakao.maps.Marker({
+          map: map,
+          position: coords,
+        });
+        setMarker(newMarker);
+
+        // 지도 이동
+        map.setCenter(coords);
+        map.setLevel(3);
+
+        // 위도/경도 설정
+        setLatitude(Number(result.y));
+        setLongitude(Number(result.x));
+      }
     });
   };
 
@@ -1026,7 +1092,7 @@ export default function CreateTripClient() {
         </div>
 
         {/* 위치 입력 */}
-        <div className="mb-6">
+        <div className="mb-1">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             여행 위치
           </label>
@@ -1036,55 +1102,58 @@ export default function CreateTripClient() {
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && searchAddress()}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="주소를 검색하세요"
+                readOnly
               />
               <button
                 type="button"
-                onClick={searchAddress}
+                onClick={() => setShowPostcode(true)}
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
               >
-                검색
+                주소 검색
               </button>
             </div>
             <input
               type="text"
               value={detailAddress}
               onChange={(e) => setDetailAddress(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mt-2"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="상세주소를 입력하세요"
             />
-            {showAddressResults && addressResults.length > 0 && (
-              <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto">
-                {addressResults.map((result, index) => (
-                  <button
-                    key={index}
-                    onClick={() => selectAddress(result)}
-                    className="w-full px-4 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
-                  >
-                    <div className="text-sm font-medium">
-                      {result.address_name}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {result.road_address
-                        ? result.road_address.address_name
-                        : "도로명 주소 없음"}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-            {/* <div ref={mapRef} className="w-full h-64 rounded-lg" />
-            <input
-              type="text"
-              value={location}
-              readOnly
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
-              placeholder="지도를 통해 위치를 선택하세요"
-            /> */}
+            {/* <div ref={mapRef} className="w-full h-64 rounded-lg" /> */}
           </div>
         </div>
+
+        {/* 다음 우편번호 서비스 모달 */}
+        {showPostcode && (
+          <div className="fixed inset-0 z-50">
+            <div 
+              className="absolute inset-0 bg-gray-30"
+              onClick={() => setShowPostcode(false)}
+            />
+            <div className="relative h-full flex items-center justify-center p-4">
+              <div className="bg-white rounded-lg w-full max-w-lg shadow-xl">
+                <div className="flex justify-between items-center p-4 border-b">
+                  <h3 className="text-lg font-medium">주소 검색</h3>
+                  <button
+                    onClick={() => setShowPostcode(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <HiXMark className="w-6 h-6" />
+                  </button>
+                </div>
+                <div className="p-4">
+                  <DaumPostcode
+                    onComplete={handlePostcodeComplete}
+                    style={{ width: '100%', height: '400px' }}
+                    autoClose={false}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 날짜 선택 */}
         <div className="mb-6">
