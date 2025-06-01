@@ -5,9 +5,9 @@ import "slick-carousel/slick/slick-theme.css";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { HiPlus as HiPlusIcon } from "react-icons/hi2";
+import { HiPlus as HiPlusIcon, HiOutlineMap, HiOutlineGlobeAlt } from "react-icons/hi2";
 import TripList from "@/components/TripList";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import instance from "@/app/api/axios";
 import { useUser } from "@/hooks/useUser";
 
@@ -52,6 +52,8 @@ export default function Home() {
   const [recommendedTrips, setRecommendedTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchRecommendedTrips = async () => {
@@ -114,6 +116,19 @@ export default function Home() {
     };
 
     fetchRecommendedTrips();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const settings = {
@@ -313,12 +328,38 @@ export default function Home() {
       </section>
 
       {user && (
-        <button
-          onClick={() => router.push("/trip/create")}
-          className="floating-button"
-        >
-          <HiPlusIcon className="w-6 h-6" />
-        </button>
+        <div className="fixed bottom-[105px] right-[170px] z-999" ref={menuRef}>
+          {showMenu && (
+            <div className="absolute bottom-16 right-0 w-48 bg-white rounded-lg shadow-lg py-2 mb-2">
+              <button
+                onClick={() => {
+                  router.push("/trip/create");
+                  setShowMenu(false);
+                }}
+                className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+              >
+                <HiPlusIcon className="w-5 h-5" />
+                여행 만들기
+              </button>
+              <button
+                onClick={() => {
+                  router.push("/trip");
+                  setShowMenu(false);
+                }}
+                className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+              >
+                <HiOutlineMap className="w-5 h-5" />
+                전체 여행 보기
+              </button>
+            </div>
+          )}
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="floating-button"
+          >
+            <HiPlusIcon className="w-6 h-6" />
+          </button>
+        </div>
       )}
     </main>
   );

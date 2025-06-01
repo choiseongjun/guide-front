@@ -410,7 +410,8 @@ function SocialContent() {
       {/* 플로팅 버튼 */}
       <button
         onClick={() => router.push("/social/create")}
-        className="fixed bottom-20 right-4 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600 transition-colors"
+        className="floating-button"
+        // className="fixed bottom-20 right-4 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600 transition-colors"
       >
         <HiPlus className="w-6 h-6" />
       </button>
