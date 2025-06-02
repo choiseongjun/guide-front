@@ -949,6 +949,100 @@ export default function TripDetailPage({
             />
           </div>
 
+          {/* 참여자 목록 */}
+          {(
+            <div className="mt-6">
+              <h2 className="text-lg font-semibold mb-4">참여자 목록</h2>
+              <div className="space-y-4">
+                {/* 참여 확정된 참여자 */}
+                {trip.participants.filter(p => p.status === "APPROVED").length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">참여 확정</h3>
+                    <div className="space-y-2">
+                      {trip.participants
+                        .filter(p => p.status === "APPROVED")
+                        .map((participant) => (
+                          <div
+                            key={participant.id}
+                            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                                <Image
+                                  src={getProfileImage(participant.user.profileImageUrl)}
+                                  alt={participant.user.nickname}
+                                  fill
+                                  className="object-cover"
+                                />
+                              </div>
+                              <div>
+                                <p className="font-medium">{participant.user.nickname}</p>
+                                <p className="text-sm text-gray-500">참여 확정</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 대기 중인 참여자 */}
+                {trip.participants.filter(p => p.status === "PENDING").length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">대기 중</h3>
+                    <div className="space-y-2">
+                      {trip.participants
+                        .filter(p => p.status === "PENDING")
+                        .map((participant) => (
+                          <div
+                            key={participant.id}
+                            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                                <Image
+                                  src={getProfileImage(participant.user.profileImageUrl)}
+                                  alt={participant.user.nickname}
+                                  fill
+                                  className="object-cover"
+                                />
+                              </div>
+                              <div>
+                                <p className="font-medium">{participant.user.nickname}</p>
+                                <p className="text-sm text-gray-500">대기 중</p>
+                              </div>
+                            </div>
+                            {isCreator && (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleApprove(participant.id)}
+                                  className="px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600"
+                                >
+                                  승인
+                                </button>
+                                <button
+                                  onClick={() => handleReject(participant.id)}
+                                  className="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300"
+                                >
+                                  거절
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {trip.participants.filter(p => p.status === "APPROVED" || p.status === "PENDING").length === 0 && (
+                  <p className="text-center text-gray-500 py-4">
+                    아직 참여 신청한 사람이 없습니다.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* 제공/미제공 항목 */}
           <div className="mt-6">
             <h2 className="text-xl font-bold mb-4">포함/불포함 항목</h2>
