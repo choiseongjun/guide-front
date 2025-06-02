@@ -93,20 +93,10 @@ export default function LoginClient({ params }: LoginClientProps) {
         password: password,
       });
 
-      const response = await instance.post(
-        `/api/v1/users/login`,
-        {
-          phoneNumber: cleanPhone, // phone -> phoneNumber로 변경
-          password: password,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          withCredentials: true, // 쿠키 포함
-        }
-      );
+      const response = await instance.post(`/api/v1/users/login`, {
+        phoneNumber: cleanPhone, // phone -> phoneNumber로 변경
+        password: password,
+      });
 
       console.log("로그인 응답:", response.data);
 
