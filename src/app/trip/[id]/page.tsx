@@ -34,6 +34,7 @@ import { FaInstagram } from "react-icons/fa";
 import { RiKakaoTalkFill } from "react-icons/ri";
 import { BsFacebook, BsTwitter } from "react-icons/bs";
 import TripTabs from "./components/TripTabs";
+import PhotoTab from "./components/PhotoTab";
 
 interface Participant {
   id: number;
@@ -179,11 +180,10 @@ export default function TripDetailPage({
   >(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewTitle, setReviewTitle] = useState("");
   const [reviewContent, setReviewContent] = useState("");
   const [rating, setRating] = useState(5);
   const [reviewImages, setReviewImages] = useState<ImageFile[]>([]);
-  const [reviewTitle, setReviewTitle] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [editingReview, setEditingReview] = useState<Review | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [reviewToDelete, setReviewToDelete] = useState<number | null>(null);
@@ -203,7 +203,7 @@ export default function TripDetailPage({
   const [badMannerReason, setBadMannerReason] = useState("");
   const [showShareModal, setShowShareModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [activeTab, setActiveTab] = useState<"info" | "schedule" | "reviews">("info");
+  const [activeTab, setActiveTab] = useState<"info" | "schedule" | "reviews" | "photos">("info");
 
   useEffect(() => {
     const fetchTrip = async () => {
@@ -625,7 +625,7 @@ export default function TripDetailPage({
 
   const fetchEvaluations = async () => {
     try {
-      const response = await instance.get(`/api/v1/travels/${resolvedParams.id}/evaluations`);
+      const response = await instance.get(`/api/v1/travels/${resolvedParams.id}/reviews`);
       if (response.status === 200) {
         setEvaluations(response.data.data || []);
       }
@@ -723,7 +723,7 @@ export default function TripDetailPage({
     }
   };
 
-  const handleTabClick = (tab: "info" | "schedule" | "reviews") => {
+  const handleTabClick = (tab: "info" | "schedule" | "reviews" | "photos") => {
     setActiveTab(tab);
     scrollToSection(tab);
   };
@@ -1124,6 +1124,11 @@ export default function TripDetailPage({
               </div>
             )}
           </div>
+        </div>
+
+        {/* 사진 섹션 */}
+        <div id="photos" className="bg-white p-4">
+          <PhotoTab tripId={resolvedParams.id} isCreator={isCreator} />
         </div>
 
         {/* 플로팅 참가하기 버튼 */}
@@ -1630,6 +1635,164 @@ export default function TripDetailPage({
               </motion.div>
             )}
           </AnimatePresence>
+        )}
+
+        {/* 리뷰 작성 모달 */}
+        {showReviewForm && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 shadow-xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">리뷰 작성123</h3>
+                <button
+                  onClick={() => {
+                    setShowReviewForm(false);
+                    setReviewContent("");
+                    setReviewTitle("");
+                    setRating(5);
+                    setReviewImages([]);
+                    setEditingReview(null);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                >
+                  <HiOutlineXMark className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  평점
+                </label>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => {
+                    const isHalf = rating === star - 0.5;
+                    const isFull = rating >= star;
+                    return (
+                      <div key={star} className="relative">
+                        <div className="text-2xl text-gray-300">★</div>
+                        <div
+                          className={`absolute inset-0 text-2xl text-yellow-400 overflow-hidden ${
+                            isHalf ? "w-1/2" : isFull ? "w-full" : "w-0"
+                          }`}
+                        >
+                          ★
+                        </div>
+                        <button
+                          onClick={() => setRating(star)}
+                          className="absolute inset-0 w-1/2"
+                        />
+                        <button
+                          onClick={() => setRating(star - 0.5)}
+                          className="absolute inset-0 w-1/2 left-1/2"
+                        />
+                      </div>
+                    );
+                  })}
+                  <span className="ml-2 text-sm text-gray-600">
+                    {rating.toFixed(1)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  제목
+                </label>
+                <input
+                  type="text"
+                  value={reviewTitle}
+                  onChange={(e) => setReviewTitle(e.target.value)}
+                  placeholder="리뷰 제목을 입력하세요"
+                  className="w-full p-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  사진 첨부
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {reviewImages.map((image, index) => (
+                    <div key={index} className="relative aspect-square">
+                      <img
+                        src={getImageUrl(image.fileUrl)}
+                        alt={`Review image ${index + 1}`}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReviewImages((prev) => {
+                            const newImages = [...prev];
+                            newImages.splice(index, 1);
+                            return newImages;
+                          });
+                        }}
+                        className="absolute top-1 right-1 p-1 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70"
+                      >
+                        <HiOutlineXMark className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                  {reviewImages.length < 10 && (
+                    <label
+                      htmlFor="review-image-upload"
+                      className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center hover:border-gray-400 transition-colors cursor-pointer"
+                    >
+                      <HiOutlinePhoto className="w-8 h-8 text-gray-400 mb-1" />
+                      <span className="text-sm text-gray-500">사진 추가</span>
+                      <input
+                        id="review-image-upload"
+                        type="file"
+                        onChange={handleReviewImageUpload}
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  리뷰 내용
+                </label>
+                <textarea
+                  value={reviewContent}
+                  onChange={(e) => setReviewContent(e.target.value)}
+                  placeholder="여행에 대한 리뷰를 작성해주세요..."
+                  className="w-full p-3 border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[150px]"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    setShowReviewForm(false);
+                    setReviewContent("");
+                    setReviewTitle("");
+                    setRating(5);
+                    setReviewImages([]);
+                    setEditingReview(null);
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleReviewSubmit}
+                  disabled={!reviewContent.trim() || !reviewTitle.trim()}
+                  className={`px-4 py-2 rounded-lg ${
+                    reviewContent.trim() && reviewTitle.trim()
+                      ? "bg-blue-500 text-white hover:bg-blue-600"
+                      : "bg-gray-100 text-gray-400"
+                  }`}
+                >
+                  작성하기
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </div>

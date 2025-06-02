@@ -50,8 +50,9 @@ export default function Footer() {
                     </h4>
                     <ul className="space-y-2 text-sm text-gray-600">
                       <li>회사명: 트윗</li>
-                      <li>대표이사: 최성준</li>
+                      <li>대표자: 최성준</li>
                       <li>대표번호: 010-2547-2702</li>
+                      <li>대표이메일: travelwithmemaster@gmail.com</li>
                       <li>사업자등록번호: 880-05-02957</li>
                       <li>주소: 서울시 동작구 상도동 211-114 201호</li>
                       {/* <li className="flex items-center gap-2">

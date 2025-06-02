@@ -536,7 +536,7 @@ export default function ProfilePage() {
       )}
 
       {/* 가이드 레벨 */}
-      <div className="bg-white rounded-xl p-6 mb-4">
+      {isLoggedIn && <div className="bg-white rounded-xl p-6 mb-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">가이드 레벨</h2>
           <button 
@@ -590,7 +590,7 @@ export default function ProfilePage() {
             </li>
           </ul>
         </div>
-      </div>
+      </div>}
 
       {/* 트립 레벨 */}
       {isLoggedIn && (
@@ -658,12 +658,12 @@ export default function ProfilePage() {
       )}
 
       {/* 여행 컬렉션 */}
-      {isLoggedIn && (
+       
         <div className="mt-4 bg-white">
           <div className="max-w-md mx-auto px-4 py-4">
             <h2 className="text-lg font-semibold mb-4">여행 컬렉션</h2>
             <div className="space-y-3">
-              <motion.button
+              {isLoggedIn&&<motion.button
                 whileHover={{ scale: 1.02 }}
                 className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
                 onClick={() => router.push("/trip/my")}
@@ -678,9 +678,9 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
-              </motion.button>
+              </motion.button>}
 
-              <motion.button
+             {isLoggedIn&& <motion.button
                 whileHover={{ scale: 1.02 }}
                 className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
                 onClick={() => router.push("/profile/trips")}
@@ -695,9 +695,9 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
-              </motion.button>
+              </motion.button>}
 
-              <motion.button
+            {isLoggedIn&&  <motion.button
                 whileHover={{ scale: 1.02 }}
                 className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
                 onClick={() => router.push("/profile/trips/requests")}
@@ -714,9 +714,9 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
-              </motion.button>
+              </motion.button>}
 
-              <motion.button
+              {isLoggedIn&&<motion.button
                 whileHover={{ scale: 1.02 }}
                 className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
                 onClick={() => router.push("/profile/saved")}
@@ -731,9 +731,9 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
-              </motion.button>
+              </motion.button>}
 
-              <motion.button
+             {isLoggedIn&& <motion.button
                 whileHover={{ scale: 1.02 }}
                 className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
                 onClick={() => router.push("/profile/reviews")}
@@ -748,26 +748,9 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
-              </motion.button>
+              </motion.button>}
 
-              {/* <motion.button
-                whileHover={{ scale: 1.02 }}
-                className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
-                onClick={() => router.push("/profile/bookmarks")}
-              >
-                <div className="flex items-center">
-                  <HiOutlineBookmark className="w-6 h-6 text-green-500 mr-3" />
-                  <div>
-                    <h4 className="font-medium text-gray-800">북마크</h4>
-                    <p className="text-sm text-gray-600">
-                      여행 가이드 2개 • 게시글 2개
-                    </p>
-                  </div>
-                </div>
-                <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
-              </motion.button> */}
-
-              <motion.button
+              {isLoggedIn&&<motion.button
                 whileHover={{ scale: 1.02 }}
                 className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
                 onClick={() => router.push("/profile/payment")}
@@ -782,9 +765,9 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
-              </motion.button>
+              </motion.button>}
 
-              <motion.button
+            {isLoggedIn&&  <motion.button
                 whileHover={{ scale: 1.02 }}
                 className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
                 onClick={() => router.push("/profile/settlement")}
@@ -799,7 +782,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <HiOutlineChevronRight className="w-5 h-5 text-gray-400" />
-              </motion.button>
+              </motion.button>}
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 className="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between border border-gray-100"
@@ -825,12 +808,12 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-      )}
+      
 
       {/* 설정 메뉴 */}
       <div className="mt-4 bg-white">
         <div className="max-w-md mx-auto">
-          {settingsMenu.map((section) => (
+          {isLoggedIn && settingsMenu.map((section) => (
             <div key={section.id} className="border-b last:border-b-0">
               <button
                 className="w-full px-4 py-4 flex items-center gap-3 hover:bg-gray-50 transition-colors"

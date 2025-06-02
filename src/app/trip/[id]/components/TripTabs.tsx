@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 
 interface TripTabsProps {
-  activeTab: "info" | "schedule" | "reviews";
-  onTabChange: (tab: "info" | "schedule" | "reviews") => void;
+  activeTab: "info" | "schedule" | "reviews" | "photos";
+  onTabChange: (tab: "info" | "schedule" | "reviews" | "photos") => void;
 }
 
 export default function TripTabs({ activeTab, onTabChange }: TripTabsProps) {
@@ -34,7 +34,7 @@ export default function TripTabs({ activeTab, onTabChange }: TripTabsProps) {
       }`}
     >
       <div className="max-w-md mx-auto">
-        <div className="grid grid-cols-3">
+        <div className="grid grid-cols-4">
           <button
             onClick={() => onTabChange("info")}
             className={`py-4 text-sm font-medium ${
@@ -64,6 +64,16 @@ export default function TripTabs({ activeTab, onTabChange }: TripTabsProps) {
             }`}
           >
             리뷰
+          </button>
+          <button
+            onClick={() => onTabChange("photos")}
+            className={`py-4 text-sm font-medium ${
+              activeTab === "photos"
+                ? "text-blue-500 border-b-2 border-blue-500"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            사진
           </button>
         </div>
       </div>
