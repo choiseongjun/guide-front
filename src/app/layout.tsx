@@ -67,6 +67,7 @@ export default function RootLayout({
           name="viewport"
           content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
         />
+        <link rel="icon" href="/logo.svg" type="image/svg+xml" />
       </head>
       <body className={inter.className}>
         <ServerStatusProvider>

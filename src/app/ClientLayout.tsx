@@ -20,6 +20,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import GlobalLoading from "@/components/GlobalLoading";
 import { useNotificationCount } from "@/hooks/useNotificationCount";
+import Image from "next/image";
 
 // 임시 알림 데이터
 const notifications = [
@@ -72,7 +73,7 @@ export default function ClientLayout({
         <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
           <div className="max-w-md mx-auto">
             <div className="flex items-center px-4 py-3 relative">
-              <motion.div
+              {/* <motion.div
                 className="flex items-center gap-2"
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -95,7 +96,10 @@ export default function ClientLayout({
                     <HiOutlineStar className="w-4 h-4 text-yellow-400" />
                   </motion.div>
                 </div>
-              </motion.div>
+              </motion.div> */}
+              <div>
+                <Image src="/logo.svg" alt="logo" width={32} height={32} />
+              </div>
 
               <div className="absolute left-1/2 transform -translate-x-1/2">
                 <div className="flex items-center gap-1">
