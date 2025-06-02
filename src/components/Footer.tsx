@@ -10,7 +10,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Footer() {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   return (
     <footer className="bg-gray-50 border-t border-gray-200 mt-auto">
@@ -23,7 +23,7 @@ export default function Footer() {
           >
             <div className="flex items-center gap-2">
               <h3 className="text-lg font-semibold text-gray-900">회사 정보</h3>
-              <span className="text-sm text-gray-500">(클릭하여 펼치기)</span>
+              {/* <span className="text-sm text-gray-500">(클릭하여 펼치기)</span> */}
             </div>
             <motion.div
               animate={{ rotate: isExpanded ? 180 : 0 }}
@@ -61,7 +61,7 @@ export default function Footer() {
                   </div>
 
                   {/* 고객센터 */}
-                  <div>
+                  {/* <div>
                     <h4 className="text-sm font-medium text-gray-900 mb-3">
                       고객센터
                     </h4>
@@ -80,7 +80,7 @@ export default function Footer() {
                         <span>문의메일: travelwithmemaster@gmail.com</span>
                       </li>
                     </ul>
-                  </div>
+                  </div> */}
 
                   {/* 서비스 정보 */}
                   <div>
@@ -90,26 +90,32 @@ export default function Footer() {
                     <ul className="space-y-2 text-sm text-gray-600">
                       <li>
                         <Link
-                          href="/terms"
+                          href="https://www.notion.so/203f6533a0e28064a3b0c4dfc8729dd8?source=copy_link"
                           className="hover:text-blue-600 transition-colors"
+                          target="_blank"
+                          rel="noopener noreferrer"
                         >
                           이용약관
                         </Link>
                       </li>
                       <li>
                         <Link
-                          href="/privacy"
+                          href="https://www.notion.so/203f6533a0e280a8b602f5a0c7bfc87e?source=copy_link"
                           className="hover:text-blue-600 transition-colors"
+                          target="_blank"
+                          rel="noopener noreferrer"
                         >
                           개인정보처리방침
                         </Link>
                       </li>
                       <li>
                         <Link
-                          href="/faq"
+                          href="https://www.notion.so/204f6533a0e28002a75cd1eba80fbec5?source=copy_link"
                           className="hover:text-blue-600 transition-colors"
+                          target="_blank"
+                          rel="noopener noreferrer"
                         >
-                          자주 묻는 질문
+                          환불 정책
                         </Link>
                       </li>
                     </ul>
