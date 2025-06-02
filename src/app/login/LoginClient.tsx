@@ -60,7 +60,7 @@ export default function LoginClient({ params }: LoginClientProps) {
         localStorage.setItem("user", JSON.stringify(user));
 
         // 로그인 성공 후 사용자 정보 갱신을 위해 storage 이벤트 발생
-        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new Event("storage"));
 
         // 메인 페이지로 리다이렉션
         router.push("/");
@@ -93,8 +93,8 @@ export default function LoginClient({ params }: LoginClientProps) {
         password: password,
       });
 
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/users/login`,
+      const response = await instance.post(
+        `/api/v1/users/login`,
         {
           phoneNumber: cleanPhone, // phone -> phoneNumber로 변경
           password: password,
@@ -119,7 +119,7 @@ export default function LoginClient({ params }: LoginClientProps) {
         localStorage.setItem("user", JSON.stringify(user));
 
         // 로그인 성공 후 사용자 정보 갱신을 위해 storage 이벤트 발생
-        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new Event("storage"));
 
         // 메인 페이지로 리다이렉션
         router.push("/");
