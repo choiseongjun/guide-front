@@ -238,7 +238,7 @@ export default function CreateSocialClient({
               <div className="space-y-4">
                 <div>
                   <h3 className="font-medium text-gray-700">전화 문의</h3>
-                  <p className="text-gray-600">010-9587-0000</p>
+                  <p className="text-gray-600">010-2547-2702</p>
                   <p className="text-sm text-gray-500">
                     운영시간: 09:00 - 18:00
                   </p>

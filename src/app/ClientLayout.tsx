@@ -61,7 +61,9 @@ export default function ClientLayout({
   }, [pathname]);
 
   // 현재 경로가 여행 관련 페이지인지 확인
-  const isTravelPage = pathname ? (pathname === "/" || pathname.startsWith("/theme/")) : false;
+  const isTravelPage = pathname
+    ? pathname === "/" || pathname.startsWith("/theme/")
+    : false;
 
   return (
     <>
@@ -218,7 +220,7 @@ export default function ClientLayout({
                   </div>
                   <div>
                     <p className="font-medium text-gray-800">전화 문의</p>
-                    <p className="text-sm text-gray-600">02-1234-5678</p>
+                    <p className="text-sm text-gray-600">010-2547-2702</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
