@@ -15,6 +15,7 @@ import {
   HiOutlineHeart,
 } from "react-icons/hi2";
 import instance from "@/app/api/axios";
+import { getImageUrl, getProfileImage } from "@/app/common/imgUtils";
 
 interface Trip {
   id: number;
@@ -51,7 +52,7 @@ export default function TripRequestsPage() {
     const fetchTrips = async () => {
       try {
         setLoading(true);
-        const response = await instance.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels/me`);
+        const response = await instance.get(`/api/v1/travels/me`);
         if (response.data.status === 200) {
           const tripsData = response.data.data.content || response.data.data;
           setTrips(Array.isArray(tripsData) ? tripsData : []);
@@ -70,7 +71,7 @@ export default function TripRequestsPage() {
   const handleApprove = async (tripId: number, participantId: number) => {
     try {
       const response = await instance.put(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels/${tripId}/participants/${participantId}/approve`
+        `/api/v1/travels/${tripId}/participants/${participantId}/approve`
       );
       if (response.data.status === 200) {
         setTrips(prevTrips => 
@@ -96,7 +97,7 @@ export default function TripRequestsPage() {
   const handleReject = async (tripId: number, participantId: number) => {
     try {
       const response = await instance.put(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels/${tripId}/participants/${participantId}/reject`
+        `/api/v1/travels/${tripId}/participants/${participantId}/reject`
       );
       if (response.data.status === 200) {
         setTrips(prevTrips => 
@@ -152,6 +153,7 @@ export default function TripRequestsPage() {
       </div>
     );
   }
+  
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -180,7 +182,7 @@ export default function TripRequestsPage() {
                 <div className="flex gap-4">
                   <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
                     <Image
-                      src={trip.images[0]?.imageUrl || "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&auto=format&fit=crop&q=60"}
+                      src={getImageUrl(trip.images[0]?.imageUrl)}
                       alt={trip.title}
                       fill
                       className="object-cover"
@@ -230,7 +232,7 @@ export default function TripRequestsPage() {
                         <div className="flex items-center gap-3">
                           <div className="relative w-10 h-10 rounded-full overflow-hidden">
                             <Image
-                              src={participant.user.profileImageUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=60"}
+                              src={getProfileImage(participant.user.profileImageUrl || "")}
                               alt={participant.user.nickname}
                               fill
                               className="object-cover"
