@@ -106,7 +106,7 @@ export default function CreateTripClient({ mode = "create", initialData }: Creat
   const [providedItems, setProvidedItems] = useState<string[]>([]);
   const [notProvidedItems, setNotProvidedItems] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
-  const [date, setDate] = useState<Value>([null, null]);
+  const [date, setDate] = useState<Value>([new Date(), null]);
   const [images, setImages] = useState<string[]>([]);
   const [showCalendar, setShowCalendar] = useState(false);
   const [map, setMap] = useState<any>(null);
@@ -161,7 +161,11 @@ export default function CreateTripClient({ mode = "create", initialData }: Creat
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [showPostcode, setShowPostcode] = useState(false);
   const [buildingCode, setBuildingCode] = useState("");
-  const [startTime, setStartTime] = useState("09:00");
+  const [startTime, setStartTime] = useState(() => {
+    const now = new Date();
+    now.setHours(now.getHours() + 2);
+    return now.toTimeString().slice(0, 5);
+  });
 
   // 시간 옵션 생성 (30분 간격)
   const timeOptions = Array.from({ length: 48 }, (_, i) => {
@@ -460,7 +464,11 @@ export default function CreateTripClient({ mode = "create", initialData }: Creat
       setTags(initialData.tags?.map((tag: any) => tag.name) || []);
       setImages(initialData.images?.map((img: any) => img.imageUrl) || []);
       setSelectedCategory(initialData.categoryId);
-      setStartTime(initialData.startTime || "09:00");
+      setStartTime(() => {
+        const now = new Date();
+        now.setHours(now.getHours() + 2);
+        return now.toTimeString().slice(0, 5);
+      });
 
       // 일정 설정
       if (initialData.schedules) {
@@ -496,7 +504,7 @@ export default function CreateTripClient({ mode = "create", initialData }: Creat
       setDetailAddress("애월읍");
       setLatitude(33.450701);
       setLongitude(126.570667);
-      setDate([new Date("2024-03-01"), new Date("2024-03-04")]);
+      setDate([new Date(), null]);
       setMinParticipants(2);
       setMaxParticipants(10);
       setIsFree(false);
@@ -509,7 +517,11 @@ export default function CreateTripClient({ mode = "create", initialData }: Creat
       setIsScheduleEnabled(true);
       setTags(["제주도", "3박4일", "일출", "시티투어"]);
       setDiscountRate(0);
-      setStartTime("09:00");
+      setStartTime(() => {
+        const now = new Date();
+        now.setHours(now.getHours() + 2);
+        return now.toTimeString().slice(0, 5);
+      });
 
       // 일정 초기값 설정
       setSchedules([

@@ -85,28 +85,28 @@ const settingsMenu = [
       { id: "marketing", title: "마케팅 알림" },
     ],
   },
-  {
-    id: "privacy",
-    title: "공개 범위 설정",
-    icon: HiOutlineGlobeAlt,
-    description: "누가 내 여행 이력을 볼 수 있는지",
-    items: [
-      { id: "profile", title: "프로필 공개" },
-      { id: "reviews", title: "리뷰 공개" },
-      { id: "collections", title: "컬렉션 공개" },
-    ],
-  },
-  {
-    id: "safety",
-    title: "차단 목록 / 안전 설정",
-    icon: HiOutlineShieldCheck,
-    description: "신뢰 기반 여행 커뮤니티",
-    items: [
-      { id: "blocked", title: "차단한 사용자" },
-      { id: "report", title: "신고 내역" },
-      { id: "privacy", title: "개인정보 보호" },
-    ],
-  },
+  // {
+  //   id: "privacy",
+  //   title: "공개 범위 설정",
+  //   icon: HiOutlineGlobeAlt,
+  //   description: "누가 내 여행 이력을 볼 수 있는지",
+  //   items: [
+  //     { id: "profile", title: "프로필 공개" },
+  //     { id: "reviews", title: "리뷰 공개" },
+  //     { id: "collections", title: "컬렉션 공개" },
+  //   ],
+  // },
+  // {
+  //   id: "safety",
+  //   title: "차단 목록 / 안전 설정",
+  //   icon: HiOutlineShieldCheck,
+  //   description: "신뢰 기반 여행 커뮤니티",
+  //   items: [
+  //     { id: "blocked", title: "차단한 사용자" },
+  //     { id: "report", title: "신고 내역" },
+  //     { id: "privacy", title: "개인정보 보호" },
+  //   ],
+  // },
 ];
 
 const menuItems = [
@@ -161,7 +161,7 @@ export default function ProfilePage() {
     const fetchUserData = async () => {
       try {
         const response = await instance.get(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/users/me`
+          `/api/v1/users/me`
         );
         setUserData(response.data);
       } catch (error) {
@@ -169,21 +169,23 @@ export default function ProfilePage() {
       }
     };
 
-    const fetchMyTrips = async () => {
-      try {
-        const response = await instance.get(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels/my`
-        );
-        setMyTrips(response.data);
-      } catch (error) {
-        console.error("내 여행 목록 조회 실패:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    // const fetchMyTrips = async () => {
+    //   try {
+    //     const response = await instance.get(
+    //       `/api/v1/travels/my`
+    //     );
+    //     setMyTrips(response.data);
+    //   } catch (error) {
+    //     console.error("내 여행 목록 조회 실패:", error);
+    //   } finally {
+    //     setLoading(false);
+    //   }
+    // };
 
-    fetchUserData();
-    fetchMyTrips();
+    if(user) {
+      fetchUserData();
+      // fetchMyTrips();
+    }
   }, []);
 
   const handleLogin = () => {
@@ -394,13 +396,13 @@ export default function ProfilePage() {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
+  //       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
