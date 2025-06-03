@@ -12,6 +12,8 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import TripList from "@/components/TripList";
 import instance from "@/app/api/axios";
 import { log } from "console";
+import { useUser } from "@/hooks/useUser";
+import { HiPlus as HiPlusIcon, HiOutlineMap, HiOutlineGlobeAlt } from "react-icons/hi2";
 
 interface Travel {
   id: number;
@@ -134,6 +136,8 @@ export default function ThemePageClient({
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [sort, setSort] = useState('');
+  const { user } = useUser();
+  const [showMenu, setShowMenu] = useState(false);
 
   // 카테고리 ID가 변경될 때 상태 초기화
   useEffect(() => {
@@ -675,6 +679,40 @@ export default function ThemePageClient({
           </div>
         </div>
       </main>
+      {user && (
+          <div className="fixed bottom-[100px]  z-50" style={{ right: 'calc((100% - 22rem) / 2 + 1rem)' }}>
+            {showMenu && (
+              <div className="absolute bottom-16 right-0 w-48 bg-white rounded-lg shadow-lg py-2 mb-2">
+                <button
+                  onClick={() => {
+                    router.push("/trip/create");
+                    setShowMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <HiPlusIcon className="w-5 h-5" />
+                  여행 만들기
+                </button>
+                <button
+                  onClick={() => {
+                    router.push("/trip");
+                    setShowMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <HiOutlineMap className="w-5 h-5" />
+                  전체 여행 보기
+                </button>
+              </div>
+            )}
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="floating-button"
+            >
+              <HiPlusIcon className="w-6 h-6" />
+            </button>
+          </div>
+        )}
     </div>
   );
 }
