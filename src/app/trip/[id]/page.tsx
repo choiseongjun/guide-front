@@ -23,6 +23,7 @@ import {
   HiOutlineShare,
   HiOutlineLink,
   HiMinus,
+  HiOutlineExclamationTriangle,
 } from "react-icons/hi2";
 import { HiOutlineChatBubbleLeft } from "react-icons/hi2";
 import instance from "@/app/api/axios";
@@ -35,6 +36,7 @@ import { RiKakaoTalkFill } from "react-icons/ri";
 import { BsFacebook, BsTwitter } from "react-icons/bs";
 import TripTabs from "./components/TripTabs";
 import PhotoTab from "./components/PhotoTab";
+import ErrorModal from "@/app/components/ErrorModal";
 
 interface Participant {
   id: number;
@@ -204,6 +206,8 @@ export default function TripDetailPage({
   const [showShareModal, setShowShareModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab] = useState<"info" | "schedule" | "reviews" | "photos">("info");
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     const fetchTrip = async () => {
@@ -382,9 +386,11 @@ export default function TripDetailPage({
         });
         setShowCancelModal(false);
       }
-    } catch (error) {
+    } catch (error:any) {
       console.error("참여 취소 실패:", error);
-      alert("참여 취소에 실패했습니다.");
+      const errMessage = error?.response?.data?.message || "참여 취소에 실패했습니다.";
+      setErrorMessage(errMessage);
+      setShowErrorModal(true);
     }
   };
 
@@ -1888,6 +1894,13 @@ export default function TripDetailPage({
             </div>
           </div>
         )}
+
+        {/* 에러 모달 */}
+        <ErrorModal 
+          isOpen={showErrorModal}
+          message={errorMessage}
+          onClose={() => setShowErrorModal(false)}
+        />
       </main>
     </div>
   );
