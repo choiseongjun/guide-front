@@ -13,6 +13,7 @@ import {
   HiOutlineXMark,
   HiOutlineStar,
   HiOutlineHeart,
+  HiOutlineExclamationTriangle,
 } from "react-icons/hi2";
 import instance from "@/app/api/axios";
 import { getImageUrl, getProfileImage } from "@/app/common/imgUtils";
@@ -47,6 +48,8 @@ export default function TripRequestsPage() {
   const router = useRouter();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [selectedParticipant, setSelectedParticipant] = useState<{tripId: number, participantId: number} | null>(null);
 
   useEffect(() => {
     const fetchTrips = async () => {
@@ -95,18 +98,25 @@ export default function TripRequestsPage() {
   };
 
   const handleReject = async (tripId: number, participantId: number) => {
+    setSelectedParticipant({ tripId, participantId });
+    setShowRejectModal(true);
+  };
+
+  const confirmReject = async () => {
+    if (!selectedParticipant) return;
+
     try {
       const response = await instance.put(
-        `/api/v1/travels/${tripId}/participants/${participantId}/reject`
+        `/api/v1/travels/${selectedParticipant.tripId}/participants/${selectedParticipant.participantId}/reject`
       );
       if (response.data.status === 200) {
         setTrips(prevTrips => 
           prevTrips.map(trip => {
-            if (trip.id === tripId) {
+            if (trip.id === selectedParticipant.tripId) {
               return {
                 ...trip,
                 participants: trip.participants.map(p => 
-                  p.id === participantId ? { ...p, status: 'REJECTED' } : p
+                  p.id === selectedParticipant.participantId ? { ...p, status: 'REJECTED' } : p
                 )
               };
             }
@@ -117,6 +127,9 @@ export default function TripRequestsPage() {
     } catch (error) {
       console.error('참여자 거절 실패:', error);
       alert('참여자 거절에 실패했습니다.');
+    } finally {
+      setShowRejectModal(false);
+      setSelectedParticipant(null);
     }
   };
 
@@ -284,6 +297,41 @@ export default function TripRequestsPage() {
           </div>
         )}
       </div>
+
+      {/* 거절 확인 모달 */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+            <div className="flex items-center justify-center mb-4">
+              <div className="bg-red-100 p-3 rounded-full">
+                <HiOutlineExclamationTriangle className="w-8 h-8 text-red-500" />
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-center mb-2">참여 신청 거절</h3>
+            <p className="text-gray-600 text-center mb-6">
+              참여 신청을 거절하시겠습니까?<br />
+              이 작업은 되돌릴 수 없습니다.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowRejectModal(false);
+                  setSelectedParticipant(null);
+                }}
+                className="flex-1 py-2.5 px-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={confirmReject}
+                className="flex-1 py-2.5 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                거절하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

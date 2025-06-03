@@ -242,28 +242,6 @@ export default function Home() {
         </Slider>
       </div>
 
-      <div className="theme-grid">
-        {themes.map((theme, index) => (
-          <Link
-            key={index}
-            href={`/theme/${theme.id}`}
-            className="theme-item cursor-pointer hover:opacity-80 transition-opacity"
-          >
-            <div className="theme-image">
-              <Image
-                src={theme.image}
-                alt={theme.title}
-                width={85}
-                height={85}
-                style={{ objectFit: "cover" }}
-                unoptimized
-              />
-            </div>
-            <div className="theme-title">{theme.title}</div>
-          </Link>
-        ))}
-      </div>
-
       <div className="relative mb-6">
         <div className="relative">
           <input
@@ -289,6 +267,30 @@ export default function Home() {
           검색
         </button>
       </div>
+
+      <div className="theme-grid">
+        {themes.map((theme, index) => (
+          <Link
+            key={index}
+            href={`/theme/${theme.id}`}
+            className="theme-item cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            <div className="theme-image">
+              <Image
+                src={theme.image}
+                alt={theme.title}
+                width={85}
+                height={85}
+                style={{ objectFit: "cover" }}
+                unoptimized
+              />
+            </div>
+            <div className="theme-title">{theme.title}</div>
+          </Link>
+        ))}
+      </div>
+
+      
 
       <section className="max-w-md mx-auto px-4 py-6 relative">
         <div className="flex items-center justify-between mb-4">
