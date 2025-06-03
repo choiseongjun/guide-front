@@ -19,6 +19,7 @@ import {
   HiOutlineTag,
   HiOutlinePhoto,
   HiXMark,
+  HiOutlineClock,
 } from "react-icons/hi2";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
@@ -155,10 +156,12 @@ export default function CreateTripClient({ mode = "create", initialData }: Creat
     schedules: [],
     tags: [],
     images: [],
+    startTime: "",
   });
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [showPostcode, setShowPostcode] = useState(false);
   const [buildingCode, setBuildingCode] = useState("");
+  const [startTime, setStartTime] = useState("09:00");
 
   // 시간 옵션 생성 (30분 간격)
   const timeOptions = Array.from({ length: 48 }, (_, i) => {
@@ -457,6 +460,7 @@ export default function CreateTripClient({ mode = "create", initialData }: Creat
       setTags(initialData.tags?.map((tag: any) => tag.name) || []);
       setImages(initialData.images?.map((img: any) => img.imageUrl) || []);
       setSelectedCategory(initialData.categoryId);
+      setStartTime(initialData.startTime || "09:00");
 
       // 일정 설정
       if (initialData.schedules) {
@@ -505,6 +509,7 @@ export default function CreateTripClient({ mode = "create", initialData }: Creat
       setIsScheduleEnabled(true);
       setTags(["제주도", "3박4일", "일출", "시티투어"]);
       setDiscountRate(0);
+      setStartTime("09:00");
 
       // 일정 초기값 설정
       setSchedules([
@@ -587,6 +592,7 @@ export default function CreateTripClient({ mode = "create", initialData }: Creat
         Array.isArray(date) && date[1]
           ? date[1].toISOString().split("T")[0]
           : "",
+      startTime,
       minParticipants,
       maxParticipants,
       isPaid: !isFree,
@@ -889,7 +895,7 @@ export default function CreateTripClient({ mode = "create", initialData }: Creat
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-white pb-20">
       <Script
         src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY}&libraries=services`}
         strategy="beforeInteractive"
@@ -1335,6 +1341,24 @@ export default function CreateTripClient({ mode = "create", initialData }: Creat
               />
             </div>
           )}
+        </div>
+
+        {/* 시작 시간 선택 */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            시작 시간
+          </label>
+          <div className="relative">
+            <input
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+              required
+              onClick={(e) => e.currentTarget.showPicker()}
+            />
+            <HiOutlineClock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+          </div>
         </div>
 
         {/* 참가자 수 선택 */}

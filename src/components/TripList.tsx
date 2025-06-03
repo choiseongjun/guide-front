@@ -23,6 +23,13 @@ interface TripListProps {
   showEditButton?: boolean;
 }
 
+// 여행 시작 여부 확인 함수
+const isTripStarted = (startDate: string, startTime: string) => {
+  const now = new Date();
+  const tripStart = new Date(`${startDate}T${startTime}`);
+  return now > tripStart;
+};
+
 export default function TripList({ trips, onTripClick, showEditButton = false }: TripListProps) {
   const router = useRouter();
   const { user } = useUser();
@@ -103,13 +110,23 @@ export default function TripList({ trips, onTripClick, showEditButton = false }:
         const approvedParticipants = Array.isArray(trip.participants)
           ? trip.participants.filter((p) => p.status === "APPROVED").slice(0, 3)
           : [];
+        const isStarted = isTripStarted(trip.startDate, trip.startTime);
 
         return (
           <div
             key={trip.id}
-            className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => onTripClick(trip.id)}
+            className={`bg-white rounded-lg shadow-sm overflow-hidden relative ${
+              isStarted ? "opacity-60" : "cursor-pointer hover:shadow-md transition-shadow"
+            }`}
+            onClick={() => !isStarted && onTripClick(trip.id)}
           >
+            {/* 마감 표시 */}
+            {isStarted && (
+              <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium z-10">
+                마감
+              </div>
+            )}
+
             <div className="relative h-48">
               <Image
                 src={getImageUrl(trip.image)}
@@ -195,7 +212,7 @@ export default function TripList({ trips, onTripClick, showEditButton = false }:
                 </div>
                 <div className="flex items-center gap-1">
                   <HiOutlineClock className="w-3.5 h-3.5" />
-                  <span>{trip.time}</span>
+                  <span>{trip.startTime}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <HiOutlineMapPin className="w-3.5 h-3.5" />

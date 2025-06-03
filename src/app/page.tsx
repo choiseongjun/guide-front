@@ -61,11 +61,12 @@ export default function Home() {
         setLoading(true);
         setError(null);
         const response = await instance.get(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/travels`,
+          `/api/v1/travels`,
           {
             params: {
               page: 0,
               size: 5,
+              kind:"latest",
             },
           }
         );
@@ -300,7 +301,7 @@ export default function Home() {
           </Link>
         </div>
 
-        {error ? (
+        {/* {error ? (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
             <p className="text-red-600">{error}</p>
             <button
@@ -324,7 +325,16 @@ export default function Home() {
               />
             ))}
           </div>
-        )}
+        )} */}
+         <div className="space-y-4">
+            {recommendedTrips.map((trip, index) => (
+              <TripList
+                key={index}
+                trips={[trip]}
+                onTripClick={(tripId) => router.push(`/trip/${tripId}`)}
+              />
+            ))}
+          </div>
 
         {user && (
           <div className="fixed bottom-[100px]  z-50" style={{ right: 'calc((100% - 22rem) / 2 + 1rem)' }}>

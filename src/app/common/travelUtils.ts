@@ -67,6 +67,7 @@ interface RawTravel {
 }
 
 export interface ProcessedTravel {
+  startTime: ReactNode;
   id: number;
   title: string;
   startDate: string;

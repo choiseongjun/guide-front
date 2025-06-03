@@ -5,13 +5,6 @@ import Image from "next/image";
 import {
   HiOutlineArrowLeft,
   HiOutlineAdjustmentsHorizontal,
-  HiOutlineCalendar,
-  HiOutlineClock,
-  HiOutlineUserGroup,
-  HiOutlineCurrencyDollar,
-  HiOutlineMapPin,
-  HiOutlineHeart,
-  HiOutlineStar,
   HiOutlineArrowsUpDown,
   HiXMark,
 } from "react-icons/hi2";
@@ -173,6 +166,7 @@ export default function ThemePageClient({
               page: pageNum,
               size: 10,
               categoryId: params.id,
+              kind:"latest",
               sort: sortBy === 'startDate' ? 'startDate,desc' : 
                     sortBy === 'price' ? 'price,asc' : 
                     sortBy === 'popular' ? 'likes,desc' : "",
