@@ -6,12 +6,14 @@ import {
   HiOutlineUserGroup,
   HiOutlineUser,
   HiOutlineArrowLeft,
+  HiOutlineLockClosed,
 } from "react-icons/hi2";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import instance from "@/app/api/axios";
 import { getImageUrl, getProfileImage } from "../common/imgUtils";
 import { useUser } from "@/hooks/useUser";
+import LoginRequired from "@/components/LoginRequired";
 
 interface Participant {
   id: number;
@@ -70,7 +72,12 @@ export default function ChatListPage() {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
- 
+  // 로그인 체크
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/login");
+    } 
+  }, [isLoading, user, router]);
 
   useEffect(() => {
     if (isLoading) return; // 로딩 중이면 API 호출하지 않음
@@ -165,7 +172,33 @@ export default function ChatListPage() {
     );
   }
 
+  // 로그인되지 않은 경우 LoginRequired 컴포넌트 표시
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* 헤더 */}
+        <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
+          <div className="max-w-md mx-auto px-4 py-3">
+            <div className="flex items-center">
+              <button
+                onClick={() => router.back()}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <HiOutlineArrowLeft className="w-6 h-6" />
+              </button>
+              <h1 className="text-xl font-bold ml-4">채팅</h1>
+            </div>
+          </div>
+        </header>
 
+        <LoginRequired
+          title="채팅 서비스 이용을 위해 로그인이 필요합니다"
+          message="채팅 기능을 이용하기 위해서는 로그인이 필요합니다. 로그인 하시겠습니까?"
+          buttonText="로그인 하러가기"
+        />
+      </div>
+    );
+  }
 
   console.log("filteredChats===",filteredChats)
 

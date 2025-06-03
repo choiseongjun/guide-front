@@ -13,6 +13,7 @@ import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import instance from "@/app/api/axios";
 import { useUser } from "@/hooks/useUser";
+import { getUserToken } from "@/app/common/userUtils";
 
 interface Participant {
   id: number;
@@ -70,7 +71,7 @@ export default function ChatRoomPage({
 }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isLoading } = useUser();
   const [chatRoom, setChatRoom] = useState<ChatRoom | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -84,10 +85,10 @@ export default function ChatRoomPage({
 
   // 로그인 체크
   useEffect(() => {
-    if (!user) {
+    if (!isLoading && !user) {
       router.push("/login");
-    }
-  }, [user, router]);
+    } 
+  }, [isLoading, user, router]);
 
   // 채팅방 정보 조회
   useEffect(() => {
@@ -162,11 +163,15 @@ export default function ChatRoomPage({
 
     const connectWebSocket = () => {
       const wsUrl = process.env.NEXT_PUBLIC_BASE_URL + "/ws";
-      const socket = new SockJS(wsUrl);
+      const socket = new SockJS(wsUrl, null, {
+        transports: ['websocket', 'xhr-streaming', 'xhr-polling'],
+        timeout: 5000
+      });
+
       const client = new Client({
         webSocketFactory: () => socket,
         connectHeaders: {
-          Authorization: `Bearer ${localStorage.getItem("at")}`,
+          Authorization: `Bearer ${getUserToken()}`,
         },
         debug: function (str) {
           console.log("STOMP Debug:", str);
@@ -174,6 +179,13 @@ export default function ChatRoomPage({
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
+        onWebSocketError: (event) => {
+          console.error("WebSocket Error:", event);
+        },
+        onWebSocketClose: (event) => {
+          console.log("WebSocket Closed:", event);
+          setIsConnected(false);
+        },
         onConnect: () => {
           console.log("Connected to STOMP");
           setIsConnected(true);
@@ -256,6 +268,7 @@ export default function ChatRoomPage({
 
   // 메시지 읽음 처리 요청
   const markMessagesAsRead = () => {
+    console.log("markMessagesAsRead=",stompClient.current);
     if (!stompClient.current?.connected) {
       console.log("WebSocket not connected, retrying in 1 second...");
       setTimeout(markMessagesAsRead, 1000);

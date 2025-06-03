@@ -5,7 +5,7 @@ const instance = axios.create({
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
-  },
+  }
 });
 
 // 토큰 갱신 관련 변수

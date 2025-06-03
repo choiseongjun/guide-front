@@ -61,7 +61,7 @@ function GuideProfileClient({ guideId }: { guideId: string }) {
         if (response.status === 200) {
           const processedTrips = processTravelList(response.data.data.content);
           setTrips(processedTrips);
-        }
+        } 
       } catch (error) {
         console.error("가이드 여행 목록 조회 실패:", error);
       } finally {
@@ -80,9 +80,10 @@ function GuideProfileClient({ guideId }: { guideId: string }) {
   const handleChatRequest = async () => {
     try {
       const response = await instance.post(`/api/v1/chat-rooms/direct/${guideId}`);
-      if (response.data.status === "success") {
+      
+      console.log('response===',response)
         router.push(`/chat/${response.data.data.id}`);
-      }
+      
     } catch (error) {
       console.error("대화 신청 실패:", error);
       alert("대화 신청에 실패했습니다.");

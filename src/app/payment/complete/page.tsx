@@ -6,6 +6,7 @@ import Image from "next/image";
 import { HiOutlineCheckCircle, HiOutlineHome } from "react-icons/hi2";
 import instance from "@/app/api/axios";
 import { getImageUrl } from "@/app/common/imgUtils";
+import { useNotificationCount } from "@/hooks/useNotificationCount";
 
 interface Trip {
   id: number;
@@ -39,6 +40,20 @@ function PaymentCompleteContent() {
   const tripId = searchParams?.get("tripId");
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
+  const { refreshCount } = useNotificationCount();
+
+  // 컴포넌트 마운트 시 알림 갱신
+  useEffect(() => {
+    // 즉시 한 번 갱신
+    refreshCount();
+    
+    // 1초 후 한 번 더 갱신 (서버 상태가 완전히 반영되도록)
+    const timer = setTimeout(() => {
+      refreshCount();
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [refreshCount]);
 
   useEffect(() => {
     const fetchTrip = async () => {
@@ -47,6 +62,10 @@ function PaymentCompleteContent() {
         const response = await instance.get(`/api/v1/travels/${tripId}`);
         if (response.data.status === 200) {
           setTrip(response.data.data);
+          // 여행 정보를 가져온 후 약간의 지연을 두고 알림 갱신
+          setTimeout(() => {
+            refreshCount();
+          }, 500);
         }
       } catch (error) {
         console.error("여행 정보 조회 실패:", error);
@@ -56,7 +75,7 @@ function PaymentCompleteContent() {
     };
 
     fetchTrip();
-  }, [tripId]);
+  }, [tripId, refreshCount]);
 
   if (loading || !trip) {
     return (
