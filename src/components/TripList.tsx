@@ -110,7 +110,7 @@ export default function TripList({ trips, onTripClick, showEditButton = false }:
         const approvedParticipants = Array.isArray(trip.participants)
           ? trip.participants.filter((p) => p.status === "APPROVED").slice(0, 3)
           : [];
-        const isStarted = isTripStarted(trip.startDate, trip.startTime);
+        const isStarted = isTripStarted(trip.startDate, trip.startTime??"00:00:00");
 
         return (
           <div

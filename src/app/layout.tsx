@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "./ClientLayout";
@@ -6,6 +6,13 @@ import ServerStatusProvider from "./ServerStatusProvider";
 import Footer from "@/components/Footer";
 
 const inter = Geist({ subsets: ["latin"] });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
 export const metadata: Metadata = {
   title: "트래블윗미 - 함께하는 여행의 시작",
@@ -46,10 +53,6 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-  },
   // verification: {
   //   google: "your-google-site-verification", // Google Search Console 인증 코드
   // },
@@ -63,10 +66,6 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-        />
         <link rel="icon" href="/logo.svg" type="image/svg+xml" />
       </head>
       <body className={inter.className}>

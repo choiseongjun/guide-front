@@ -1,3 +1,5 @@
+import { ReactNode } from 'react';
+
 interface TravelImage {
   id: number;
   imageUrl: string;
@@ -67,7 +69,7 @@ interface RawTravel {
 }
 
 export interface ProcessedTravel {
-  startTime: ReactNode;
+  startTime?: string;
   id: number;
   title: string;
   startDate: string;
@@ -131,6 +133,7 @@ export interface ProcessedTravel {
 export const processTravelData = (travel: RawTravel): ProcessedTravel => {
   return {
     ...travel,
+    startTime: travel.schedules[0]?.time || "",
     image:
       travel.images.length > 0
         ? travel.images[0].imageUrl
