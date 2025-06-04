@@ -14,6 +14,7 @@ import {
   HiOutlineBell,
   HiOutlinePhone,
   HiOutlineEnvelope,
+  HiOutlineSparkles,
 } from "react-icons/hi2";
 import { BsHeadset } from "react-icons/bs";
 import { motion } from "framer-motion";
@@ -163,6 +164,17 @@ export default function ClientLayout({
                 >
                   <HiOutlineUserGroup className="w-6 h-6" />
                   <span className="text-xs mt-1">소셜</span>
+                </Link>
+                <Link
+                  href="/trip/custom"
+                  className={`flex flex-col items-center flex-1 ${
+                    pathname === "/trip/custom"
+                      ? "text-blue-500"
+                      : "text-gray-600"
+                  }`}
+                >
+                  <HiOutlineSparkles className="w-6 h-6" />
+                  <span className="text-xs mt-1">맞춤여행</span>
                 </Link>
                 <Link
                   href="/chat"
