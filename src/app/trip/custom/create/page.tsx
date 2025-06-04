@@ -367,10 +367,10 @@ export default function CreateCustomTrip() {
       alert("여행지를 선택해주세요.");
       return;
     }
-    if (step === 5 && !selectedTravelStyle) {
-      alert("여행 스타일을 선택해주세요.");
-      return;
-    }
+    // if (step === 5 && !selectedTravelStyle) {
+    //   alert("여행 스타일을 선택해주세요.");
+    //   return;
+    // }
     if (step === 5 && !selectedBudget) {
       alert("예산을 선택해주세요.");
       return;
@@ -410,36 +410,49 @@ export default function CreateCustomTrip() {
           {
             role: "user",
             content: `
-다음 조건에 맞는 여행 계획을 생성해주세요:
-- 여행 분위기: ${tripData.mood}
-- 현재 기분: ${tripData.moodState}
-- 성향: ${tripData.personality}
-- 선호 여행 스타일: ${tripData.preferences.join(', ')}
-- 여행지: ${tripData.location}
-- 여행 스타일: ${tripData.travelStyle}
-- 예산: ${tripData.budget}
-- 여행 기간: ${tripData.startDate} ~ ${tripData.endDate}
-- 여행 인원: ${tripData.travelers}명
+            다음 조건에 맞는 여행 계획을 생성해주세요:
+            - 여행 분위기: ${tripData.mood}
+            - 현재 기분: ${tripData.moodState}
+            - 성향: ${tripData.personality}
+            - 선호 여행 스타일: ${tripData.preferences.join(', ')}
+            - 여행지: ${tripData.location}
+            - 여행 스타일: ${tripData.travelStyle}
+            - 예산: ${tripData.budget}
+            - 여행 기간: ${tripData.startDate} ~ ${tripData.endDate}
+            - 여행 인원: ${tripData.travelers}명
 
-다음 형식의 JSON으로 응답해주세요:
+            다음 형식의 JSON으로 응답해주세요:
 
-{
-  "일별_추천_일정": [
-    {"날짜": "YYYY-MM-DD", "일정": "내용"}
-  ],
-  "추천_맛집": [
-    {"이름": "맛집명", "주소": "주소", "추천_메뉴": "메뉴"}
-  ],
-  "추천_명소": [
-    {"이름": "명소명", "설명": "간단 설명", "주소": "주소"}
-  ],
-  "예상_비용": "총 비용",
-  "여행_팁": "유용한 여행 팁"
-}
-`
+            {
+              "일별_추천_일정": [
+                {
+                  "날짜": "YYYY-MM-DD",
+                  "일정": {
+                    "아침": "아침 일정 내용",
+                    "오전 활동": "오전 일정 내용",
+                    "점심": "점심 장소 및 메뉴",
+                    "오후 활동": "오후 일정 내용",
+                    "저녁": "저녁 장소 및 활동",
+                    "이동/기타": "이동 경로, 교통수단 등"
+                  }
+                }
+              ],
+              "추천_맛집": [
+                {"이름": "맛집명", "주소": "주소", "추천_메뉴": "메뉴", "유명도": "유명" 또는 "로컬"}
+              ],
+              "추천_명소": [
+                {"이름": "명소명", "설명": "간단 설명", "주소": "주소", "유명도": "유명" 또는 "로컬"}
+              ],
+              "예상_비용": "총 비용",
+              "여행_팁": "유용한 여행 팁"
+            }
+
+            ※ 특히 '일별_추천_일정'은 하루 단위로 상세히 작성해주세요 (예: 아침~저녁 구성 포함).
+            `
           }
         ],
-        temperature: 0.3
+        temperature: 0.3,
+        max_tokens: 2500 // 필요 시 2000~3000까지도 가능
       }, {
         headers: {
           'Content-Type': 'application/json',
@@ -513,7 +526,7 @@ export default function CreateCustomTrip() {
         </div>
 
         {/* 스텝 1: 기분/분위기 선택 */}
-        {step === 1 && (
+        {step === 1 && !generatedPlan && (
           <div className="p-4">
             <h2 className="text-lg font-semibold mb-4">
               어떤 기분으로 여행하고 싶으신가요?
@@ -536,13 +549,11 @@ export default function CreateCustomTrip() {
                 </button>
               ))}
             </div>
-
-           
           </div>
         )}
 
         {/* 스텝 2: 성향 선택 */}
-        {step === 2 && (
+        {step === 2 && !generatedPlan && (
           <div className="p-4">
             <h2 className="text-lg font-semibold mb-4">
               어떤 성향을 가지고 계신가요?
@@ -569,7 +580,7 @@ export default function CreateCustomTrip() {
         )}
 
         {/* 스텝 3: 선호 여행 스타일 선택 */}
-        {step === 3 && (
+        {step === 3 && !generatedPlan && (
           <div className="p-4">
             <h2 className="text-lg font-semibold mb-4">
               어떤 여행을 선호하시나요?
@@ -596,7 +607,7 @@ export default function CreateCustomTrip() {
         )}
 
         {/* 스텝 4: 여행지와 기분 상태 선택 */}
-        {step === 4 && (
+        {step === 4 && !generatedPlan && (
           <div className="p-4">
             <h2 className="text-lg font-semibold mb-4">
               어디로 여행하고 싶으신가요?
@@ -645,13 +656,13 @@ export default function CreateCustomTrip() {
         )}
 
         {/* 스텝 5: 여행 스타일과 예산 */}
-        {step === 5 && (
+        {step === 5 && !generatedPlan && (
           <div className="p-4">
             <h2 className="text-lg font-semibold mb-4">
               어떤 여행 스타일과 예산으로 여행하고 싶으신가요?
             </h2>
             <div className="space-y-6">
-              <div>
+              {/* <div>
                 <h3 className="text-sm font-medium text-gray-700 mb-3">
                   선호하는 여행 스타일
                 </h3>
@@ -673,7 +684,7 @@ export default function CreateCustomTrip() {
                     </button>
                   ))}
                 </div>
-              </div>
+              </div> */}
               <div>
                 <h3 className="text-sm font-medium text-gray-700 mb-3">
                   예산 범위
@@ -702,7 +713,7 @@ export default function CreateCustomTrip() {
         )}
 
         {/* 스텝 6: 여행 일정 */}
-        {step === 6 && (
+        {step === 6 && !generatedPlan && (
           <div className="p-4">
             <h2 className="text-lg font-semibold mb-4">
               여행 일정을 선택해주세요
@@ -758,7 +769,14 @@ export default function CreateCustomTrip() {
                 {generatedPlan.일별_추천_일정.map((schedule: any, index: number) => (
                   <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
                     <div className="font-semibold text-blue-600">{schedule.날짜}</div>
-                    <div className="mt-2">{schedule.일정}</div>
+                    <div className="mt-2 space-y-2">
+                      {Object.entries(schedule.일정).map(([time, content]: [string, any]) => (
+                        <div key={time} className="flex gap-2">
+                          <span className="font-medium text-gray-700 min-w-[80px]">{time}:</span>
+                          <span>{content}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -837,7 +855,7 @@ export default function CreateCustomTrip() {
               disabled={isLoading}
               className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-blue-300"
             >
-              {isLoading ? '여행 계획 생성 중...' : 'AI 맞춤 여행 생성하기'}
+              {isLoading ? '여행 계획 생성 중...(약 1분정도 걸립니다!)' : 'AI 맞춤 여행 생성하기'}
             </button>
           ) : (
             <div className="flex gap-4">
