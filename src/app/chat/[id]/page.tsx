@@ -161,103 +161,90 @@ export default function ChatRoomPage({
   useEffect(() => {
     if (!user) return; // 로그인되지 않은 경우 WebSocket 연결하지 않음
 
-    const connectWebSocket = () => {
-      const wsUrl = process.env.NEXT_PUBLIC_BASE_URL + "/ws";
-      const socket = new SockJS(wsUrl, null, {
-        transports: ['websocket', 'xhr-streaming', 'xhr-polling'],
-        timeout: 5000
-      });
+    const wsUrl = process.env.NEXT_PUBLIC_BASE_URL + "/ws";
+    const socket = new SockJS(wsUrl);
+    const client = new Client({
+      webSocketFactory: () => socket,
+      connectHeaders: {
+        Authorization: `Bearer ${getUserToken()}`,
+      }, 
+      debug: function (str) {
+        console.log("STOMP Debug:", str);
+      },
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+    });
 
-      const client = new Client({
-        webSocketFactory: () => socket,
-        connectHeaders: {
-          Authorization: `Bearer ${getUserToken()}`,
-        },
-        debug: function (str) {
-          console.log("STOMP Debug:", str);
-        },
-        reconnectDelay: 5000,
-        heartbeatIncoming: 4000,
-        heartbeatOutgoing: 4000,
-        onWebSocketError: (event) => {
-          console.error("WebSocket Error:", event);
-        },
-        onWebSocketClose: (event) => {
-          console.log("WebSocket Closed:", event);
-          setIsConnected(false);
-        },
-        onConnect: () => {
-          console.log("Connected to STOMP");
-          setIsConnected(true);
+    client.onConnect = () => {
+      console.log("Connected to STOMP");
+      setIsConnected(true);
 
-          // 채팅방 메시지 구독
-          client.subscribe(
-            `/topic/chat.room.${resolvedParams.id}`,
-            (message) => {
-              console.log("Received message:", message);
-              const newMessage = JSON.parse(message.body);
-              setMessages((prev) => {
-                // 중복 메시지 체크
-                const isDuplicate = prev.some(
-                  (msg) => msg.id === newMessage.id
-                );
-                if (isDuplicate) return prev;
-                return [...prev, newMessage];
-              });
-              // 메시지 수신 시 읽음 처리
-              markMessagesAsRead();
-            }
-          );
-
-          // 읽지 않은 메시지 알림 구독
-          client.subscribe(`/user/queue/chat.unread`, (message) => {
-            console.log("Received unread message:", message);
-            const newMessage = JSON.parse(message.body);
-            setMessages((prev) => {
-              // 중복 메시지 체크
-              const isDuplicate = prev.some((msg) => msg.id === newMessage.id);
-              if (isDuplicate) return prev;
-              return [...prev, newMessage];
-            });
-            // 메시지 수신 시 읽음 처리
-            markMessagesAsRead();
+      // 채팅방 메시지 구독
+      client.subscribe(
+        `/topic/chat.room.${resolvedParams.id}`,
+        (message) => {
+          console.log("Received message:", message);
+          const newMessage = JSON.parse(message.body);
+          setMessages((prev) => {
+            // 중복 메시지 체크
+            const isDuplicate = prev.some(
+              (msg) => msg.id === newMessage.id
+            );
+            if (isDuplicate) return prev;
+            return [...prev, newMessage];
           });
+          // 메시지 수신 시 읽음 처리
+          markMessagesAsRead();
+        }
+      );
 
-          // 메시지 읽음 상태 구독
-          client.subscribe(
-            `/topic/chat.room.${resolvedParams.id}.read`,
-            (message) => {
-              console.log("Message read status updated:", message);
-              const userId = JSON.parse(message.body);
-              // 여기서 필요한 경우 UI 업데이트 로직 추가
-            }
-          );
-        },
-        onDisconnect: () => {
-          console.log("Disconnected from STOMP");
-          setIsConnected(false);
-          // 연결이 끊어지면 5초 후 재연결 시도
-          setTimeout(connectWebSocket, 5000);
-        },
-        onStompError: (frame) => {
-          console.error("STOMP error:", frame);
-          setIsConnected(false);
-          // 에러 발생 시 5초 후 재연결 시도
-          setTimeout(connectWebSocket, 5000);
-        },
+      // 읽지 않은 메시지 알림 구독
+      client.subscribe(`/user/queue/chat.unread`, (message) => {
+        console.log("Received unread message:", message);
+        const newMessage = JSON.parse(message.body);
+        setMessages((prev) => {
+          // 중복 메시지 체크
+          const isDuplicate = prev.some((msg) => msg.id === newMessage.id);
+          if (isDuplicate) return prev;
+          return [...prev, newMessage];
+        });
+        // 메시지 수신 시 읽음 처리
+        markMessagesAsRead();
       });
 
-      try {
-        client.activate();
-        stompClient.current = client;
-      } catch (error) {
-        console.error("Failed to activate STOMP client:", error);
-        // 활성화 실패 시 5초 후 재시도
-        setTimeout(connectWebSocket, 5000);
-      }
+      // 메시지 읽음 상태 구독
+      client.subscribe(
+        `/topic/chat.room.${resolvedParams.id}.read`,
+        (message) => {
+          console.log("Message read status updated:", message);
+          const userId = JSON.parse(message.body);
+          // 여기서 필요한 경우 UI 업데이트 로직 추가
+        }
+      );
     };
 
-    connectWebSocket();
+    client.onStompError = (frame) => {
+      console.error("STOMP error:", frame);
+      setIsConnected(false);
+    };
+
+    client.onWebSocketError = (event) => {
+      console.error("WebSocket Error:", event);
+      setIsConnected(false);
+    };
+
+    client.onWebSocketClose = (event) => {
+      console.log("WebSocket Closed:", event);
+      setIsConnected(false);
+    };
+
+    try {
+      client.activate();
+      stompClient.current = client;
+    } catch (error) {
+      console.error("Failed to activate STOMP client:", error);
+    }
 
     return () => {
       if (stompClient.current?.connected) {

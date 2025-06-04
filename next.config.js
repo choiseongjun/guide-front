@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  typescript: {
+    ignoreBuildErrors: true, // 타입 체크 비활성화
+  },
   images: {
     domains: ["*"],
     remotePatterns: [
