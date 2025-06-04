@@ -378,8 +378,12 @@ export default function CreateCustomTrip() {
       return;
     }
     setStep(step + 1);
-    // 스크롤을 최상단으로 이동
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // 모바일에서도 작동하는 스크롤 최상단 이동
+    const mainElement = document.querySelector('main');
+    if (mainElement) {
+      mainElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
 
   const handleSubmit = async () => {
