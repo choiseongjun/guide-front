@@ -9,7 +9,11 @@ import {
   HiOutlineUserGroup,
   HiOutlineHeart,
   HiOutlineSparkles,
+  HiOutlineCurrencyDollar,
+  HiOutlineLightBulb,
 } from "react-icons/hi2";
+import { FaUtensils, FaLandmark } from "react-icons/fa";
+import axios from "axios";
 
 const moods = [
   {
@@ -51,6 +55,49 @@ const moods = [
     id: "luxury",
     name: "럭셔리/특별",
     description: "특별하고 고급스러운 경험을 원하시나요?",
+  },
+];
+
+const moodStates = [
+  {
+    id: "stress-relief",
+    name: "스트레스 해소",
+    description: "스트레스를 풀고 싶으신가요?",
+  },
+  {
+    id: "happy",
+    name: "행복한",
+    description: "행복한 기분을 더하고 싶으신가요?",
+  },
+  {
+    id: "tired",
+    name: "피곤한",
+    description: "피로를 풀고 싶으신가요?",
+  },
+  {
+    id: "excited",
+    name: "설렘",
+    description: "새로운 경험을 기대하시나요?",
+  },
+  {
+    id: "depressed",
+    name: "우울한",
+    description: "기분 전환이 필요하신가요?",
+  },
+  {
+    id: "joyful",
+    name: "즐거운",
+    description: "즐거운 시간을 보내고 싶으신가요?",
+  },
+  {
+    id: "anxious",
+    name: "불안한",
+    description: "마음을 진정시키고 싶으신가요?",
+  },
+  {
+    id: "peaceful",
+    name: "평온한",
+    description: "평화로운 시간을 원하시나요?",
   },
 ];
 
@@ -234,10 +281,54 @@ const budgets = [
   },
 ];
 
+const travelStyles = [
+  {
+    id: "relaxation",
+    name: "힐링/휴식",
+    description: "평화롭고 여유로운 여행을 원하시나요?",
+  },
+  {
+    id: "adventurous",
+    name: "모험/도전",
+    description: "새로운 경험과 도전을 찾으시나요?",
+  },
+  {
+    id: "cultural",
+    name: "문화/역사",
+    description: "지역의 문화와 역사를 탐방하고 싶으신가요?",
+  },
+  {
+    id: "romantic",
+    name: "로맨틱",
+    description: "특별한 추억을 만들고 싶으신가요?",
+  },
+  {
+    id: "family",
+    name: "가족/친목",
+    description: "가족이나 친구들과 함께 즐거운 시간을 보내고 싶으신가요?",
+  },
+  {
+    id: "nature",
+    name: "자연/경관",
+    description: "아름다운 자연 속에서 힐링하고 싶으신가요?",
+  },
+  {
+    id: "urban",
+    name: "도시/현대",
+    description: "도시의 활기찬 분위기를 즐기고 싶으신가요?",
+  },
+  {
+    id: "luxury",
+    name: "럭셔리/특별",
+    description: "특별하고 고급스러운 경험을 원하시나요?",
+  },
+];
+
 export default function CreateCustomTrip() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [selectedMood, setSelectedMood] = useState<string>("");
+  const [selectedMoodState, setSelectedMoodState] = useState<string>("");
   const [selectedPersonality, setSelectedPersonality] = useState<string>("");
   const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<string>("");
@@ -246,6 +337,9 @@ export default function CreateCustomTrip() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [travelers, setTravelers] = useState(1);
+  const [selectedTravelStyle, setSelectedTravelStyle] = useState<string>("");
+  const [generatedPlan, setGeneratedPlan] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handlePreferenceToggle = (preferenceId: string) => {
     setSelectedPreferences((prev) =>
@@ -260,6 +354,7 @@ export default function CreateCustomTrip() {
       alert("기분/분위기를 선택해주세요.");
       return;
     }
+   
     if (step === 2 && !selectedPersonality) {
       alert("성향을 선택해주세요.");
       return;
@@ -272,8 +367,8 @@ export default function CreateCustomTrip() {
       alert("여행지를 선택해주세요.");
       return;
     }
-    if (step === 5 && !selectedSeason) {
-      alert("계절을 선택해주세요.");
+    if (step === 5 && !selectedTravelStyle) {
+      alert("여행 스타일을 선택해주세요.");
       return;
     }
     if (step === 5 && !selectedBudget) {
@@ -286,22 +381,87 @@ export default function CreateCustomTrip() {
     }
     setStep(step + 1);
   };
-
   const handleSubmit = async () => {
-    // TODO: API 연동
-    console.log({
-      mood: selectedMood,
-      personality: selectedPersonality,
-      preferences: selectedPreferences,
-      location: selectedLocation,
-      season: selectedSeason,
-      budget: selectedBudget,
-      startDate,
-      endDate,
-      travelers,
-    });
+    try {
+      setIsLoading(true);
+      // 여행 데이터 구성
+      const tripData = {
+        mood: moods.find(m => m.id === selectedMood)?.name,
+        moodState: moodStates.find(m => m.id === selectedMoodState)?.name,
+        personality: personalities.find(p => p.id === selectedPersonality)?.name,
+        preferences: selectedPreferences.map(prefId => 
+          preferences.find(p => p.id === prefId)?.name
+        ),
+        location: locations.find(l => l.id === selectedLocation)?.name,
+        travelStyle: travelStyles.find(t => t.id === selectedTravelStyle)?.name,
+        budget: budgets.find(b => b.id === selectedBudget)?.name,
+        startDate,
+        endDate,
+        travelers,
+      };
 
-    router.push("/trip/custom");
+      const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "당신은 여행 계획 전문가입니다. 사용자의 조건에 맞게 자세하고 정리된 JSON 형식으로 여행 계획을 작성하세요."
+          },
+          {
+            role: "user",
+            content: `
+다음 조건에 맞는 여행 계획을 생성해주세요:
+- 여행 분위기: ${tripData.mood}
+- 현재 기분: ${tripData.moodState}
+- 성향: ${tripData.personality}
+- 선호 여행 스타일: ${tripData.preferences.join(', ')}
+- 여행지: ${tripData.location}
+- 여행 스타일: ${tripData.travelStyle}
+- 예산: ${tripData.budget}
+- 여행 기간: ${tripData.startDate} ~ ${tripData.endDate}
+- 여행 인원: ${tripData.travelers}명
+
+다음 형식의 JSON으로 응답해주세요:
+
+{
+  "일별_추천_일정": [
+    {"날짜": "YYYY-MM-DD", "일정": "내용"}
+  ],
+  "추천_맛집": [
+    {"이름": "맛집명", "주소": "주소", "추천_메뉴": "메뉴"}
+  ],
+  "추천_명소": [
+    {"이름": "명소명", "설명": "간단 설명", "주소": "주소"}
+  ],
+  "예상_비용": "총 비용",
+  "여행_팁": "유용한 여행 팁"
+}
+`
+          }
+        ],
+        temperature: 0.3
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_OPENAI_API_KEY}`
+        }
+      });
+
+      // 응답 메시지에서 assistant content 추출
+      const assistantMessage = response.data.choices[0].message.content;
+      
+      // JSON 문자열에서 실제 JSON 객체 추출
+      const jsonStr = assistantMessage.replace(/```json\n|\n```/g, '');
+      const parsedPlan = JSON.parse(jsonStr);
+      
+      setGeneratedPlan(parsedPlan);
+      setStep(7);
+    } catch (error) {
+      console.error('Error generating trip plan:', error);
+      alert('여행 계획 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -329,7 +489,7 @@ export default function CreateCustomTrip() {
         {/* 진행 상태 */}
         <div className="px-4 py-3 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            {[1, 2, 3, 4, 5, 6].map((s) => (
+            {[1, 2, 3, 4, 5, 6, 7].map((s) => (
               <div key={s} className="flex items-center">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -340,7 +500,7 @@ export default function CreateCustomTrip() {
                 >
                   {s}
                 </div>
-                {s < 6 && (
+                {s < 7 && (
                   <div
                     className={`w-8 h-0.5 ${
                       s < step ? "bg-blue-500" : "bg-gray-200"
@@ -358,7 +518,7 @@ export default function CreateCustomTrip() {
             <h2 className="text-lg font-semibold mb-4">
               어떤 기분으로 여행하고 싶으신가요?
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-3 mb-6">
               {moods.map((mood) => (
                 <button
                   key={mood.id}
@@ -376,6 +536,8 @@ export default function CreateCustomTrip() {
                 </button>
               ))}
             </div>
+
+           
           </div>
         )}
 
@@ -433,13 +595,13 @@ export default function CreateCustomTrip() {
           </div>
         )}
 
-        {/* 스텝 4: 여행지 선택 */}
+        {/* 스텝 4: 여행지와 기분 상태 선택 */}
         {step === 4 && (
           <div className="p-4">
             <h2 className="text-lg font-semibold mb-4">
               어디로 여행하고 싶으신가요?
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-3 mb-6">
               {locations.map((location) => (
                 <button
                   key={location.id}
@@ -457,34 +619,56 @@ export default function CreateCustomTrip() {
                 </button>
               ))}
             </div>
+
+            <h2 className="text-lg font-semibold mb-4">
+              현재 기분 상태는 어떠신가요?
+            </h2>
+            <div className="space-y-3">
+              {moodStates.map((state) => (
+                <button
+                  key={state.id}
+                  onClick={() => setSelectedMoodState(state.id)}
+                  className={`w-full p-4 text-left rounded-lg border ${
+                    selectedMoodState === state.id
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:border-blue-500"
+                  }`}
+                >
+                  <div className="font-medium">{state.name}</div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    {state.description}
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* 스텝 5: 계절과 예산 */}
+        {/* 스텝 5: 여행 스타일과 예산 */}
         {step === 5 && (
           <div className="p-4">
             <h2 className="text-lg font-semibold mb-4">
-              어떤 계절과 예산으로 여행하고 싶으신가요?
+              어떤 여행 스타일과 예산으로 여행하고 싶으신가요?
             </h2>
             <div className="space-y-6">
               <div>
                 <h3 className="text-sm font-medium text-gray-700 mb-3">
-                  선호하는 계절
+                  선호하는 여행 스타일
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
-                  {seasons.map((season) => (
+                  {travelStyles.map((style) => (
                     <button
-                      key={season.id}
-                      onClick={() => setSelectedSeason(season.id)}
+                      key={style.id}
+                      onClick={() => setSelectedTravelStyle(style.id)}
                       className={`p-3 text-left rounded-lg border ${
-                        selectedSeason === season.id
+                        selectedTravelStyle === style.id
                           ? "border-blue-500 bg-blue-50"
                           : "border-gray-200 hover:border-blue-500"
                       }`}
                     >
-                      <div className="font-medium">{season.name}</div>
+                      <div className="font-medium">{style.name}</div>
                       <div className="text-sm text-gray-600 mt-1">
-                        {season.description}
+                        {style.description}
                       </div>
                     </button>
                   ))}
@@ -559,6 +743,85 @@ export default function CreateCustomTrip() {
           </div>
         )}
 
+        {/* 스텝 7: 생성된 여행 계획 */}
+        {step === 7 && generatedPlan && (
+          <div className="p-4 pb-24">
+            <h2 className="text-lg font-semibold mb-4">맞춤 여행 계획</h2>
+            
+            {/* 일별 일정 */}
+            <section className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <HiOutlineCalendar className="text-2xl text-blue-500" />
+                <h3 className="text-xl font-semibold">일별 추천 일정</h3>
+              </div>
+              <div className="space-y-3">
+                {generatedPlan.일별_추천_일정.map((schedule: any, index: number) => (
+                  <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
+                    <div className="font-semibold text-blue-600">{schedule.날짜}</div>
+                    <div className="mt-2">{schedule.일정}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* 추천 맛집 */}
+            <section className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <FaUtensils className="text-2xl text-red-500" />
+                <h3 className="text-xl font-semibold">추천 맛집</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {generatedPlan.추천_맛집.map((restaurant: any, index: number) => (
+                  <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
+                    <div className="font-semibold text-lg">{restaurant.이름}</div>
+                    <div className="text-gray-600 mt-2">{restaurant.주소}</div>
+                    <div className="text-red-500 mt-2">추천 메뉴: {restaurant.추천_메뉴}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* 추천 명소 */}
+            <section className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <FaLandmark className="text-2xl text-green-500" />
+                <h3 className="text-xl font-semibold">추천 명소</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {generatedPlan.추천_명소.map((attraction: any, index: number) => (
+                  <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
+                    <div className="font-semibold text-lg">{attraction.이름}</div>
+                    <div className="text-gray-600 mt-2">{attraction.주소}</div>
+                    <div className="mt-2">{attraction.설명}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* 예상 비용 */}
+            <section className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <HiOutlineCurrencyDollar className="text-2xl text-yellow-500" />
+                <h3 className="text-xl font-semibold">예상 비용</h3>
+              </div>
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <div className="text-xl font-semibold">{generatedPlan.예상_비용}</div>
+              </div>
+            </section>
+
+            {/* 여행 팁 */}
+            <section className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <HiOutlineLightBulb className="text-2xl text-yellow-500" />
+                <h3 className="text-xl font-semibold">여행 팁</h3>
+              </div>
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <div className="text-lg">{generatedPlan.여행_팁}</div>
+              </div>
+            </section>
+          </div>
+        )}
+
         {/* 하단 버튼 */}
         <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
           {step < 6 ? (
@@ -568,14 +831,32 @@ export default function CreateCustomTrip() {
             >
               다음
             </button>
-          ) : (
+          ) : step === 6 ? (
             <button
               onClick={handleSubmit}
-              className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition-colors"
+              disabled={isLoading}
+              className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-blue-300"
             >
-              AI 맞춤 여행 생성하기
+              {isLoading ? '여행 계획 생성 중...' : 'AI 맞춤 여행 생성하기'}
             </button>
+          ) : (
+            <div className="flex gap-4">
+              <button
+                onClick={() => setStep(6)}
+                className="flex-1 bg-gray-500 text-white py-3 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                이전으로 재생성
+              </button>
+              <button
+                onClick={() => router.push('/trip/custom')}
+                className="flex-1 bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                여행 목록으로
+              </button>
+              
+            </div>
           )}
+          
         </div>
       </motion.main>
     </div>

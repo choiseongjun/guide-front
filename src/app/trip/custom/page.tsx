@@ -186,6 +186,17 @@ export default function CustomTripList() {
                 </div>
               </div>
 
+              {/* 함께 여행하기 버튼 */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/trip/custom/${trip.id}/travelers`);
+                }}
+                className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300 ease-in-out transform hover:scale-105 shadow-md"
+              >
+                함께 여행하기
+              </button>
+
               {/* AI 추천 */}
               <div className="bg-blue-50 p-3 rounded-lg">
                 <div className="flex items-center gap-2 text-blue-600 mb-2">
