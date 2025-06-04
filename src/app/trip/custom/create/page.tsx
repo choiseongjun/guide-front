@@ -14,6 +14,7 @@ import {
 } from "react-icons/hi2";
 import { FaUtensils, FaLandmark } from "react-icons/fa";
 import axios from "axios";
+import instance from "@/app/api/axios";
 
 const moods = [
   {
@@ -340,6 +341,7 @@ export default function CreateCustomTrip() {
   const [selectedTravelStyle, setSelectedTravelStyle] = useState<string>("");
   const [generatedPlan, setGeneratedPlan] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handlePreferenceToggle = (preferenceId: string) => {
     setSelectedPreferences((prev) =>
@@ -367,10 +369,6 @@ export default function CreateCustomTrip() {
       alert("여행지를 선택해주세요.");
       return;
     }
-    // if (step === 5 && !selectedTravelStyle) {
-    //   alert("여행 스타일을 선택해주세요.");
-    //   return;
-    // }
     if (step === 5 && !selectedBudget) {
       alert("예산을 선택해주세요.");
       return;
@@ -380,7 +378,10 @@ export default function CreateCustomTrip() {
       return;
     }
     setStep(step + 1);
+    // 스크롤을 최상단으로 이동
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
   const handleSubmit = async () => {
     try {
       setIsLoading(true);
@@ -474,6 +475,47 @@ export default function CreateCustomTrip() {
       alert('여행 계획 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSaveTrip = async () => {
+    try {
+      setIsSaving(true);
+      
+      // 저장할 여행 데이터 구성
+      const tripData = {
+        title: `${locations.find(l => l.id === selectedLocation)?.name} ${selectedSeason ? seasons.find(s => s.id === selectedSeason)?.name : ''} 여행`,
+        mood: moods.find(m => m.id === selectedMood)?.name,
+        moodState: moodStates.find(m => m.id === selectedMoodState)?.name,
+        personality: personalities.find(p => p.id === selectedPersonality)?.name,
+        preferences: selectedPreferences.map(prefId => 
+          preferences.find(p => p.id === prefId)?.name
+        ),
+        location: locations.find(l => l.id === selectedLocation)?.name,
+        travelStyle: travelStyles.find(t => t.id === selectedTravelStyle)?.name,
+        budget: budgets.find(b => b.id === selectedBudget)?.name,
+        startDate,
+        endDate,
+        travelers,
+        plan: generatedPlan,
+        createdAt: new Date().toISOString()
+      };
+      // const generatedPlan = generatedPlan;
+
+      console.log("tripData==",tripData)
+      // const response = await instance.post('/api/trip/save', tripData);
+      
+      // if (response.data.success) {
+      //   alert('여행 계획이 저장되었습니다.');
+      //   router.push('/trip/custom');
+      // } else {
+      //   throw new Error('저장 실패');
+      // }
+    } catch (error) {
+      console.error('Error saving trip plan:', error);
+      alert('여행 계획 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -858,20 +900,26 @@ export default function CreateCustomTrip() {
               {isLoading ? '여행 계획 생성 중...(약 1분정도 걸립니다!)' : 'AI 맞춤 여행 생성하기'}
             </button>
           ) : (
-            <div className="flex gap-4">
+            <div className="flex gap-2">
               <button
                 onClick={() => setStep(6)}
-                className="flex-1 bg-gray-500 text-white py-3 rounded-lg hover:bg-gray-600 transition-colors"
+                className="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors"
               >
-                이전으로 재생성
+                이전
+              </button>
+              <button
+                onClick={handleSaveTrip}
+                disabled={isSaving}
+                className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-blue-300"
+              >
+                {isSaving ? '저장 중...' : '저장하기'}
               </button>
               <button
                 onClick={() => router.push('/trip/custom')}
-                className="flex-1 bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition-colors"
+                className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors"
               >
-                여행 목록으로
+                목록으로
               </button>
-              
             </div>
           )}
           
