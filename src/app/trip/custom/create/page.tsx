@@ -559,14 +559,15 @@ export default function CreateCustomTrip() {
       // const generatedPlan = generatedPlan;
 
       console.log("tripData==", tripData);
-      // const response = await instance.post('/api/trip/save', tripData);
+      const response = await instance.post('/api/travel/plans', tripData);
 
-      // if (response.data.success) {
-      //   alert('여행 계획이 저장되었습니다.');
-      //   router.push('/trip/custom');
-      // } else {
-      //   throw new Error('저장 실패');
-      // }
+      console.log("response==", response);
+      if (response.status===200) {
+        alert('여행 계획이 저장되었습니다.');
+        router.push('/trip/custom');
+      } else {
+        throw new Error('저장 실패');
+      }
     } catch (error) {
       console.error("Error saving trip plan:", error);
       alert("여행 계획 저장 중 오류가 발생했습니다. 다시 시도해주세요.");

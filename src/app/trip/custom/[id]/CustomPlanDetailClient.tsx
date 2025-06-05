@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   HiOutlineCalendar,
@@ -17,121 +16,65 @@ import {
   HiOutlineBookmark,
   HiOutlineArrowLeft,
 } from "react-icons/hi2";
+import instance from "@/app/api/axios";
 
-// 가데이터 정의
-const mockCustomPlan = {
-  id: 1,
-  destination: "도쿄",
-  startDate: "2024-04-01",
-  endDate: "2024-04-05",
-  budget: "150만원",
-  companions: "혼자",
-  interests: ["맛집/음식", "문화/역사", "쇼핑"],
-  preferredActivities: ["도시 관광", "맛집 투어", "쇼핑"],
-  accommodationType: "호텔",
-  transportation: "대중교통",
-  dailyPlans: [
-    {
-      day: 1,
-      activities: [
-        {
-          time: "09:00",
-          title: "도쿄 스카이트리 방문",
-          description: "도쿄의 전경을 감상하며 아침 식사",
-          location: "도쿄 스카이트리",
-          cost: "3,000엔",
-        },
-        {
-          time: "12:00",
-          title: "스시 점심 식사",
-          description: "현지 유명 스시집에서 점심 식사",
-          location: "츠키지 시장",
-          cost: "5,000엔",
-        },
-        {
-          time: "14:00",
-          title: "아사쿠사 사원 관광",
-          description: "도쿄의 대표적인 사원과 전통 시장 탐방",
-          location: "아사쿠사",
-          cost: "무료",
-        },
-        {
-          time: "18:00",
-          title: "시부야 쇼핑",
-          description: "도쿄의 대표적인 쇼핑 거리 탐방",
-          location: "시부야",
-          cost: "자유",
-        },
-      ],
-    },
-    {
-      day: 2,
-      activities: [
-        {
-          time: "10:00",
-          title: "하라주쿠 쇼핑",
-          description: "일본의 트렌디한 쇼핑 거리",
-          location: "하라주쿠",
-          cost: "자유",
-        },
-        {
-          time: "13:00",
-          title: "라멘 점심",
-          description: "유명 라멘집에서 점심 식사",
-          location: "신주쿠",
-          cost: "1,200엔",
-        },
-        {
-          time: "15:00",
-          title: "신주쿠 정원 산책",
-          description: "도쿄의 아름다운 정원에서 휴식",
-          location: "신주쿠 정원",
-          cost: "500엔",
-        },
-      ],
-    },
-  ],
-};
-
-interface CustomPlan {
+interface TravelPlan {
   id: number;
-  destination: string;
+  title: string;
+  location: string;
   startDate: string;
   endDate: string;
+  travelers: number;
+  mood: string;
+  moodState: string;
+  personality: string;
+  preferences: string[];
   budget: string;
-  companions: string;
-  interests: string[];
-  preferredActivities: string[];
-  accommodationType: string;
-  transportation: string;
-  dailyPlans: {
-    day: number;
-    activities: {
-      time: string;
-      title: string;
-      description: string;
-      location: string;
-      cost: string;
-    }[];
-  }[];
+  plan: string;
+  createdAt: string;
 }
 
 interface Props {
-  params: { id: string };
+  params: { value: string };
 }
 
 export default function CustomPlanDetailClient({ params }: Props) {
   const router = useRouter();
-  const [plan, setPlan] = useState<CustomPlan | null>(null);
+  const [plan, setPlan] = useState<TravelPlan | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // API 호출 대신 가데이터 사용
-    setTimeout(() => {
-      setPlan(mockCustomPlan);
+    console.log('Raw params:', params);
+    
+    let parsedParams;
+    try {
+      parsedParams = JSON.parse(params.value);
+      console.log('Parsed params:', parsedParams);
+    } catch (error) {
+      console.error('Error parsing params:', error);
       setLoading(false);
-    }, 1000); // 로딩 효과를 위해 1초 지연
-  }, [params.id]);
+      return;
+    }
+
+    const fetchPlan = async () => {
+      if (!parsedParams?.id) {
+        console.error('Plan ID is undefined');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await instance.get<TravelPlan>(`/api/travel/plans/${parsedParams.id}`);
+        setPlan(response.data);
+      } catch (error) {
+        console.error('Error fetching plan:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlan();
+  }, [params]);
 
   if (loading) {
     return (
@@ -156,6 +99,17 @@ export default function CustomPlanDetailClient({ params }: Props) {
       day: "numeric",
     });
   };
+
+  const parsePlan = (planString: string) => {
+    try {
+      return JSON.parse(planString);
+    } catch (error) {
+      console.error('Error parsing plan:', error);
+      return null;
+    }
+  };
+
+  const planData = parsePlan(plan.plan);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -185,7 +139,7 @@ export default function CustomPlanDetailClient({ params }: Props) {
         {/* 여행 계획 요약 */}
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">{plan.destination} 여행 계획</h1>
+            <h1 className="text-2xl font-bold">{plan.title}</h1>
             <div className="flex items-center gap-2 text-blue-500">
               <HiOutlineSparkles className="w-5 h-5" />
               <span className="text-sm font-medium">맞춤 여행</span>
@@ -212,26 +166,33 @@ export default function CustomPlanDetailClient({ params }: Props) {
             <div className="flex items-center gap-2">
               <HiOutlineUserGroup className="w-5 h-5 text-gray-400" />
               <div>
-                <p className="text-sm text-gray-500">동행</p>
-                <p className="font-medium">{plan.companions}</p>
+                <p className="text-sm text-gray-500">인원</p>
+                <p className="font-medium">{plan.travelers}명</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <HiOutlineMapPin className="w-5 h-5 text-gray-400" />
               <div>
                 <p className="text-sm text-gray-500">여행지</p>
-                <p className="font-medium">{plan.destination}</p>
+                <p className="font-medium">{plan.location}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <HiOutlineHeart className="w-5 h-5 text-gray-400" />
+              <div>
+                <p className="text-sm text-gray-500">성향</p>
+                <p className="font-medium">{plan.personality}</p>
               </div>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {plan.interests.map((interest) => (
+            {plan.preferences.map((preference) => (
               <span
-                key={interest}
+                key={preference}
                 className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm"
               >
-                {interest}
+                {preference}
               </span>
             ))}
           </div>
@@ -239,40 +200,107 @@ export default function CustomPlanDetailClient({ params }: Props) {
 
         {/* 일정 탭 */}
         <div className="space-y-6">
-          {plan.dailyPlans.map((dayPlan) => (
-            <div key={dayPlan.day} className="bg-white rounded-2xl shadow-sm p-6">
-              <h2 className="text-xl font-bold mb-4">Day {dayPlan.day}</h2>
+          {planData?.일별_추천_일정?.map((dayPlan: any, index: number) => (
+            <div key={index} className="bg-white rounded-2xl shadow-sm p-6">
+              <h2 className="text-xl font-bold mb-4">{dayPlan.날짜}</h2>
               <div className="space-y-4">
-                {dayPlan.activities.map((activity, index) => (
+                {dayPlan.일정.map((activity: any, idx: number) => (
                   <div
-                    key={index}
+                    key={idx}
                     className="flex gap-4 p-4 bg-gray-50 rounded-xl"
                   >
                     <div className="w-20 flex-shrink-0">
                       <p className="text-sm font-medium text-gray-900">
-                        {activity.time}
+                        {activity.시간대}
                       </p>
                     </div>
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900">
-                        {activity.title}
+                        {activity.활동}
                       </h3>
                       <p className="text-sm text-gray-500 mt-1">
-                        {activity.description}
+                        {activity.장소}
                       </p>
                       <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <HiOutlineMapPin className="w-4 h-4" />
-                          {activity.location}
+                        <span className="flex items-center gap-1 text-blue-600">
+                          <HiOutlineCurrencyDollar className="w-4 h-4" />
+                          예상 비용: {activity['예상_비용(₩)'] || '비용 정보 없음'}
                         </span>
                       </div>
                     </div>
                   </div>
                 ))}
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-600 font-medium">
+                    일일 총 예상 비용: {dayPlan.일일_총_예상_비용}
+                  </p>
+                </div>
               </div>
             </div>
           ))}
         </div>
+
+        {/* 추천 맛집 */}
+        {planData?.추천_맛집 && (
+          <div className="mt-8 bg-white rounded-2xl shadow-sm p-6">
+            <h2 className="text-xl font-bold mb-4">추천 맛집</h2>
+            <div className="space-y-4">
+              {planData.추천_맛집.map((restaurant: any, index: number) => (
+                <div key={index} className="p-4 bg-gray-50 rounded-xl">
+                  <h3 className="font-medium">{restaurant.이름}</h3>
+                  <p className="text-sm text-gray-500 mt-1">{restaurant.주소}</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-sm text-blue-600">{restaurant.추천_메뉴}</span>
+                    <span className="text-sm text-gray-500">•</span>
+                    <span className="text-sm text-gray-500">{restaurant.유명도}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 추천 명소 */}
+        {planData?.추천_명소 && (
+          <div className="mt-8 bg-white rounded-2xl shadow-sm p-6">
+            <h2 className="text-xl font-bold mb-4">추천 명소</h2>
+            <div className="space-y-4">
+              {planData.추천_명소.map((attraction: any, index: number) => (
+                <div key={index} className="p-4 bg-gray-50 rounded-xl">
+                  <h3 className="font-medium">{attraction.이름}</h3>
+                  <p className="text-sm text-gray-500 mt-1">{attraction.설명}</p>
+                  <p className="text-sm text-gray-500 mt-1">{attraction.주소}</p>
+                  <span className="inline-block mt-2 text-sm text-blue-600">
+                    {attraction.유명도}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 예상 비용 총정리 */}
+        {planData?.예상_비용_총정리 && (
+          <div className="mt-8 bg-white rounded-2xl shadow-sm p-6">
+            <h2 className="text-xl font-bold mb-4">예상 비용 총정리</h2>
+            <div className="space-y-2">
+              {Object.entries(planData.예상_비용_총정리).map(([key, value]) => (
+                <div key={key} className="flex justify-between items-center">
+                  <span className="text-gray-600">{key}</span>
+                  <span className="font-medium">{String(value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 여행 팁 */}
+        {planData?.여행_팁 && (
+          <div className="mt-8 bg-white rounded-2xl shadow-sm p-6">
+            <h2 className="text-xl font-bold mb-4">여행 팁</h2>
+            <p className="text-gray-600">{planData.여행_팁}</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -11,40 +11,36 @@ import {
   HiOutlineHeart,
   HiOutlineSparkles,
 } from "react-icons/hi2";
+import instance from "@/app/api/axios";
 
-// 가데이터
-const mockCustomTrips = [
-  {
-    id: 1,
-    title: "제주도 힐링 여행",
-    destination: "제주도",
-    startDate: "2024-04-01",
-    endDate: "2024-04-04",
-    travelers: 2,
-    mood: "relaxed",
-    preferences: ["휴양/힐링", "자연/경관"],
-    aiSuggestions: [
-      "성산일출봉에서 일출 감상",
-      "섭지코지 해안 산책로",
-      "우도 자전거 투어",
-    ],
-  },
-  {
-    id: 2,
-    title: "부산 맛집 투어",
-    destination: "부산",
-    startDate: "2024-04-15",
-    endDate: "2024-04-17",
-    travelers: 4,
-    mood: "adventurous",
-    preferences: ["맛집/음식", "문화/역사"],
-    aiSuggestions: [
-      "자갈치 시장 해산물 투어",
-      "감천문화마을 산책",
-      "부산 국제시장 탐방",
-    ],
-  },
-];
+interface TravelPlan {
+  id: number;
+  title: string;
+  location: string;
+  startDate: string;
+  endDate: string;
+  travelers: number;
+  mood: string;
+  preferences: string[];
+  plan: string;
+  createdAt: string;
+}
+
+interface PageResponse {
+  content: TravelPlan[];
+  pageable: {
+    pageNumber: number;
+    pageSize: number;
+  };
+  last: boolean;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  size: number;
+  number: number;
+  numberOfElements: number;
+  empty: boolean;
+}
 
 const moods = [
   { id: "relaxed", name: "힐링/휴식" },
@@ -69,6 +65,42 @@ export default function CustomTripList() {
   const router = useRouter();
   const [selectedMood, setSelectedMood] = useState<string>("");
   const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
+  const [travelPlans, setTravelPlans] = useState<TravelPlan[]>([]);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchTravelPlans = async (pageNum: number) => {
+    try {
+      setIsLoading(true);
+      const response = await instance.get<PageResponse>(`/api/travel/plans?page=${pageNum}&size=10`);
+      const newPlans = response.data.content;
+      
+      if (pageNum === 0) {
+        setTravelPlans(newPlans);
+      } else {
+        setTravelPlans(prev => [...prev, ...newPlans]);
+      }
+      
+      setHasMore(!response.data.last);
+    } catch (error) {
+      console.error('Error fetching travel plans:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTravelPlans(0);
+  }, []);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight * 1.5 && !isLoading && hasMore) {
+      setPage(prev => prev + 1);
+      fetchTravelPlans(page + 1);
+    }
+  };
 
   const handleCreateTrip = () => {
     router.push("/trip/custom/create");
@@ -80,6 +112,15 @@ export default function CustomTripList() {
         ? prev.filter((p) => p !== preference)
         : [...prev, preference]
     );
+  };
+
+  const parsePlan = (planString: string) => {
+    try {
+      return JSON.parse(planString);
+    } catch (error) {
+      console.error('Error parsing plan:', error);
+      return null;
+    }
   };
 
   return (
@@ -150,67 +191,79 @@ export default function CustomTripList() {
         </div>
 
         {/* 여행 목록 */}
-        <div className="divide-y divide-gray-200">
-          {mockCustomTrips.map((trip) => (
-            <div
-              key={trip.id}
-              className="p-4 hover:bg-gray-50 cursor-pointer"
-              onClick={() => router.push(`/trip/custom/${trip.id}`)}
-            >
-              <div className="flex justify-between items-start mb-3">
-                <h2 className="text-lg font-semibold">{trip.title}</h2>
-                <span className="text-sm text-gray-500">
-                  {moods.find((m) => m.id === trip.mood)?.name}
-                </span>
-              </div>
-
-              {/* 여행 정보 */}
-              <div className="space-y-2 text-sm text-gray-600 mb-3">
-                <div className="flex items-center gap-2">
-                  <HiOutlineMapPin className="w-4 h-4" />
-                  <span>{trip.destination}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <HiOutlineCalendar className="w-4 h-4" />
-                  <span>
-                    {trip.startDate} ~ {trip.endDate}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <HiOutlineUserGroup className="w-4 h-4" />
-                  <span>{trip.travelers}명</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <HiOutlineHeart className="w-4 h-4" />
-                  <span>{trip.preferences.join(", ")}</span>
-                </div>
-              </div>
-
-              {/* 함께 여행하기 버튼 */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  router.push(`/trip/custom/${trip.id}/travelers`);
-                }}
-                className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300 ease-in-out transform hover:scale-105 shadow-md"
+        <div 
+          className="divide-y divide-gray-200"
+          onScroll={handleScroll}
+        >
+          {travelPlans.map((trip) => {
+            const plan = parsePlan(trip.plan);
+            const firstDaySchedule = plan?.일별_추천_일정?.[0]?.일정?.[0];
+            
+            return (
+              <div
+                key={trip.id}
+                className="p-4 hover:bg-gray-50 cursor-pointer"
+                onClick={() => router.push(`/trip/custom/${trip.id}`)}
               >
-                함께 여행하기
-              </button>
-
-              {/* AI 추천 */}
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <div className="flex items-center gap-2 text-blue-600 mb-2">
-                  <HiOutlineSparkles className="w-4 h-4" />
-                  <span className="text-sm font-medium">AI 추천 활동</span>
+                <div className="flex justify-between items-start mb-3">
+                  <h2 className="text-lg font-semibold">{trip.title}</h2>
+                  <span className="text-sm text-gray-500">{trip.mood}</span>
                 </div>
-                <ul className="text-sm text-blue-700 space-y-1">
-                  {trip.aiSuggestions.map((suggestion, index) => (
-                    <li key={index}>• {suggestion}</li>
-                  ))}
-                </ul>
+
+                {/* 여행 정보 */}
+                <div className="space-y-2 text-sm text-gray-600 mb-3">
+                  <div className="flex items-center gap-2">
+                    <HiOutlineMapPin className="w-4 h-4" />
+                    <span>{trip.location}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <HiOutlineCalendar className="w-4 h-4" />
+                    <span>
+                      {trip.startDate} ~ {trip.endDate}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <HiOutlineUserGroup className="w-4 h-4" />
+                    <span>{trip.travelers}명</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <HiOutlineHeart className="w-4 h-4" />
+                    <span>{trip.preferences.join(", ")}</span>
+                  </div>
+                </div>
+
+                {/* 함께 여행하기 버튼 */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/trip/custom/${trip.id}/travelers`);
+                  }}
+                  className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300 ease-in-out transform hover:scale-105 shadow-md"
+                >
+                  함께 여행하기
+                </button>
+
+                {/* AI 추천 */}
+                {firstDaySchedule && (
+                  <div className="bg-blue-50 p-3 rounded-lg mt-3">
+                    <div className="flex items-center gap-2 text-blue-600 mb-2">
+                      <HiOutlineSparkles className="w-4 h-4" />
+                      <span className="text-sm font-medium">첫날 추천 활동</span>
+                    </div>
+                    <div className="text-sm text-blue-700">
+                      <div>• {firstDaySchedule.활동}</div>
+                      <div className="text-gray-600">{firstDaySchedule.장소}</div>
+                    </div>
+                  </div>
+                )}
               </div>
+            );
+          })}
+          {isLoading && (
+            <div className="p-4 text-center text-gray-500">
+              로딩 중...
             </div>
-          ))}
+          )}
         </div>
       </motion.main>
     </div>
