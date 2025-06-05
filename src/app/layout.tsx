@@ -4,6 +4,7 @@ import "./globals.css";
 import ClientLayout from "./ClientLayout";
 import ServerStatusProvider from "./ServerStatusProvider";
 import Footer from "@/components/Footer";
+import Script from "next/script";
 
 const inter = Geist({ subsets: ["latin"] });
 
@@ -60,13 +61,17 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="ko">
       <head>
         <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+        <Script
+          src="https://web.nicepay.co.kr/v3/webstd/js/nicepay-3.0.js"
+          type="text/javascript"
+        />
       </head>
       <body className={inter.className}>
         <ServerStatusProvider>
