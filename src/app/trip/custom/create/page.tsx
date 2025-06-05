@@ -356,7 +356,7 @@ export default function CreateCustomTrip() {
       alert("기분/분위기를 선택해주세요.");
       return;
     }
-   
+
     if (step === 2 && !selectedPersonality) {
       alert("성향을 선택해주세요.");
       return;
@@ -378,11 +378,11 @@ export default function CreateCustomTrip() {
       return;
     }
     setStep(step + 1);
-    
+
     // 모바일에서도 작동하는 스크롤 최상단 이동
-    const mainElement = document.querySelector('main');
+    const mainElement = document.querySelector("main");
     if (mainElement) {
-      mainElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      mainElement.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
@@ -391,55 +391,91 @@ export default function CreateCustomTrip() {
       setIsLoading(true);
       // 여행 데이터 구성
       const tripData = {
-        mood: moods.find(m => m.id === selectedMood)?.name,
-        moodState: moodStates.find(m => m.id === selectedMoodState)?.name,
-        personality: personalities.find(p => p.id === selectedPersonality)?.name,
-        preferences: selectedPreferences.map(prefId => 
-          preferences.find(p => p.id === prefId)?.name
+        mood: moods.find((m) => m.id === selectedMood)?.name,
+        moodState: moodStates.find((m) => m.id === selectedMoodState)?.name,
+        personality: personalities.find((p) => p.id === selectedPersonality)
+          ?.name,
+        preferences: selectedPreferences.map(
+          (prefId) => preferences.find((p) => p.id === prefId)?.name
         ),
-        location: locations.find(l => l.id === selectedLocation)?.name,
-        travelStyle: travelStyles.find(t => t.id === selectedTravelStyle)?.name,
-        budget: budgets.find(b => b.id === selectedBudget)?.name,
+        location: locations.find((l) => l.id === selectedLocation)?.name,
+        travelStyle: travelStyles.find((t) => t.id === selectedTravelStyle)
+          ?.name,
+        budget: budgets.find((b) => b.id === selectedBudget)?.name,
         startDate,
         endDate,
         travelers,
       };
 
-      const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: "당신은 여행 계획 전문가입니다. 사용자의 조건에 맞게 자세하고 정리된 JSON 형식으로 여행 계획을 작성하세요."
-          },
-          {
-            role: "user",
-            content: `
+      const response = await axios.post(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content:
+                "당신은 여행 계획 전문가입니다. 사용자의 조건에 맞게 실용적이고 구체적인 여행 일정을 작성하세요. 각 시간대별 활동과 해당 활동의 비용을 함께 명시하고, 하루 전체 비용 요약도 포함해주세요.",
+            },
+            {
+              role: "user",
+              content: `
             다음 조건에 맞는 여행 계획을 생성해주세요:
             - 여행 분위기: ${tripData.mood}
             - 현재 기분: ${tripData.moodState}
             - 성향: ${tripData.personality}
-            - 선호 여행 스타일: ${tripData.preferences.join(', ')}
+            - 선호 여행 스타일: ${tripData.preferences.join(", ")}
             - 여행지: ${tripData.location}
             - 여행 스타일: ${tripData.travelStyle}
             - 예산: ${tripData.budget}
             - 여행 기간: ${tripData.startDate} ~ ${tripData.endDate}
             - 여행 인원: ${tripData.travelers}명
-
-            다음 형식의 JSON으로 응답해주세요:
-
+      
+            다음 형식의 JSON으로 상세하게 응답해주세요. 각 시간대별 활동과 그에 따른 예상 비용을 반드시 포함해야 합니다.
+      
             {
               "일별_추천_일정": [
                 {
                   "날짜": "YYYY-MM-DD",
-                  "일정": {
-                    "아침": "아침 일정 내용",
-                    "오전 활동": "오전 일정 내용",
-                    "점심": "점심 장소 및 메뉴",
-                    "오후 활동": "오후 일정 내용",
-                    "저녁": "저녁 장소 및 활동",
-                    "이동/기타": "이동 경로, 교통수단 등"
-                  }
+                  "일정": [
+                    {
+                      "시간대": "아침",
+                      "활동": "활동 내용 (예: 호텔 조식 또는 카페 방문)",
+                      "장소": "장소명 또는 위치",
+                      "예상_비용(₩)": "원"
+                    },
+                    {
+                      "시간대": "오전 활동",
+                      "활동": "예: 박물관 관람",
+                      "장소": "명소명",
+                      "예상_비용(₩)": "원"
+                    },
+                    {
+                      "시간대": "점심",
+                      "활동": "식사",
+                      "장소": "맛집 이름",
+                      "예상_비용(₩)": "원"
+                    },
+                    {
+                      "시간대": "오후 활동",
+                      "활동": "시장 구경 및 쇼핑",
+                      "장소": "시장 이름",
+                      "예상_비용(₩)": "원"
+                    },
+                    {
+                      "시간대": "저녁",
+                      "활동": "식사 및 야경 관람",
+                      "장소": "레스토랑 또는 야경 명소",
+                      "예상_비용(₩)": "원"
+                    },
+                    {
+                      "시간대": "이동/기타",
+                      "활동": "교통 이동 및 숙소 체크인",
+                      "장소": "교통수단 또는 숙소명",
+                      "예상_비용(₩)": "원"
+                    }
+                  ],
+                  "일일_총_예상_비용(₩)": "원"
                 }
               ],
               "추천_맛집": [
@@ -448,35 +484,45 @@ export default function CreateCustomTrip() {
               "추천_명소": [
                 {"이름": "명소명", "설명": "간단 설명", "주소": "주소", "유명도": "유명" 또는 "로컬"}
               ],
-              "예상_비용": "총 비용",
-              "여행_팁": "유용한 여행 팁"
+              "예상_비용_총정리": {
+                "항공/교통": "₩",
+                "숙박": "₩",
+                "식비": "₩",
+                "관광/체험": "₩",
+                "기타": "₩",
+                "총합계": "₩"
+              },
+              "여행_팁": "유용한 여행 팁 (현지 문화, 날씨, 주의사항 등 포함)"
             }
-
-            ※ 특히 '일별_추천_일정'은 하루 단위로 상세히 작성해주세요 (예: 아침~저녁 구성 포함).
-            `
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 2500 // 필요 시 2000~3000까지도 가능
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_OPENAI_API_KEY}`
+      
+            ※ 각 시간대별 활동마다 '예상 비용'을 반드시 작성해주세요.
+            ※ 비용은 대략적인 원화 기준으로 명시하고, '일일_총_예상_비용'은 모든 시간대 비용의 합계여야 합니다.
+            `,
+            },
+          ],
+          temperature: 0.3,
+          max_tokens: 3500,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENAI_API_KEY}`,
+          },
         }
-      });
+      );
 
       // 응답 메시지에서 assistant content 추출
       const assistantMessage = response.data.choices[0].message.content;
-      
+
       // JSON 문자열에서 실제 JSON 객체 추출
-      const jsonStr = assistantMessage.replace(/```json\n|\n```/g, '');
+      const jsonStr = assistantMessage.replace(/```json\n|\n```/g, "");
       const parsedPlan = JSON.parse(jsonStr);
-      
+
       setGeneratedPlan(parsedPlan);
       setStep(7);
     } catch (error) {
-      console.error('Error generating trip plan:', error);
-      alert('여행 계획 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
+      console.error("Error generating trip plan:", error);
+      alert("여행 계획 생성 중 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
       setIsLoading(false);
     }
@@ -485,30 +531,36 @@ export default function CreateCustomTrip() {
   const handleSaveTrip = async () => {
     try {
       setIsSaving(true);
-      
+
       // 저장할 여행 데이터 구성
       const tripData = {
-        title: `${locations.find(l => l.id === selectedLocation)?.name} ${selectedSeason ? seasons.find(s => s.id === selectedSeason)?.name : ''} 여행`,
-        mood: moods.find(m => m.id === selectedMood)?.name,
-        moodState: moodStates.find(m => m.id === selectedMoodState)?.name,
-        personality: personalities.find(p => p.id === selectedPersonality)?.name,
-        preferences: selectedPreferences.map(prefId => 
-          preferences.find(p => p.id === prefId)?.name
+        title: `${locations.find((l) => l.id === selectedLocation)?.name} ${
+          selectedSeason
+            ? seasons.find((s) => s.id === selectedSeason)?.name
+            : ""
+        } 여행`,
+        mood: moods.find((m) => m.id === selectedMood)?.name,
+        moodState: moodStates.find((m) => m.id === selectedMoodState)?.name,
+        personality: personalities.find((p) => p.id === selectedPersonality)
+          ?.name,
+        preferences: selectedPreferences.map(
+          (prefId) => preferences.find((p) => p.id === prefId)?.name
         ),
-        location: locations.find(l => l.id === selectedLocation)?.name,
-        travelStyle: travelStyles.find(t => t.id === selectedTravelStyle)?.name,
-        budget: budgets.find(b => b.id === selectedBudget)?.name,
+        location: locations.find((l) => l.id === selectedLocation)?.name,
+        travelStyle: travelStyles.find((t) => t.id === selectedTravelStyle)
+          ?.name,
+        budget: budgets.find((b) => b.id === selectedBudget)?.name,
         startDate,
         endDate,
         travelers,
         plan: generatedPlan,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
       // const generatedPlan = generatedPlan;
 
-      console.log("tripData==",tripData)
+      console.log("tripData==", tripData);
       // const response = await instance.post('/api/trip/save', tripData);
-      
+
       // if (response.data.success) {
       //   alert('여행 계획이 저장되었습니다.');
       //   router.push('/trip/custom');
@@ -516,8 +568,8 @@ export default function CreateCustomTrip() {
       //   throw new Error('저장 실패');
       // }
     } catch (error) {
-      console.error('Error saving trip plan:', error);
-      alert('여행 계획 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+      console.error("Error saving trip plan:", error);
+      alert("여행 계획 저장 중 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
       setIsSaving(false);
     }
@@ -629,7 +681,7 @@ export default function CreateCustomTrip() {
         {step === 3 && !generatedPlan && (
           <div className="p-4">
             <h2 className="text-lg font-semibold mb-4">
-              어떤 여행을 선호하시나요?
+              어떤 여행을 선호하시나요?(다중 선택 가능)
             </h2>
             <div className="space-y-3">
               {preferences.map((preference) => (
@@ -804,7 +856,7 @@ export default function CreateCustomTrip() {
         {step === 7 && generatedPlan && (
           <div className="p-4 pb-24">
             <h2 className="text-lg font-semibold mb-4">맞춤 여행 계획</h2>
-            
+
             {/* 일별 일정 */}
             <section className="mb-8">
               <div className="flex items-center gap-2 mb-4">
@@ -812,19 +864,42 @@ export default function CreateCustomTrip() {
                 <h3 className="text-xl font-semibold">일별 추천 일정</h3>
               </div>
               <div className="space-y-3">
-                {generatedPlan.일별_추천_일정.map((schedule: any, index: number) => (
-                  <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
-                    <div className="font-semibold text-blue-600">{schedule.날짜}</div>
-                    <div className="mt-2 space-y-2">
-                      {Object.entries(schedule.일정).map(([time, content]: [string, any]) => (
-                        <div key={time} className="flex gap-2">
-                          <span className="font-medium text-gray-700 min-w-[80px]">{time}:</span>
-                          <span>{content}</span>
+                {generatedPlan.일별_추천_일정.map(
+                  (schedule: any, index: number) => (
+                    <div
+                      key={index}
+                      className="bg-white p-4 rounded-lg border border-gray-200"
+                    >
+                      <div className="font-semibold text-blue-600">
+                        {schedule.날짜}
+                      </div>
+                      <div className="mt-2 space-y-2">
+                        {schedule.일정.map((item: any, itemIndex: number) => (
+                          <div key={itemIndex} className="flex gap-2">
+                            <span className="font-medium text-gray-700 min-w-[80px]">
+                              {item.시간대}:
+                            </span>
+                            <div className="flex-1">
+                              <div>{item.활동}</div>
+                              <div className="text-sm text-gray-600">
+                                {item.장소}
+                              </div>
+                              <div className="text-sm text-blue-600">
+                                예상 비용: {item["예상_비용(₩)"]}원
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 pt-2 border-t border-gray-200">
+                        <div className="font-medium text-right">
+                          일일 총 예상 비용: {schedule["일일_총_예상_비용(₩)"]}
+                          원
                         </div>
-                      ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                )}
               </div>
             </section>
 
@@ -835,13 +910,24 @@ export default function CreateCustomTrip() {
                 <h3 className="text-xl font-semibold">추천 맛집</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {generatedPlan.추천_맛집.map((restaurant: any, index: number) => (
-                  <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
-                    <div className="font-semibold text-lg">{restaurant.이름}</div>
-                    <div className="text-gray-600 mt-2">{restaurant.주소}</div>
-                    <div className="text-red-500 mt-2">추천 메뉴: {restaurant.추천_메뉴}</div>
-                  </div>
-                ))}
+                {generatedPlan.추천_맛집.map(
+                  (restaurant: any, index: number) => (
+                    <div
+                      key={index}
+                      className="bg-white p-4 rounded-lg border border-gray-200"
+                    >
+                      <div className="font-semibold text-lg">
+                        {restaurant.이름}
+                      </div>
+                      <div className="text-gray-600 mt-2">
+                        {restaurant.주소}
+                      </div>
+                      <div className="text-red-500 mt-2">
+                        추천 메뉴: {restaurant.추천_메뉴}
+                      </div>
+                    </div>
+                  )
+                )}
               </div>
             </section>
 
@@ -852,13 +938,22 @@ export default function CreateCustomTrip() {
                 <h3 className="text-xl font-semibold">추천 명소</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {generatedPlan.추천_명소.map((attraction: any, index: number) => (
-                  <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
-                    <div className="font-semibold text-lg">{attraction.이름}</div>
-                    <div className="text-gray-600 mt-2">{attraction.주소}</div>
-                    <div className="mt-2">{attraction.설명}</div>
-                  </div>
-                ))}
+                {generatedPlan.추천_명소.map(
+                  (attraction: any, index: number) => (
+                    <div
+                      key={index}
+                      className="bg-white p-4 rounded-lg border border-gray-200"
+                    >
+                      <div className="font-semibold text-lg">
+                        {attraction.이름}
+                      </div>
+                      <div className="text-gray-600 mt-2">
+                        {attraction.주소}
+                      </div>
+                      <div className="mt-2">{attraction.설명}</div>
+                    </div>
+                  )
+                )}
               </div>
             </section>
 
@@ -869,7 +964,21 @@ export default function CreateCustomTrip() {
                 <h3 className="text-xl font-semibold">예상 비용</h3>
               </div>
               <div className="bg-white p-4 rounded-lg border border-gray-200">
-                <div className="text-xl font-semibold">{generatedPlan.예상_비용}</div>
+                <div className="space-y-2">
+                  {Object.entries(
+                    generatedPlan.예상_비용_총정리 as Record<string, string>
+                  ).map(([key, value]) => (
+                    <div
+                      key={key}
+                      className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0"
+                    >
+                      <span className="font-medium text-gray-700">{key}:</span>
+                      <span className="text-blue-600 font-semibold">
+                        {value}원
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </section>
 
@@ -901,7 +1010,9 @@ export default function CreateCustomTrip() {
               disabled={isLoading}
               className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-blue-300"
             >
-              {isLoading ? '여행 계획 생성 중...(약 1분정도 걸립니다!)' : 'AI 맞춤 여행 생성하기'}
+              {isLoading
+                ? "여행 계획 생성 중...(약 1분정도 걸립니다!)"
+                : "AI 맞춤 여행 생성하기"}
             </button>
           ) : (
             <div className="flex gap-2">
@@ -916,17 +1027,16 @@ export default function CreateCustomTrip() {
                 disabled={isSaving}
                 className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-blue-300"
               >
-                {isSaving ? '저장 중...' : '저장하기'}
+                {isSaving ? "저장 중..." : "저장하기"}
               </button>
               <button
-                onClick={() => router.push('/trip/custom')}
+                onClick={() => router.push("/trip/custom")}
                 className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors"
               >
                 목록으로
               </button>
             </div>
           )}
-          
         </div>
       </motion.main>
     </div>
