@@ -14,6 +14,7 @@ import {
 import instance from "@/app/api/axios";
 import PortOne from "@portone/browser-sdk/v2";
 import { getImageUrl } from "@/app/common/imgUtils";
+import Script from "next/script";
 
 interface Trip {
   id: number;
@@ -52,6 +53,8 @@ export default function PaymentPage({
   const [paymentMethod, setPaymentMethod] = useState<"simple" | "card">(
     "simple"
   );
+  const [isLoading, setIsLoading] = useState(false);
+
   const resolvedParams = use(params);
   const searchParams = useSearchParams();
 
@@ -99,61 +102,95 @@ export default function PaymentPage({
       alert("참여 신청에 실패했습니다.");
     }
   };
-  const handlePayment = async () => {
-    if (!trip) return;
+  // const handlePayment = async () => {
+  //   if (!trip) return;
 
-    const orderName = trip.title;
-    const totalAmount = finalPrice;
+  //   const orderName = trip.title;
+  //   const totalAmount = finalPrice;
 
-    if (totalAmount > 0) {
-      console.log("결제 진행:", paymentMethod);
-      const payment = await PortOne.requestPayment({
-        storeId: process.env.NEXT_PUBLIC_PG_STORE_ID as string,
-        channelKey: process.env.NEXT_PUBLIC_PG_PAY_CHANNEL_ID as string,
-        paymentId: randomId(),
-        orderName: orderName,
-        totalAmount: totalAmount,
-        currency: "KRW" as any,
-        payMethod: "CARD",
-        redirectUrl: `${window.location.origin}/payment/redirect?tripId=${trip.id}&totalAmount=${finalPrice}`,
-        customData: {
-          tripId: trip.id,
-          totalAmount: finalPrice,
-        },
-      });
-      console.log("결제 결과:", payment);
-      if (payment?.transactionType === "PAYMENT") {
-        sendParticipant();
-        try {
-          const paymentData = {
-            paymentId: payment.paymentId,
-            transactionType: payment.transactionType,
-            txId: payment.txId,
-            userId: user?.id,
-            productId: trip.id,
-            productName: trip.title,
-            amount: finalPrice,
-            currency: "KRW",
-            paymentMethod: paymentMethod === "simple" ? "SIMPLE" : "SIMPLE",
-            paymentStatus: "COMPLETED",
-            paymentDate: new Date().toISOString(),
-            hostUserKey: trip.user.id.toString(),
-            cardInfo: "****-****-****-****",
-          };
+  //   if (totalAmount > 0) {
+  //     console.log("결제 진행:", paymentMethod);
+  //     const payment = await PortOne.requestPayment({
+  //       storeId: process.env.NEXT_PUBLIC_PG_STORE_ID as string,
+  //       channelKey: process.env.NEXT_PUBLIC_PG_PAY_CHANNEL_ID as string,
+  //       paymentId: randomId(),
+  //       orderName: orderName,
+  //       totalAmount: totalAmount,
+  //       currency: "KRW" as any,
+  //       payMethod: "CARD",
+  //       redirectUrl: `${window.location.origin}/payment/redirect?tripId=${trip.id}&totalAmount=${finalPrice}`,
+  //       customData: {
+  //         tripId: trip.id,
+  //         totalAmount: finalPrice,
+  //       },
+  //     });
+  //     console.log("결제 결과:", payment);
+  //     if (payment?.transactionType === "PAYMENT") {
+  //       sendParticipant();
+  //       try {
+  //         const paymentData = {
+  //           paymentId: payment.paymentId,
+  //           transactionType: payment.transactionType,
+  //           txId: payment.txId,
+  //           userId: user?.id,
+  //           productId: trip.id,
+  //           productName: trip.title,
+  //           amount: finalPrice,
+  //           currency: "KRW",
+  //           paymentMethod: paymentMethod === "simple" ? "SIMPLE" : "SIMPLE",
+  //           paymentStatus: "COMPLETED",
+  //           paymentDate: new Date().toISOString(),
+  //           hostUserKey: trip.user.id.toString(),
+  //           cardInfo: "****-****-****-****",
+  //         };
 
-          const response = await instance.post("/api/payments", paymentData);
-          if (response.status === 200) {
-            console.log("결제 정보 저장 성공");
-            router.push(`/payment/complete?tripId=${trip.id}`);
-          }
-        } catch (error) {
-          console.error("결제 정보 저장 실패:", error);
-          alert("결제 정보 저장에 실패했습니다.");
-        }
+  //         const response = await instance.post("/api/payments", paymentData);
+  //         if (response.status === 200) {
+  //           console.log("결제 정보 저장 성공");
+  //           router.push(`/payment/complete?tripId=${trip.id}`);
+  //         }
+  //       } catch (error) {
+  //         console.error("결제 정보 저장 실패:", error);
+  //         alert("결제 정보 저장에 실패했습니다.");
+  //       }
+  //     }
+  //     console.log("결제 결과:", payment);
+  //   } else {
+  //     sendParticipant();
+  //   }
+  // };
+  const handlePayment = () => {
+    try {
+      setIsLoading(true);
+
+      if (typeof window !== "undefined") {
+        const payElem: any = window;
+        const { AUTHNICE } = payElem;
+
+        AUTHNICE.requestPay({
+          clientId: "S2_73d2b43644334db8a44f9280c07f6388", // 테스트용 가맹점 식별코드
+          method: "card",
+          orderId: `TRIP_${Date.now()}`,
+          amount: finalPrice,
+          tripId: trip?.id,
+          goodsName: trip?.title || "맞춤 여행 계획",
+          returnUrl: `http://localhost:8080/payment/result?tripId=${trip?.id}`,
+          failUrl: window.location.href,
+          fnSuccess: (result: any) => {
+            console.log("Payment result:", result);
+            console.log("Transaction ID (tid):", result.tid);
+          },
+          fnError: (error: any) => {
+            console.error("Payment error:", error);
+            alert("결제 처리 중 오류가 발생했습니다.");
+            setIsLoading(false);
+          },
+        });
       }
-      console.log("결제 결과:", payment);
-    } else {
-      sendParticipant();
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert("결제 처리 중 오류가 발생했습니다.");
+      setIsLoading(false);
     }
   };
 
@@ -166,6 +203,8 @@ export default function PaymentPage({
 
   return (
     <div className="min-h-screen bg-gray-50">
+            <Script type="text/javascript" src="https://pay.nicepay.co.kr/v1/js/" />
+
       {/* 헤더 */}
       <div className="bg-white border-b">
         <div className="max-w-md mx-auto px-4 py-4 flex items-center">

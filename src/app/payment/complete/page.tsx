@@ -34,26 +34,51 @@ interface Trip {
   };
 }
 
+// 클라이언트 컴포넌트
 function PaymentCompleteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tripId = searchParams?.get("tripId");
+  const finalPrice = searchParams?.get("finalPrice");
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
   const { refreshCount } = useNotificationCount();
+  const [paymentResult, setPaymentResult] = useState<any>(null);
 
-  // 컴포넌트 마운트 시 알림 갱신
   useEffect(() => {
-    // 즉시 한 번 갱신
-    refreshCount();
+    // URL 파라미터에서 결제 응답값 가져오기
+    console.log("All search params:", Object.fromEntries(searchParams?.entries() || []));
     
-    // 1초 후 한 번 더 갱신 (서버 상태가 완전히 반영되도록)
-    const timer = setTimeout(() => {
-      refreshCount();
-    }, 1000);
+    const paymentData = {
+      authResultCode: searchParams?.get('authResultCode'),
+      authResultMsg: searchParams?.get('authResultMsg'),
+      tid: searchParams?.get('tid'),
+      clientId: searchParams?.get('clientId'),
+      orderId: searchParams?.get('orderId'),
+      amount: searchParams?.get('amount'),
+      mallReserved: searchParams?.get('mallReserved'),
+      authToken: searchParams?.get('authToken'),
+      signature: searchParams?.get('signature')
+    };
 
-    return () => clearTimeout(timer);
-  }, [refreshCount]);
+    console.log("Payment data from URL:", paymentData);
+    
+    // 결제 결과가 있는 경우에만 처리
+    if (paymentData.authResultCode || paymentData.tid) {
+      setPaymentResult(paymentData);
+      
+      // 결제 성공 시 서버로 데이터 전송
+      if (paymentData.authResultCode === '0000') {
+        instance.post('http://localhost:8080/api/payments/approve', paymentData)
+          .then(response => {
+            console.log('Payment approved:', response.data);
+          })
+          .catch(error => {
+            console.error('Failed to approve payment:', error);
+          });
+      }
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchTrip = async () => {
@@ -62,10 +87,6 @@ function PaymentCompleteContent() {
         const response = await instance.get(`/api/v1/travels/${tripId}`);
         if (response.data.status === 200) {
           setTrip(response.data.data);
-          // 여행 정보를 가져온 후 약간의 지연을 두고 알림 갱신
-          setTimeout(() => {
-            refreshCount();
-          }, 500);
         }
       } catch (error) {
         console.error("여행 정보 조회 실패:", error);
@@ -75,7 +96,7 @@ function PaymentCompleteContent() {
     };
 
     fetchTrip();
-  }, [tripId, refreshCount]);
+  }, [tripId]);
 
   if (loading || !trip) {
     return (
@@ -88,6 +109,19 @@ function PaymentCompleteContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-md mx-auto px-4 py-8">
+        {/* 결제 응답 정보 */}
+        <div className="bg-white rounded-lg p-4 mb-6">
+          <h3 className="text-lg font-semibold mb-4">결제 응답 정보</h3>
+          <div className="space-y-2 text-sm">
+            {paymentResult && Object.entries(paymentResult).map(([key, value]) => (
+              <div key={key} className="flex justify-between">
+                <span className="font-medium text-gray-600">{key}:</span>
+                <span className="text-gray-800">{String(value)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* 성공 메시지 */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
