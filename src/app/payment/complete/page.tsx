@@ -70,7 +70,9 @@ function PaymentCompleteContent() {
   useEffect(() => {
     // URL 파라미터에서 결제 응답값 가져오기
     console.log("All search params:", Object.fromEntries(searchParams?.entries() || []));
-    
+
+    sendParticipant()
+
     const paymentData = {
       authResultCode: searchParams?.get('authResultCode'),
       authResultMsg: searchParams?.get('authResultMsg'),
@@ -88,12 +90,11 @@ function PaymentCompleteContent() {
     // 결제 결과가 있는 경우에만 처리
     if (paymentData.authResultCode || paymentData.tid) {
       setPaymentResult(paymentData);
-      
       // 결제 성공 시 서버로 데이터 전송
       if (paymentData.authResultCode === '0000') {
         instance.post(`${process.env.NEXT_PUBLIC_BASE_URL}/api/payments/approve`, paymentData)
           .then(response => {
-            sendParticipant()
+            
             console.log('Payment approved:', response.data);
           })
           .catch(error => {
