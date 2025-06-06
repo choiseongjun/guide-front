@@ -59,6 +59,10 @@ export default function PaymentPage({
   const searchParams = useSearchParams();
 
   const message = searchParams?.get("message");
+
+
+
+
   useEffect(() => {
     const fetchTrip = async () => {
       try {
@@ -82,26 +86,26 @@ export default function PaymentPage({
       .join("");
   }
 
-  const sendParticipant = async () => {
-    try {
-      const response = await instance.post(
-        `/api/v1/travels/${resolvedParams.id}/participants`,
-        {
-          message,
-        }
-      );
+  // const sendParticipant = async () => {
+  //   try {
+  //     const response = await instance.post(
+  //       `/api/v1/travels/${resolvedParams.id}/participants`,
+  //       {
+  //         message,
+  //       }
+  //     );
 
-      if (response.data.status === 200) {
-        // router.push(`/trip/${resolvedParams.id}/payment`);
-        router.push(`/payment/complete?tripId=${resolvedParams.id}`);
-      } else {
-        alert("참여 신청에 실패했습니다.");
-      }
-    } catch (error) {
-      console.error("참여 신청 실패:", error);
-      alert("참여 신청에 실패했습니다.");
-    }
-  };
+  //     if (response.data.status === 200) {
+  //       // router.push(`/trip/${resolvedParams.id}/payment`);
+  //       router.push(`/payment/complete?tripId=${resolvedParams.id}`);
+  //     } else {
+  //       alert("참여 신청에 실패했습니다.");
+  //     }
+  //   } catch (error) {
+  //     console.error("참여 신청 실패:", error);
+  //     alert("참여 신청에 실패했습니다.");
+  //   }
+  // };
   // const handlePayment = async () => {
   //   if (!trip) return;
 
@@ -174,7 +178,7 @@ export default function PaymentPage({
           amount: finalPrice,
           tripId: trip?.id,
           goodsName: trip?.title || "맞춤 여행 계획",
-          returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/payment/result?tripId=${trip?.id}&message=${message}`,
+          returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/payment/result?tripId=${trip?.id}&message=${message}&userId=${user?.id}`,
           failUrl: window.location.href,
           fnSuccess: (result: any) => {
             console.log("Payment result:", result);
@@ -197,6 +201,8 @@ export default function PaymentPage({
   if (!trip) {
     return null;
   }
+
+
 
   const finalPrice = trip.discountedPrice || trip.price;
   const location = `${trip.address} ${trip.detailAddress}`;

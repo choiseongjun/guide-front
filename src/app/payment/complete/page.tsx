@@ -58,7 +58,7 @@ function PaymentCompleteContent() {
 
       if (response.data.status === 200) {
         // router.push(`/trip/${resolvedParams.id}/payment`);
-        router.push(`/payment/complete?tripId=${tripId}`);
+        // router.push(`/payment/complete?tripId=${tripId}`);
       } else {
         alert("참여 신청에 실패했습니다.");
       }
