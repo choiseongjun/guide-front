@@ -47,31 +47,31 @@ function PaymentCompleteContent() {
   const [paymentResult, setPaymentResult] = useState<any>(null);
 
 
-  const sendParticipant = async () => {
-    try {
-      const response = await instance.post(
-        `/api/v1/travels/${tripId}/participants`,
-        {
-          message,
-        }
-      );
+  // const sendParticipant = async () => {
+  //   try {
+  //     const response = await instance.post(
+  //       `/api/v1/travels/${tripId}/participants`,
+  //       {
+  //         message,
+  //       }
+  //     );
 
-      if (response.data.status === 200) {
-        // router.push(`/trip/${resolvedParams.id}/payment`);
-        // router.push(`/payment/complete?tripId=${tripId}`);
-      } else {
-        alert("참여 신청에 실패했습니다.");
-      }
-    } catch (error) {
-      console.error("참여 신청 실패:", error);
-      alert("참여 신청에 실패했습니다.");
-    }
-  };
+  //     if (response.data.status === 200) {
+  //       // router.push(`/trip/${resolvedParams.id}/payment`);
+  //       // router.push(`/payment/complete?tripId=${tripId}`);
+  //     } else {
+  //       alert("참여 신청에 실패했습니다.");
+  //     }
+  //   } catch (error) {
+  //     console.error("참여 신청 실패:", error);
+  //     alert("참여 신청에 실패했습니다.");
+  //   }
+  // };
   useEffect(() => {
     // URL 파라미터에서 결제 응답값 가져오기
     console.log("All search params:", Object.fromEntries(searchParams?.entries() || []));
 
-    sendParticipant()
+    // sendParticipant()
 
     const paymentData = {
       authResultCode: searchParams?.get('authResultCode'),
