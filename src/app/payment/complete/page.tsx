@@ -39,12 +39,34 @@ function PaymentCompleteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tripId = searchParams?.get("tripId");
+  const message = searchParams?.get("message");
   const finalPrice = searchParams?.get("finalPrice");
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
   const { refreshCount } = useNotificationCount();
   const [paymentResult, setPaymentResult] = useState<any>(null);
 
+
+  const sendParticipant = async () => {
+    try {
+      const response = await instance.post(
+        `/api/v1/travels/${tripId}/participants`,
+        {
+          message,
+        }
+      );
+
+      if (response.data.status === 200) {
+        // router.push(`/trip/${resolvedParams.id}/payment`);
+        router.push(`/payment/complete?tripId=${tripId}`);
+      } else {
+        alert("참여 신청에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("참여 신청 실패:", error);
+      alert("참여 신청에 실패했습니다.");
+    }
+  };
   useEffect(() => {
     // URL 파라미터에서 결제 응답값 가져오기
     console.log("All search params:", Object.fromEntries(searchParams?.entries() || []));
@@ -71,6 +93,7 @@ function PaymentCompleteContent() {
       if (paymentData.authResultCode === '0000') {
         instance.post(`${process.env.NEXT_PUBLIC_BASE_URL}/api/payments/approve`, paymentData)
           .then(response => {
+            sendParticipant()
             console.log('Payment approved:', response.data);
           })
           .catch(error => {
