@@ -66,6 +66,7 @@ interface Trip {
   discountedPrice: number;
   providedItems: string;
   notProvidedItems: string;
+  status: 'PENDING' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
   images: {
     id: number;
     imageUrl: string;
@@ -738,6 +739,7 @@ export default function TripDetailPage({
     return null;
   }
 
+  console.log('trip.status==',trip.status)
   return (
     <div className="min-h-screen bg-white">
       {/* 헤더 */}
@@ -966,7 +968,7 @@ export default function TripDetailPage({
                     <h3 className="text-sm font-medium text-gray-500 mb-2">참여 확정</h3>
                     <div className="space-y-2">
                       {trip.participants
-                        .filter(p => p.status === "APPROVED")
+                        .filter(p => p.status === "APPROVED" && p.user.id !== user?.id)
                         .map((participant) => (
                           <div
                             key={participant.id}
@@ -986,6 +988,18 @@ export default function TripDetailPage({
                                 <p className="text-sm text-gray-500">참여 확정</p>
                               </div>
                             </div>
+                            {trip.status === 'ONGOING' && user && (
+                              <button
+                                onClick={() => {
+                                  setSelectedParticipant(participant);
+                                  setShowEvaluationModal(true);
+                                }}
+                                className="text-blue-500 text-sm flex items-center gap-1"
+                              >
+                                <HiOutlineStar className="w-5 h-5" />
+                                평가하기
+                              </button>
+                            )}
                           </div>
                         ))}
                     </div>
