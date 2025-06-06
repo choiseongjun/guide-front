@@ -69,7 +69,7 @@ function PaymentCompleteContent() {
       
       // 결제 성공 시 서버로 데이터 전송
       if (paymentData.authResultCode === '0000') {
-        instance.post('http://localhost:8080/api/payments/approve', paymentData)
+        instance.post(`${process.env.NEXT_PUBLIC_BASE_URL}/api/payments/approve`, paymentData)
           .then(response => {
             console.log('Payment approved:', response.data);
           })

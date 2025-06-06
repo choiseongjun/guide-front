@@ -174,7 +174,7 @@ export default function PaymentPage({
           amount: finalPrice,
           tripId: trip?.id,
           goodsName: trip?.title || "맞춤 여행 계획",
-          returnUrl: `http://localhost:8080/payment/result?tripId=${trip?.id}`,
+          returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/payment/result?tripId=${trip?.id}`,
           failUrl: window.location.href,
           fnSuccess: (result: any) => {
             console.log("Payment result:", result);
