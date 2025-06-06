@@ -335,7 +335,10 @@ export default function CreateCustomTrip() {
   const [selectedLocation, setSelectedLocation] = useState<string>("");
   const [selectedSeason, setSelectedSeason] = useState<string>("");
   const [selectedBudget, setSelectedBudget] = useState<string>("");
-  const [startDate, setStartDate] = useState("");
+  const [startDate, setStartDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
   const [endDate, setEndDate] = useState("");
   const [travelers, setTravelers] = useState(1);
   const [selectedTravelStyle, setSelectedTravelStyle] = useState<string>("");
@@ -351,22 +354,30 @@ export default function CreateCustomTrip() {
     );
   };
 
+  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newStartDate = e.target.value;
+    setStartDate(newStartDate);
+    // 시작일이 종료일보다 늦은 경우 종료일을 시작일로 변경
+    if (endDate && newStartDate > endDate) {
+      setEndDate(newStartDate);
+    }
+  };
+
   const handleNext = () => {
-    if (step === 1 && !selectedMood) {
+    if (step === 1 && !selectedLocation) {
+      alert("여행지를 선택해주세요.");
+      return;
+    }
+    if (step === 2 && !selectedMood) {
       alert("기분/분위기를 선택해주세요.");
       return;
     }
-
-    if (step === 2 && !selectedPersonality) {
+    if (step === 3 && !selectedPersonality) {
       alert("성향을 선택해주세요.");
       return;
     }
-    if (step === 3 && selectedPreferences.length === 0) {
+    if (step === 4 && selectedPreferences.length === 0) {
       alert("최소 하나 이상의 선호 여행 스타일을 선택해주세요.");
-      return;
-    }
-    if (step === 4 && !selectedLocation) {
-      alert("여행지를 선택해주세요.");
       return;
     }
     if (step === 5 && !selectedBudget) {
@@ -624,8 +635,35 @@ export default function CreateCustomTrip() {
           </div>
         </div>
 
-        {/* 스텝 1: 기분/분위기 선택 */}
+        {/* 스텝 1: 여행지 선택 */}
         {step === 1 && !generatedPlan && (
+          <div className="p-4">
+            <h2 className="text-lg font-semibold mb-4">
+              어디로 여행하고 싶으신가요?
+            </h2>
+            <div className="space-y-3 mb-6">
+              {locations.map((location) => (
+                <button
+                  key={location.id}
+                  onClick={() => setSelectedLocation(location.id)}
+                  className={`w-full p-4 text-left rounded-lg border ${
+                    selectedLocation === location.id
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:border-blue-500"
+                  }`}
+                >
+                  <div className="font-medium">{location.name}</div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    {location.description}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 스텝 2: 기분/분위기 선택 */}
+        {step === 2 && !generatedPlan && (
           <div className="p-4">
             <h2 className="text-lg font-semibold mb-4">
               어떤 기분으로 여행하고 싶으신가요?
@@ -651,8 +689,8 @@ export default function CreateCustomTrip() {
           </div>
         )}
 
-        {/* 스텝 2: 성향 선택 */}
-        {step === 2 && !generatedPlan && (
+        {/* 스텝 3: 성향 선택 */}
+        {step === 3 && !generatedPlan && (
           <div className="p-4">
             <h2 className="text-lg font-semibold mb-4">
               어떤 성향을 가지고 계신가요?
@@ -678,8 +716,8 @@ export default function CreateCustomTrip() {
           </div>
         )}
 
-        {/* 스텝 3: 선호 여행 스타일 선택 */}
-        {step === 3 && !generatedPlan && (
+        {/* 스텝 4: 선호 여행 스타일 선택 */}
+        {step === 4 && !generatedPlan && (
           <div className="p-4">
             <h2 className="text-lg font-semibold mb-4">
               어떤 여행을 선호하시나요?(다중 선택 가능)
@@ -705,108 +743,29 @@ export default function CreateCustomTrip() {
           </div>
         )}
 
-        {/* 스텝 4: 여행지와 기분 상태 선택 */}
-        {step === 4 && !generatedPlan && (
-          <div className="p-4">
-            <h2 className="text-lg font-semibold mb-4">
-              어디로 여행하고 싶으신가요?
-            </h2>
-            <div className="space-y-3 mb-6">
-              {locations.map((location) => (
-                <button
-                  key={location.id}
-                  onClick={() => setSelectedLocation(location.id)}
-                  className={`w-full p-4 text-left rounded-lg border ${
-                    selectedLocation === location.id
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-blue-500"
-                  }`}
-                >
-                  <div className="font-medium">{location.name}</div>
-                  <div className="text-sm text-gray-600 mt-1">
-                    {location.description}
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            <h2 className="text-lg font-semibold mb-4">
-              현재 기분 상태는 어떠신가요?
-            </h2>
-            <div className="space-y-3">
-              {moodStates.map((state) => (
-                <button
-                  key={state.id}
-                  onClick={() => setSelectedMoodState(state.id)}
-                  className={`w-full p-4 text-left rounded-lg border ${
-                    selectedMoodState === state.id
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-blue-500"
-                  }`}
-                >
-                  <div className="font-medium">{state.name}</div>
-                  <div className="text-sm text-gray-600 mt-1">
-                    {state.description}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 스텝 5: 여행 스타일과 예산 */}
+        {/* 스텝 5: 예산 선택 */}
         {step === 5 && !generatedPlan && (
           <div className="p-4">
             <h2 className="text-lg font-semibold mb-4">
-              어떤 여행 스타일과 예산으로 여행하고 싶으신가요?
+              어떤 예산으로 여행하고 싶으신가요?
             </h2>
-            <div className="space-y-6">
-              {/* <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-3">
-                  선호하는 여행 스타일
-                </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {travelStyles.map((style) => (
-                    <button
-                      key={style.id}
-                      onClick={() => setSelectedTravelStyle(style.id)}
-                      className={`p-3 text-left rounded-lg border ${
-                        selectedTravelStyle === style.id
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:border-blue-500"
-                      }`}
-                    >
-                      <div className="font-medium">{style.name}</div>
-                      <div className="text-sm text-gray-600 mt-1">
-                        {style.description}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div> */}
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-3">
-                  예산 범위
-                </h3>
-                <div className="space-y-3">
-                  {budgets.map((budget) => (
-                    <button
-                      key={budget.id}
-                      onClick={() => setSelectedBudget(budget.id)}
-                      className={`w-full p-4 text-left rounded-lg border ${
-                        selectedBudget === budget.id
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:border-blue-500"
-                      }`}
-                    >
-                      <div className="font-medium">{budget.name}</div>
-                      <div className="text-sm text-gray-600 mt-1">
-                        {budget.description}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+            <div className="space-y-3">
+              {budgets.map((budget) => (
+                <button
+                  key={budget.id}
+                  onClick={() => setSelectedBudget(budget.id)}
+                  className={`w-full p-4 text-left rounded-lg border ${
+                    selectedBudget === budget.id
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:border-blue-500"
+                  }`}
+                >
+                  <div className="font-medium">{budget.name}</div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    {budget.description}
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
         )}
@@ -823,18 +782,24 @@ export default function CreateCustomTrip() {
                   여행 기간
                 </label>
                 <div className="flex gap-4">
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  <div className="flex-1">
+                    <input
+                      type="date"
+                      value={startDate}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={handleStartDateChange}
+                      className="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="date"
+                      value={endDate}
+                      min={startDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="flex-1 px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
                 </div>
               </div>
               <div>
