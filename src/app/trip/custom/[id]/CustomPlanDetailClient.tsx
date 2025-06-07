@@ -36,6 +36,9 @@ interface TravelPlan {
     id: number;
     nickname: string;
     profileImageUrl: string | null;
+    bankName?: string;
+    bankCode?: string;
+    bankAccountNumber?: string;
   };
 }
 
@@ -320,6 +323,47 @@ export default function CustomPlanDetailClient({ params }: Props) {
             <p className="text-gray-600">{planData.여행_팁}</p>
           </div>
         )}
+      </div>
+
+      {/* 플래너 영역 - 별도 섹션 */}
+      <div className="max-w-4xl mx-auto px-4 py-8 mt-8 border-t border-gray-200">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">플래너 정보</h2>
+          
+          <div className="bg-white rounded-xl p-6 shadow-sm">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-blue-100">
+                <img
+                  src={plan.user.profileImageUrl || "/default-profile.png"}
+                  alt="플래너 프로필"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <div className="font-bold text-xl text-gray-800">{plan.user.nickname}</div>
+                <div className="text-sm text-gray-500">여행 계획 작성자</div>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100 pt-6">
+              <h3 className="font-semibold text-lg text-gray-800 mb-4">정산 계좌 정보</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600">은행명</span>
+                  <span className="font-medium text-gray-800">{plan.user.bankName || "-"}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600">은행 코드</span>
+                  <span className="font-medium text-gray-800">{plan.user.bankCode || "-"}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600">계좌번호</span>
+                  <span className="font-medium text-gray-800">{plan.user.bankAccountNumber || "-"}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

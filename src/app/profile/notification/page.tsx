@@ -5,45 +5,67 @@ import { useRouter } from "next/navigation";
 import { HiXMark, HiOutlineBell } from "react-icons/hi2";
 import instance from "@/app/api/axios";
 
-interface Notification {
-  id: number;
-  title: string;
-  content: string;
-  type: string;
-  isRead: boolean;
-  createdAt: string;
+interface NotificationSettings {
+  emailNotification: boolean;
+  pushNotification: boolean;
+  marketingNotification: boolean;
+  travelNotification: boolean;
+  chatNotification: boolean;
 }
 
-export default function NotificationPage() {
+export default function NotificationSettingsPage() {
   const router = useRouter();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [settings, setSettings] = useState<NotificationSettings>({
+    emailNotification: true,
+    pushNotification: true,
+    marketingNotification: true,
+    travelNotification: true,
+    chatNotification: true,
+  });
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    fetchNotifications();
+    fetchNotificationSettings();
   }, []);
 
-  const fetchNotifications = async () => {
+  const fetchNotificationSettings = async () => {
     try {
-      const response = await instance.get("/api/v1/notifications/me");
+      const response = await instance.get("/api/v1/users/notification/settings");
+
+      console.log(response.data);
       if (response.data.status === 200) {
-        setNotifications(response.data.data);
+        setSettings(response.data.data);
       }
     } catch (error) {
-      console.error("알림 목록 조회 실패:", error);
+      console.error("알림 설정 조회 실패:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+  const handleToggle = (key: keyof NotificationSettings) => {
+    setSettings(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
 
-    if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
-    if (diffInMinutes < 24 * 60) return `${Math.floor(diffInMinutes / 60)}시간 전`; 
-    return `${Math.floor(diffInMinutes / (24 * 60))}일 전`;
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const response = await instance.put("/api/v1/users/notification/settings", settings);
+      if (response.data.status === 200) {
+        alert("알림 설정이 저장되었습니다.");
+      } else {
+        throw new Error(response.data.message || "알림 설정 저장에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("알림 설정 저장 실패:", error);
+      alert("알림 설정 저장에 실패했습니다.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (loading) {
@@ -65,43 +87,118 @@ export default function NotificationPage() {
             >
               <HiXMark className="w-6 h-6" />
             </button>
-            <h1 className="text-lg font-semibold">알림</h1>
+            <h1 className="text-lg font-semibold">알림 설정</h1>
             <div className="w-6" />
           </div>
         </div>
       </div>
 
       <div className="max-w-md mx-auto px-4 py-6">
-        {notifications.length === 0 ? (
-          <div className="text-center py-12">
-            <HiOutlineBell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">새로운 알림이 없습니다.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {notifications.map((notification) => (
-              <div
-                key={notification.id}
-                className={`bg-white rounded-lg shadow p-4 ${
-                  !notification.isRead ? "border-l-4 border-blue-500" : ""
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">{notification.title}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{notification.content}</p>
-                    <p className="text-xs text-gray-400 mt-2">
-                      {formatDate(notification.createdAt)}
-                    </p>
-                  </div>
-                  {!notification.isRead && (
-                    <span className="ml-2 w-2 h-2 bg-blue-500 rounded-full"></span>
-                  )}
-                </div>
+        <div className="bg-white rounded-lg shadow-sm">
+          {/* 이메일 알림 */}
+          <div className="p-4 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-gray-900">이메일 알림</h3>
+                <p className="text-sm text-gray-500">이메일로 알림을 받습니다</p>
               </div>
-            ))}
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={settings.emailNotification}
+                  onChange={() => handleToggle('emailNotification')}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
           </div>
-        )}
+
+          {/* 푸시 알림 */}
+          <div className="p-4 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-gray-900">푸시 알림</h3>
+                <p className="text-sm text-gray-500">앱 푸시 알림을 받습니다</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={settings.pushNotification}
+                  onChange={() => handleToggle('pushNotification')}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+          </div>
+
+          {/* 마케팅 알림 */}
+          <div className="p-4 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-gray-900">마케팅 알림</h3>
+                <p className="text-sm text-gray-500">이벤트 및 프로모션 알림을 받습니다</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={settings.marketingNotification}
+                  onChange={() => handleToggle('marketingNotification')}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+          </div>
+
+          {/* 여행 알림 */}
+          <div className="p-4 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-gray-900">여행 알림</h3>
+                <p className="text-sm text-gray-500">여행 관련 업데이트 알림을 받습니다</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={settings.travelNotification}
+                  onChange={() => handleToggle('travelNotification')}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+          </div>
+
+          {/* 채팅 알림 */}
+          <div className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-gray-900">채팅 알림</h3>
+                <p className="text-sm text-gray-500">채팅 메시지 알림을 받습니다</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={settings.chatNotification}
+                  onChange={() => handleToggle('chatNotification')}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* 저장 버튼 */}
+        <button
+          onClick={handleSave}
+          disabled={isSaving}
+          className="w-full mt-6 bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition-colors disabled:bg-blue-300"
+        >
+          {isSaving ? "저장 중..." : "설정 저장"}
+        </button>
       </div>
     </div>
   );

@@ -17,6 +17,9 @@ interface ProfileData {
   birthDate: string;
   gender: string;
   nationality: string;
+  bankName: string;
+  bankCode: string;
+  bankAccountNumber: string;
 }
 
 export default function ProfileEditPage() {
@@ -31,6 +34,9 @@ export default function ProfileEditPage() {
     birthDate: "",
     gender: "",
     nationality: "",
+    bankName: "",
+    bankCode: "",
+    bankAccountNumber: "",
   });
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,6 +56,9 @@ export default function ProfileEditPage() {
             birthDate: data.birthDate || "",
             gender: data.gender || "",
             nationality: data.nationality || "",
+            bankName: data.bankName || "",
+            bankCode: data.bankCode || "",
+            bankAccountNumber: data.bankAccountNumber || "",
           });
         }
       } catch (error) {
@@ -256,68 +265,7 @@ export default function ProfileEditPage() {
                 }))
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-              placeholder="01012345678"
-            />
-          </div>
-
-          {/* 생년월일 (읽기 전용) */}
-          <div>
-            <label
-              htmlFor="birthDate"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              생년월일
-            </label>
-            <input
-              type="text"
-              id="birthDate"
-              value={profileData.birthDate}
-              readOnly
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              생년월일은 변경할 수 없습니다
-            </p>
-          </div>
-
-          {/* 성별 (읽기 전용) */}
-          <div>
-            <label
-              htmlFor="gender"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              성별
-            </label>
-            <input
-              type="text"
-              id="gender"
-              value={
-                profileData.gender === "MALE"
-                  ? "남자"
-                  : profileData.gender === "FEMALE"
-                  ? "여자"
-                  : profileData.gender
-              }
-              readOnly
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
-            />
-          </div>
-
-          {/* 국적 (읽기 전용) */}
-          <div>
-            <label
-              htmlFor="nationality"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              국적
-            </label>
-            <input
-              type="text"
-              id="nationality"
-              value={profileData.nationality}
-              readOnly
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+              placeholder="010-0000-0000"
             />
           </div>
 
@@ -344,6 +292,81 @@ export default function ProfileEditPage() {
             />
           </div>
 
+             {/* 정산 계좌 정보 섹션 */}
+        <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-6">정산 계좌 정보</h2>
+          
+          <div className="bg-white rounded-xl p-6 shadow-sm">
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="bankName"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  은행명
+                </label>
+                <input
+                  type="text"
+                  id="bankName"
+                  value={profileData.bankName}
+                  onChange={(e) =>
+                    setProfileData((prev) => ({
+                      ...prev,
+                      bankName: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="은행명을 입력하세요"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="bankCode"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  은행 코드
+                </label>
+                <input
+                  type="text"
+                  id="bankCode"
+                  value={profileData.bankCode}
+                  onChange={(e) =>
+                    setProfileData((prev) => ({
+                      ...prev,
+                      bankCode: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="은행 코드를 입력하세요"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="bankAccountNumber"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  계좌번호
+                </label>
+                <input
+                  type="text"
+                  id="bankAccountNumber"
+                  value={profileData.bankAccountNumber}
+                  onChange={(e) =>
+                    setProfileData((prev) => ({
+                      ...prev,
+                      bankAccountNumber: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="계좌번호를 입력하세요"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
           {/* 저장 버튼 */}
           <button
             type="submit"
@@ -353,6 +376,8 @@ export default function ProfileEditPage() {
             {isSubmitting ? "저장 중..." : "저장하기"}
           </button>
         </form>
+
+     
       </main>
     </div>
   );
