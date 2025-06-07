@@ -206,14 +206,15 @@ export default function LoginClient({ params }: LoginClientProps) {
             여러분의 특별한 여행을 함께 만들어요
           </p>
            {/* FCM 토큰 디버그 표시 */}
-        {fcmToken && (
-          <div className="fixed top-0 left-0 right-0 bg-yellow-100 p-2 text-xs overflow-x-auto">
-            <p className="font-mono">FCM Token: {fcmToken}</p>
-          </div>
-        )}
+       
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
+        {fcmToken && (
+          <div className="">
+            <p className="font-mono">FCM Token: {fcmToken}</p>
+          </div>
+        )}
           <div>
             <label
               htmlFor="phone"
