@@ -26,6 +26,7 @@ export default function LoginClient({ params }: LoginClientProps) {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fcmToken, setFcmToken] = useState<string | null>(null);
 
   useEffect(() => {
     if (searchParams) {
@@ -42,6 +43,23 @@ export default function LoginClient({ params }: LoginClientProps) {
       NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
       NODE_ENV: process.env.NODE_ENV,
     });
+
+    // FCM 토큰 확인
+    const checkFcmToken = () => {
+      const fcmInput = document.querySelector('input[name="fcmToken"]') as HTMLInputElement;
+      if (fcmInput) {
+        setFcmToken(fcmInput.value);
+      }
+    };
+
+    // 초기 확인
+    checkFcmToken();
+
+    // MutationObserver를 사용하여 DOM 변경 감지
+    const observer = new MutationObserver(checkFcmToken);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => observer.disconnect();
   }, [searchParams]);
 
   const handleKakaoLogin = async (code: string) => {
@@ -138,6 +156,8 @@ export default function LoginClient({ params }: LoginClientProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
+     
+
       {/* 헤더 */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
         <div className="max-w-md mx-auto px-4 py-3">
@@ -185,6 +205,12 @@ export default function LoginClient({ params }: LoginClientProps) {
           <p className="text-gray-600 mt-2">
             여러분의 특별한 여행을 함께 만들어요
           </p>
+           {/* FCM 토큰 디버그 표시 */}
+        {fcmToken && (
+          <div className="fixed top-0 left-0 right-0 bg-yellow-100 p-2 text-xs overflow-x-auto">
+            <p className="font-mono">FCM Token: {fcmToken}</p>
+          </div>
+        )}
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
