@@ -1158,7 +1158,7 @@ export default function TripDetailPage({
                       <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-100">
                         {review.user?.profileImageUrl ? (
                           <Image
-                            src={review.user.profileImageUrl}
+                            src={getProfileImage(review.user.profileImageUrl)}
                             alt={review.user?.nickname || "사용자"}
                             fill
                             className="object-cover"
