@@ -165,6 +165,202 @@ declare global {
   }
 }
 
+interface ImageModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  images: { id: number; imageUrl: string; displayOrder: number }[];
+  initialIndex: number;
+}
+
+const ImageModal = ({ isOpen, onClose, images, initialIndex }: ImageModalProps) => {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+  useEffect(() => {
+    setCurrentIndex(initialIndex);
+  }, [initialIndex]);
+
+  if (!isOpen) return null;
+
+  const nextImage = () => {
+    if (currentIndex < images.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  const prevImage = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center"
+      onClick={onClose}
+    >
+      <div className="relative w-full h-full flex items-center justify-center">
+        {/* 이미지 */}
+        <div className="relative w-full h-full flex items-center justify-center">
+          <Image
+            src={getImageUrl(images[currentIndex].imageUrl)}
+            alt={`여행 이미지 ${currentIndex + 1}`}
+            fill
+            className="object-contain"
+            priority
+          />
+        </div>
+
+        {/* 닫기 버튼 */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+        >
+          <HiOutlineXMark className="w-6 h-6" />
+        </button>
+
+        {/* 이전/다음 버튼 */}
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                prevImage();
+              }}
+              disabled={currentIndex === 0}
+              className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors disabled:opacity-30"
+            >
+              <HiOutlineChevronLeft className="w-6 h-6" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                nextImage();
+              }}
+              disabled={currentIndex === images.length - 1}
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors disabled:opacity-30"
+            >
+              <HiOutlineChevronRight className="w-6 h-6" />
+            </button>
+          </>
+        )}
+
+        {/* 이미지 인디케이터 */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+          {images.map((_, index) => (
+            <div
+              key={index}
+              className={`w-2 h-2 rounded-full ${
+                index === currentIndex ? "bg-white" : "bg-white/50"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+interface ReviewImageModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  images: string[];
+  initialIndex: number;
+}
+
+const ReviewImageModal = ({ isOpen, onClose, images, initialIndex }: ReviewImageModalProps) => {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+  useEffect(() => {
+    setCurrentIndex(initialIndex);
+  }, [initialIndex]);
+
+  if (!isOpen) return null;
+
+  const nextImage = () => {
+    if (currentIndex < images.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  const prevImage = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center"
+      onClick={onClose}
+    >
+      <div className="relative w-full h-full flex items-center justify-center">
+        {/* 이미지 */}
+        <div className="relative w-full h-full flex items-center justify-center">
+          <Image
+            src={getImageUrl(images[currentIndex])}
+            alt={`리뷰 이미지 ${currentIndex + 1}`}
+            fill
+            className="object-contain"
+            priority
+          />
+        </div>
+
+        {/* 닫기 버튼 */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+        >
+          <HiOutlineXMark className="w-6 h-6" />
+        </button>
+
+        {/* 이전/다음 버튼 */}
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                prevImage();
+              }}
+              disabled={currentIndex === 0}
+              className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors disabled:opacity-30"
+            >
+              <HiOutlineChevronLeft className="w-6 h-6" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                nextImage();
+              }}
+              disabled={currentIndex === images.length - 1}
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors disabled:opacity-30"
+            >
+              <HiOutlineChevronRight className="w-6 h-6" />
+            </button>
+          </>
+        )}
+
+        {/* 이미지 인디케이터 */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+          {images.map((_, index) => (
+            <div
+              key={index}
+              className={`w-2 h-2 rounded-full ${
+                index === currentIndex ? "bg-white" : "bg-white/50"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 export default function TripDetailPage({
   params,
 }: {
@@ -209,6 +405,11 @@ export default function TripDetailPage({
   const [activeTab, setActiveTab] = useState<"info" | "schedule" | "reviews" | "photos">("info");
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [showReviewImageModal, setShowReviewImageModal] = useState(false);
+  const [selectedReviewImageIndex, setSelectedReviewImageIndex] = useState(0);
+  const [selectedReviewImages, setSelectedReviewImages] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchTrip = async () => {
@@ -799,8 +1000,12 @@ export default function TripDetailPage({
             src={getImageUrl(trip.images[currentImageIndex].imageUrl)}
             alt={trip.title}
             fill
-            className="object-cover"
+            className="object-cover cursor-pointer"
             priority
+            onClick={() => {
+              setSelectedImageIndex(currentImageIndex);
+              setShowImageModal(true);
+            }}
           />
           {/* 이미지 네비게이션 버튼 */}
           {trip.images.length > 1 && (
@@ -1218,7 +1423,15 @@ export default function TripDetailPage({
                   {review.imageUrls && review.imageUrls.length > 0 && (
                     <div className="grid grid-cols-3 gap-2 mt-3">
                       {review.imageUrls.map((imageUrl, index) => (
-                        <div key={index} className="relative aspect-square">
+                        <div 
+                          key={index} 
+                          className="relative aspect-square cursor-pointer"
+                          onClick={() => {
+                            setSelectedReviewImages(review.imageUrls || []);
+                            setSelectedReviewImageIndex(index);
+                            setShowReviewImageModal(true);
+                          }}
+                        >
                           <Image
                             src={getImageUrl(imageUrl)}
                             alt={`리뷰 이미지 ${index + 1}`}
@@ -1915,6 +2128,30 @@ export default function TripDetailPage({
           message={errorMessage}
           onClose={() => setShowErrorModal(false)}
         />
+
+        {/* 이미지 모달 */}
+        <AnimatePresence>
+          {showImageModal && (
+            <ImageModal
+              isOpen={showImageModal}
+              onClose={() => setShowImageModal(false)}
+              images={trip.images}
+              initialIndex={selectedImageIndex}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* 리뷰 이미지 모달 */}
+        <AnimatePresence>
+          {showReviewImageModal && (
+            <ReviewImageModal
+              isOpen={showReviewImageModal}
+              onClose={() => setShowReviewImageModal(false)}
+              images={selectedReviewImages}
+              initialIndex={selectedReviewImageIndex}
+            />
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );

@@ -16,7 +16,6 @@ interface ProfileData {
   profileImageUrl: string | null;
   birthDate: string;
   gender: string;
-  nationality: string;
   bankName: string;
   bankCode: string;
   bankAccountNumber: string;
@@ -33,7 +32,6 @@ export default function ProfileEditPage() {
     profileImageUrl: null,
     birthDate: "",
     gender: "",
-    nationality: "",
     bankName: "",
     bankCode: "",
     bankAccountNumber: "",
@@ -55,7 +53,6 @@ export default function ProfileEditPage() {
             profileImageUrl: data.profileImageUrl || null,
             birthDate: data.birthDate || "",
             gender: data.gender || "",
-            nationality: data.nationality || "",
             bankName: data.bankName || "",
             bankCode: data.bankCode || "",
             bankAccountNumber: data.bankAccountNumber || "",
@@ -279,7 +276,7 @@ export default function ProfileEditPage() {
             </label>
             <textarea
               id="introduction"
-              value={profileData.introduction || ""}
+              value={profileData.introduction}
               onChange={(e) =>
                 setProfileData((prev) => ({
                   ...prev,
@@ -292,80 +289,128 @@ export default function ProfileEditPage() {
             />
           </div>
 
-             {/* 정산 계좌 정보 섹션 */}
-        <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-6">정산 계좌 정보</h2>
-          
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <div className="space-y-4">
-              <div>
-                <label
-                  htmlFor="bankName"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  은행명
-                </label>
-                <input
-                  type="text"
-                  id="bankName"
-                  value={profileData.bankName}
-                  onChange={(e) =>
-                    setProfileData((prev) => ({
-                      ...prev,
-                      bankName: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="은행명을 입력하세요"
-                />
-              </div>
+          {/* 성별 */}
+          <div>
+            <label
+              htmlFor="gender"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              성별
+            </label>
+            <select
+              id="gender"
+              value={profileData.gender}
+              onChange={(e) =>
+                setProfileData((prev) => ({
+                  ...prev,
+                  gender: e.target.value,
+                }))
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">선택해주세요</option>
+              <option value="MALE">남성</option>
+              <option value="FEMALE">여성</option>
+              <option value="OTHER">기타</option>
+            </select>
+          </div>
 
-              <div>
-                <label
-                  htmlFor="bankCode"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  은행 코드
-                </label>
-                <input
-                  type="text"
-                  id="bankCode"
-                  value={profileData.bankCode}
-                  onChange={(e) =>
-                    setProfileData((prev) => ({
-                      ...prev,
-                      bankCode: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="은행 코드를 입력하세요"
-                />
-              </div>
+          {/* 생년월일 */}
+          <div>
+            <label
+              htmlFor="birthDate"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              생년월일
+            </label>
+            <input
+              type="date"
+              id="birthDate"
+              value={profileData.birthDate}
+              onChange={(e) =>
+                setProfileData((prev) => ({
+                  ...prev,
+                  birthDate: e.target.value,
+                }))
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-              <div>
-                <label
-                  htmlFor="bankAccountNumber"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  계좌번호
-                </label>
-                <input
-                  type="text"
-                  id="bankAccountNumber"
-                  value={profileData.bankAccountNumber}
-                  onChange={(e) =>
-                    setProfileData((prev) => ({
-                      ...prev,
-                      bankAccountNumber: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="계좌번호를 입력하세요"
-                />
+          {/* 정산 계좌 정보 섹션 */}
+          <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-6">정산 계좌 정보</h2>
+            
+            <div className="bg-white rounded-xl p-6 shadow-sm">
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="bankName"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    은행명
+                  </label>
+                  <input
+                    type="text"
+                    id="bankName"
+                    value={profileData.bankName || ""}
+                    onChange={(e) =>
+                      setProfileData((prev) => ({
+                        ...prev,
+                        bankName: e.target.value || "",
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="은행명을 입력하세요"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="bankCode"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    은행 코드
+                  </label>
+                  <input
+                    type="text"
+                    id="bankCode"
+                    value={profileData.bankCode || ""}
+                    onChange={(e) =>
+                      setProfileData((prev) => ({
+                        ...prev,
+                        bankCode: e.target.value || "",
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="은행 코드를 입력하세요"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="bankAccountNumber"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    계좌번호
+                  </label>
+                  <input
+                    type="text"
+                    id="bankAccountNumber"
+                    value={profileData.bankAccountNumber || ""}
+                    onChange={(e) =>
+                      setProfileData((prev) => ({
+                        ...prev,
+                        bankAccountNumber: e.target.value || "",
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="계좌번호를 입력하세요"
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
           {/* 저장 버튼 */}
           <button
@@ -376,8 +421,6 @@ export default function ProfileEditPage() {
             {isSubmitting ? "저장 중..." : "저장하기"}
           </button>
         </form>
-
-     
       </main>
     </div>
   );
