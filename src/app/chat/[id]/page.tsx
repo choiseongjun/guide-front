@@ -71,7 +71,7 @@ export default function ChatRoomPage({
 }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const { user, isLoading } = useUser();
+  const { user, isLoading: userLoading } = useUser();
   const [chatRoom, setChatRoom] = useState<ChatRoom | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -80,88 +80,22 @@ export default function ChatRoomPage({
   const [hasMore, setHasMore] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const stompClient = useRef<Client | null>(null);
   const [showMemberList, setShowMemberList] = useState(false);
 
-  // 로그인 체크
+  // 로그인 체크 및 리다이렉트
   useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/login");
-    } 
-  }, [isLoading, user, router]);
+    if (!userLoading && !user) {
+      router.replace("/login");
+    }
+  }, [userLoading, user, router]);
 
-  // 채팅방 정보 조회
+  // WebSocket 연결
   useEffect(() => {
-    if (!user) return; // 로그인되지 않은 경우 API 호출하지 않음
-
-    const fetchChatRoom = async () => {
-      try {
-        const response = await instance.get(
-          `/api/v1/chat-rooms/${resolvedParams.id}`
-        );
-        if (response.data.status === 200) {
-          console.log("채팅방 데이터:", response.data.data);
-          setChatRoom(response.data.data);
-          // 채팅방 정보를 받자마자 읽음 처리 요청
-          markMessagesAsRead();
-        }
-      } catch (error) {
-        console.error("채팅방 정보 조회 실패:", error);
-      }
-    };
-
-    fetchChatRoom();
-  }, [resolvedParams.id, user]);
-
-  console.log("user==", user);
-  // 메시지 조회
-  useEffect(() => {
-    if (!user) return; // 로그인되지 않은 경우 API 호출하지 않음
-
-    const fetchMessages = async () => {
-      try {
-        const response = await instance.get<ChatMessageResponse>(
-          `/api/v1/chat-rooms/${resolvedParams.id}/messages`,
-          {
-            params: {
-              page,
-              size: 20,
-            },
-          }
-        );
-        console.log("response==", response);
-        if (response.data.status === 200) {
-          const { content, totalPages, number } = response.data.data;
-          // 시간순으로 정렬하여 최신 메시지가 아래에 오도록
-          const sortedContent = [...content].sort(
-            (a, b) =>
-              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          );
-          // 중복 메시지 제거
-          setMessages((prev) => {
-            const existingIds = new Set(prev.map((msg) => msg.id));
-            const newMessages = sortedContent.filter(
-              (msg) => !existingIds.has(msg.id)
-            );
-            return [...prev, ...newMessages];
-          });
-          setHasMore(number < totalPages - 1);
-        }
-      } catch (error) {
-        console.error("메시지 조회 실패:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMessages();
-  }, [resolvedParams.id, page, user]);
-
-  // STOMP 연결
-  useEffect(() => {
-    if (!user || isConnecting) return;
+    // 로그인 상태가 확실히 확인된 후에만 연결 시도
+    if (userLoading || !user || isConnecting) return;
 
     const connectWebSocket = () => {
       if (isConnecting) return;
@@ -190,6 +124,7 @@ export default function ChatRoomPage({
         setIsConnecting(false);
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
+          reconnectTimeoutRef.current = null;
         }
 
         // 채팅방 메시지 구독
@@ -273,12 +208,74 @@ export default function ChatRoomPage({
     return () => {
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
       }
       if (stompClient.current?.connected) {
         stompClient.current.deactivate();
       }
     };
-  }, [resolvedParams.id, user]);
+  }, [resolvedParams.id, user, userLoading]);
+
+  // 채팅방 정보 조회
+  useEffect(() => {
+    if (userLoading || !user) return;
+
+    const fetchChatRoom = async () => {
+      try {
+        const response = await instance.get(
+          `/api/v1/chat-rooms/${resolvedParams.id}`
+        );
+        if (response.data.status === 200) {
+          setChatRoom(response.data.data);
+          markMessagesAsRead();
+        }
+      } catch (error) {
+        console.error("채팅방 정보 조회 실패:", error);
+      }
+    };
+
+    fetchChatRoom();
+  }, [resolvedParams.id, user, userLoading]);
+
+  // 메시지 조회
+  useEffect(() => {
+    if (userLoading || !user) return;
+
+    const fetchMessages = async () => {
+      try {
+        const response = await instance.get<ChatMessageResponse>(
+          `/api/v1/chat-rooms/${resolvedParams.id}/messages`,
+          {
+            params: {
+              page,
+              size: 20,
+            },
+          }
+        );
+        if (response.data.status === 200) {
+          const { content, totalPages, number } = response.data.data;
+          const sortedContent = [...content].sort(
+            (a, b) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+          setMessages((prev) => {
+            const existingIds = new Set(prev.map((msg) => msg.id));
+            const newMessages = sortedContent.filter(
+              (msg) => !existingIds.has(msg.id)
+            );
+            return [...prev, ...newMessages];
+          });
+          setHasMore(number < totalPages - 1);
+        }
+      } catch (error) {
+        console.error("메시지 조회 실패:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMessages();
+  }, [resolvedParams.id, page, user, userLoading]);
 
   // 메시지 읽음 처리 요청
   const markMessagesAsRead = () => {

@@ -53,8 +53,18 @@ export function useUser() {
       }
     };
 
+    // 커스텀 이벤트 리스너 추가
+    const handleLoginChange = () => {
+      fetchUser();
+    };
+
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    window.addEventListener("loginChange", handleLoginChange);
+    
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("loginChange", handleLoginChange);
+    };
   }, []);
 
   // 로그인/로그아웃 시 강제로 사용자 정보 갱신
