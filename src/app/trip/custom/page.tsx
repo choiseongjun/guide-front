@@ -24,6 +24,11 @@ interface TravelPlan {
   preferences: string[];
   plan: string;
   createdAt: string;
+  user: {
+    id: number;
+    nickname: string;
+    profileImageUrl: string | null;
+  };
 }
 
 interface PageResponse {
@@ -205,9 +210,21 @@ export default function CustomTripList() {
                 className="p-4 hover:bg-gray-50 cursor-pointer"
                 onClick={() => router.push(`/trip/custom/${trip.id}`)}
               >
-                <div className="flex justify-between items-start mb-3">
-                  <h2 className="text-lg font-semibold">{trip.title}</h2>
-                  <span className="text-sm text-gray-500">{trip.mood}</span>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-full overflow-hidden">
+                    <img
+                      src={trip.user.profileImageUrl || "/default-profile.png"}
+                      alt="프로필"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <h2 className="text-lg font-semibold">{trip.title}</h2>
+                      <span className="text-sm text-gray-500">{trip.mood}</span>
+                    </div>
+                    <div className="text-sm text-gray-500">{trip.user.nickname}</div>
+                  </div>
                 </div>
 
                 {/* 여행 정보 */}

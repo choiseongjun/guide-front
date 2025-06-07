@@ -89,10 +89,7 @@ export default function LoginClient({ params }: LoginClientProps) {
     }
   };
   const handleKakaoLoginClick = () => {
-    console.log(
-      "process.env.NEXT_PUBLIC_BASE_URL==",
-      process.env.NEXT_PUBLIC_BASE_URL
-    );
+
     // 임시로 하드코딩된 URL 사용
     window.location.href = `${process.env.NEXT_PUBLIC_BASE_URL}/login/page`;
   };

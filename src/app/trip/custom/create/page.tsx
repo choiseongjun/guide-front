@@ -15,6 +15,8 @@ import {
 import { FaUtensils, FaLandmark } from "react-icons/fa";
 import axios from "axios";
 import instance from "@/app/api/axios";
+import { useUser } from "@/hooks/useUser";
+import { getProfileImage } from "@/app/common/imgUtils";
 
 const moods = [
   {
@@ -327,6 +329,7 @@ const travelStyles = [
 
 export default function CreateCustomTrip() {
   const router = useRouter();
+  const { user } = useUser();
   const [step, setStep] = useState(1);
   const [selectedMood, setSelectedMood] = useState<string>("");
   const [selectedMoodState, setSelectedMoodState] = useState<string>("");
@@ -540,6 +543,12 @@ export default function CreateCustomTrip() {
   };
 
   const handleSaveTrip = async () => {
+
+    if(user?.id === null) {
+      alert("로그인 후 이용해주세요.");
+      return;
+    }
+
     try {
       setIsSaving(true);
 
@@ -821,6 +830,20 @@ export default function CreateCustomTrip() {
         {/* 스텝 7: 생성된 여행 계획 */}
         {step === 7 && generatedPlan && (
           <div className="p-4 pb-24">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full overflow-hidden">
+                <img
+                  src={getProfileImage(user?.profileImageUrl??null) }
+                  alt="프로필"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <div className="font-medium">{user?.nickname || "사용자"}</div>
+                <div className="text-sm text-gray-500">여행 계획 작성자</div>
+              </div>
+            </div>
+
             <h2 className="text-lg font-semibold mb-4">맞춤 여행 계획</h2>
 
             {/* 일별 일정 */}

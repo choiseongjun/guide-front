@@ -32,6 +32,11 @@ interface TravelPlan {
   budget: string;
   plan: string;
   createdAt: string;
+  user: {
+    id: number;
+    nickname: string;
+    profileImageUrl: string | null;
+  };
 }
 
 interface Props {
@@ -138,6 +143,20 @@ export default function CustomPlanDetailClient({ params }: Props) {
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* 여행 계획 요약 */}
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-full overflow-hidden">
+              <img
+                src={plan.user.profileImageUrl || "/default-profile.png"}
+                alt="프로필"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div>
+              <div className="font-medium">{plan.user.nickname}</div>
+              <div className="text-sm text-gray-500">여행 계획 작성자</div>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold">{plan.title}</h1>
             <div className="flex items-center gap-2 text-blue-500">
