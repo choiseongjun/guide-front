@@ -1454,9 +1454,9 @@ export default function TripDetailPage({
         </div>
 
         {/* 사진 섹션 */}
-        <div id="photos" className="bg-white p-4">
+        {/* <div id="photos" className="bg-white p-4">
           <PhotoTab tripId={resolvedParams.id} isCreator={isCreator} />
-        </div>
+        </div> */}
 
         {/* 플로팅 참가하기 버튼 */}
         {!isCreator && (

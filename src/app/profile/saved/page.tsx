@@ -20,7 +20,7 @@ export default function SavedTripsPage() {
 
   const fetchLikedTrips = async () => {
     try {
-      const response = await instance.get(`/api/v1/travels/liked?page=${page}`);
+      const response = await instance.get(`/api/v1/travels/me?page=${page}`);
       if (response.status === 200) {
         const processedTrips = processTravelList(response.data.data.content);
         setLikedTrips((prev) => [...prev, ...processedTrips]);

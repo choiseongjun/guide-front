@@ -137,7 +137,7 @@ function GuideProfileClient({ guideId }: { guideId: string }) {
             </div>
             <button
               onClick={handleChatRequest}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hoㅜ ㅠㅍㅊㅁㄴㅇver:bg-blue-600 transition-colors"
             >
               <HiOutlineChatBubbleLeftRight className="w-4 h-4" />
               <span>대화 신청</span>

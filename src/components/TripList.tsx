@@ -120,7 +120,7 @@ export default function TripList({ trips, onTripClick, showEditButton = false }:
             className={`bg-white rounded-lg shadow-sm overflow-hidden relative ${
               isStarted ? "opacity-60" : "cursor-pointer hover:shadow-md transition-shadow"
             }`}
-            onClick={() => !isStarted && onTripClick(trip.id)}
+            onClick={() => onTripClick(trip.id)}
           >
             {/* 마감 표시 */}
             {isStarted && (

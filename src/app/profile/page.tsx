@@ -246,9 +246,10 @@ export default function ProfilePage() {
     try {
       const refreshToken = localStorage.getItem("rt");
 
+      console.log("refreshToken===",refreshToken)
       // 카카오 로그아웃 API 호출
       await instance.post("/api/auth/kakao/logout", null, {
-        headers: {
+        headers: { 
           "Refresh-Token": refreshToken,
         },
       });
