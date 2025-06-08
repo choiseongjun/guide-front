@@ -39,6 +39,7 @@ function GuideProfileClient({ guideId }: { guideId: string }) {
   const [activeTab, setActiveTab] = useState<'ongoing' | 'completed' | 'social'>('ongoing');
   const [guide, setGuide] = useState<Guide | null>(null);
   const [trips, setTrips] = useState<ProcessedTravel[]>([]);
+  const [completedTrips, setCompletedTrips] = useState<ProcessedTravel[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,12 +56,25 @@ function GuideProfileClient({ guideId }: { guideId: string }) {
       }
     };
 
+    fetchGuideData();
+  }, [guideId]);
+
+  useEffect(() => {
     const fetchGuideTrips = async () => {
       try {
-        const response = await instance.get(`/api/v1/travels/guide/${guideId}`);
+        setLoading(true);
+        const response = await instance.get(`/api/v1/travels/guide/${guideId}`, {
+          params: {
+            status: activeTab === 'ongoing' ? 'ONGOING' : 'COMPLETED'
+          }
+        });
         if (response.status === 200) {
           const processedTrips = processTravelList(response.data.data.content);
-          setTrips(processedTrips);
+          if (activeTab === 'ongoing') {
+            setTrips(processedTrips);
+          } else {
+            setCompletedTrips(processedTrips);
+          }
         } 
       } catch (error) {
         console.error("가이드 여행 목록 조회 실패:", error);
@@ -69,9 +83,8 @@ function GuideProfileClient({ guideId }: { guideId: string }) {
       }
     };
 
-    fetchGuideData();
     fetchGuideTrips();
-  }, [guideId]);
+  }, [guideId, activeTab]);
 
   const handleBack = () => {
     router.back();
@@ -90,9 +103,9 @@ function GuideProfileClient({ guideId }: { guideId: string }) {
     }
   };
 
-  if (loading || !guide) {
-    return <div>Loading...</div>;
-  }
+  // if (loading || !guide) {
+  //   return <div>Loading...</div>;
+  // }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -227,7 +240,16 @@ function GuideProfileClient({ guideId }: { guideId: string }) {
             )}
             {activeTab === 'completed' && (
               <div>
-                {/* 완료된 여행 목록 */}
+                {completedTrips && completedTrips.length > 0 ? (
+                  <TripList
+                    trips={completedTrips}
+                    onTripClick={(tripId) => router.push(`/trip/${tripId}`)}
+                  />
+                ) : (
+                  <div className="text-center text-sm text-gray-400 py-3">
+                    완료된 여행이 없습니다.
+                  </div>
+                )}
               </div>
             )}
             {activeTab === 'social' && (
