@@ -12,30 +12,44 @@ import {
 import { getProfileImage } from "@/app/common/imgUtils";
 
 interface Payment {
-  id: number;
-  paymentId: string;
-  transactionType: string;
-  txId: string;
-  userId: number;
-  productId: number;
-  productName: string;
-  productNumber: string;
+  code: number;
+  message: string;
+  tid: string;
+  orderId: string;
   amount: number;
-  currency: string;
-  paymentMethod: string;
-  paymentStatus: "COMPLETED" | "CANCELLED" | "PENDING";
-  paymentDate: string;
-  hostUserKey: string;
+  paidAt: string | null;
+  status: string;
+  resultCode: string;
+  resultMsg: string;
   hostInfo: {
     id: number;
+    email: string;
     nickname: string;
     profileImageUrl: string;
+    phoneNumber: string | null;
+    birthDate: string | null;
+    gender: string | null;
+    nationality: string | null;
+    introduction: string | null;
   };
-  cardInfo: string;
-  failureReason: string | null;
-  refundReason: string | null;
-  refundDate: string | null;
-  metadata: any;
+  travelResponse: {
+    id: number;
+    title: string;
+    highlight: string;
+    description: string;
+    address: string;
+    detailAddress: string;
+    startDate: string;
+    endDate: string;
+    minParticipants: number;
+    maxParticipants: number;
+    price: number;
+    discountRate: number;
+    discountedPrice: number;
+    productNumber: string;
+    categoryId: number;
+    status: string;
+  };
 }
 
 interface PaymentResponse {
@@ -142,6 +156,35 @@ interface PaymentCancelResponse {
   empty: boolean;
 }
 
+interface PaymentApprovalResponse {
+  content: Payment[];
+  pageable: {
+    pageNumber: number;
+    pageSize: number;
+    sort: {
+      empty: boolean;
+      sorted: boolean;
+      unsorted: boolean;
+    };
+    offset: number;
+    paged: boolean;
+    unpaged: boolean;
+  };
+  last: boolean;
+  totalPages: number;
+  totalElements: number;
+  size: number;
+  number: number;
+  sort: {
+    empty: boolean;
+    sorted: boolean;
+    unsorted: boolean;
+  };
+  first: boolean;
+  numberOfElements: number;
+  empty: boolean;
+}
+
 export default function PaymentHistoryPage() {
   const router = useRouter();
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -155,10 +198,8 @@ export default function PaymentHistoryPage() {
   // 결제 요약 정보 계산
   const summary = payments.reduce(
     (acc, curr) => {
-      if (curr.paymentStatus === "COMPLETED") {
-        acc.completedCount++;
-        acc.totalCompletedAmount += curr.amount;
-      }
+      acc.completedCount++;
+      acc.totalCompletedAmount += curr.amount;
       return acc;
     },
     {
@@ -178,15 +219,29 @@ export default function PaymentHistoryPage() {
     }
   }, [activeTab]);
 
-  const fetchPayments = async () => {
+  const fetchPayments = async (pageNumber = 0) => {
     try {
       setLoading(true);
-      const response = await instance.get<PaymentResponse>(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/payments`
+      const response = await instance.get<PaymentApprovalResponse>(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/payments/approvals`,
+        {
+          params: {
+            page: pageNumber,
+            size: 10,
+          },
+        }
       );
 
+      console.log("결제 완료 응답:", response);
+
       if (response.status === 200) {
-        setPayments(response.data.content);
+        if (pageNumber === 0) {
+          setPayments(response.data.content);
+        } else {
+          setPayments((prev) => [...prev, ...response.data.content]);
+        }
+        setHasMore(!response.data.last);
+        setPage(pageNumber);
       }
     } catch (error: any) {
       console.error("결제 내역 조회 실패:", error);
@@ -223,6 +278,12 @@ export default function PaymentHistoryPage() {
       console.error("취소 내역 조회 실패:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMorePayments = () => {
+    if (hasMore && !loading) {
+      fetchPayments(page + 1);
     }
   };
 
@@ -335,12 +396,12 @@ export default function PaymentHistoryPage() {
             <div className="space-y-4">
               {payments.map((payment) => (
                 <div
-                  key={payment.id}
+                  key={payment.tid}
                   className="bg-white rounded-lg shadow-sm p-4 space-y-3"
                 >
                   <div className="flex items-start justify-between">
                     <h3 className="font-medium text-gray-900">
-                      {payment.productName}
+                      {payment.travelResponse.title}
                     </h3>
                     <span className="text-sm font-medium text-green-600">
                       결제 완료
@@ -351,25 +412,23 @@ export default function PaymentHistoryPage() {
                     <div className="flex justify-between">
                       <span className="text-gray-500">상품 번호</span>
                       <span className="text-gray-900">
-                        {payment.productNumber}
+                        {payment.travelResponse.productNumber}
                       </span>
                     </div>
 
-                    {payment.hostInfo && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">가이드</span>
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={getProfileImage(payment.hostInfo.profileImageUrl)}
-                            alt={payment.hostInfo.nickname}
-                            className="w-6 h-6 rounded-full"
-                          />
-                          <span className="text-gray-900">
-                            {payment.hostInfo.nickname}
-                          </span>
-                        </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">가이드</span>
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={getProfileImage(payment.hostInfo.profileImageUrl)}
+                          alt={payment.hostInfo.nickname}
+                          className="w-6 h-6 rounded-full"
+                        />
+                        <span className="text-gray-900">
+                          {payment.hostInfo.nickname}
+                        </span>
                       </div>
-                    )}
+                    </div>
 
                     <div className="flex justify-between">
                       <span className="text-gray-500">결제 금액</span>
@@ -381,12 +440,30 @@ export default function PaymentHistoryPage() {
                     <div className="flex justify-between">
                       <span className="text-gray-500">결제 일시</span>
                       <span className="text-gray-900">
-                        {formatDate(payment.paymentDate)}
+                        {formatDate(payment.paidAt || '')}
                       </span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">주문 번호</span>
+                      <span className="text-gray-900">{payment.orderId}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">거래 번호</span>
+                      <span className="text-gray-900">{payment.tid}</span>
                     </div>
                   </div>
                 </div>
               ))}
+              {hasMore && (
+                <button
+                  onClick={loadMorePayments}
+                  className="w-full py-2 text-sm text-gray-600 hover:text-gray-800"
+                >
+                  더 보기
+                </button>
+              )}
             </div>
           ) : (
             <div className="text-center py-8">
