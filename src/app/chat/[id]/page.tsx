@@ -7,6 +7,7 @@ import {
   HiOutlineArrowLeft,
   HiOutlinePaperAirplane,
   HiOutlineUserGroup,
+  HiOutlineXMark,
 } from "react-icons/hi2";
 import { HiStar } from "react-icons/hi";
 import { Client } from "@stomp/stompjs";
@@ -35,6 +36,8 @@ interface ChatMessage {
   };
   read: boolean;
   links: any[];
+  type?: 'SYSTEM' | 'MESSAGE';
+  systemMessage?: boolean;
 }
 
 interface ChatRoom {
@@ -84,6 +87,8 @@ export default function ChatRoomPage({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const stompClient = useRef<Client | null>(null);
   const [showMemberList, setShowMemberList] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
 
   // 로그인 체크 및 리다이렉트
   useEffect(() => {
@@ -92,9 +97,45 @@ export default function ChatRoomPage({
     }
   }, [userLoading, user, router]);
 
+  // 채팅방 정보 조회
+  useEffect(() => {
+    if (userLoading || !user) return;
+
+    const fetchChatRoom = async () => {
+      try {
+        const response = await instance.get(
+          `/api/v1/chat-rooms/${resolvedParams.id}`
+        );
+        if (response.data.status === 200) {
+          setChatRoom(response.data.data);
+          markMessagesAsRead();
+
+          // 초기 입장 메시지 전송
+          if (isInitialLoad && stompClient.current?.connected) {
+            stompClient.current.publish({
+              destination: `/app/chat.room.${resolvedParams.id}.join`,
+              body: JSON.stringify({
+                userId: user.id,
+                nickname: user.nickname,
+                isInitial: true
+              }),
+              headers: {
+                Authorization: `Bearer ${getUserToken()}`,
+              },
+            });
+            setIsInitialLoad(false);
+          }
+        }
+      } catch (error) {
+        console.error("채팅방 정보 조회 실패:", error);
+      }
+    };
+
+    fetchChatRoom();
+  }, [resolvedParams.id, user, userLoading, isInitialLoad]);
+
   // WebSocket 연결
   useEffect(() => {
-    // 로그인 상태가 확실히 확인된 후에만 연결 시도
     if (userLoading || !user || isConnecting) return;
 
     const connectWebSocket = () => {
@@ -138,6 +179,19 @@ export default function ChatRoomPage({
               return [...prev, newMessage];
             });
             markMessagesAsRead();
+          }
+        );
+
+        // 입장/퇴장 메시지 구독
+        client.subscribe(
+          `/topic/chat.room.${resolvedParams.id}.system`,
+          (message) => {
+            const systemMessage = JSON.parse(message.body);
+            setMessages((prev) => {
+              const isDuplicate = prev.some((msg) => msg.id === systemMessage.id);
+              if (isDuplicate) return prev;
+              return [...prev, systemMessage];
+            });
           }
         );
 
@@ -206,35 +260,26 @@ export default function ChatRoomPage({
     connectWebSocket();
 
     return () => {
+      // 퇴장 메시지 전송
+      if (stompClient.current?.connected) {
+        stompClient.current.publish({
+          destination: `/app/chat.room.${resolvedParams.id}.leave`,
+          body: JSON.stringify({
+            userId: user.id,
+            nickname: user.nickname,
+            isInitial: false
+          }),
+          headers: {
+            Authorization: `Bearer ${getUserToken()}`,
+          },
+        });
+        stompClient.current.deactivate();
+      }
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
       }
-      if (stompClient.current?.connected) {
-        stompClient.current.deactivate();
-      }
     };
-  }, [resolvedParams.id, user, userLoading]);
-
-  // 채팅방 정보 조회
-  useEffect(() => {
-    if (userLoading || !user) return;
-
-    const fetchChatRoom = async () => {
-      try {
-        const response = await instance.get(
-          `/api/v1/chat-rooms/${resolvedParams.id}`
-        );
-        if (response.data.status === 200) {
-          setChatRoom(response.data.data);
-          markMessagesAsRead();
-        }
-      } catch (error) {
-        console.error("채팅방 정보 조회 실패:", error);
-      }
-    };
-
-    fetchChatRoom();
   }, [resolvedParams.id, user, userLoading]);
 
   // 메시지 조회
@@ -374,15 +419,26 @@ export default function ChatRoomPage({
 
   // 메시지 목록 렌더링
   const renderMessage = (message: ChatMessage) => {
-    // 현재 로그인한 사용자가 보낸 메시지인지 확인
-    const isMyMessage = message.sender.id === user?.id;
+    // 시스템 메시지인 경우
+    if (message.type === 'SYSTEM') {
+      return (
+        <div key={message.id} className="w-full flex justify-center items-center my-2">
+          <div className="bg-gray-100 text-gray-600 text-xs px-3 py-1.5 rounded-full inline-block">
+            {message.content}
+          </div>
+        </div>
+      );
+    }
+
+    // 일반 메시지인 경우
+    const isMyMessage = message.sender?.id === user?.id;
 
     return (
       <div
         key={message.id}
         className={`flex ${isMyMessage ? "justify-end" : "justify-start"} mb-4`}
       >
-        {!isMyMessage && (
+        {!isMyMessage && message.sender && (
           <div className="flex items-center mr-3">
             <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-gray-100">
               <Image
@@ -398,7 +454,7 @@ export default function ChatRoomPage({
           </div>
         )}
         <div className="flex flex-col max-w-[70%]">
-          {!isMyMessage && (
+          {!isMyMessage && message.sender && (
             <div className="text-sm font-semibold text-gray-700 mb-1.5">
               {message.sender.nickname}
             </div>
@@ -438,6 +494,37 @@ export default function ChatRoomPage({
     };
   }, [showMemberList]);
 
+  // 채팅방 나가기 함수
+  const handleLeaveChatRoom = async () => {
+    try {
+      if (stompClient.current?.connected) {
+        // WebSocket을 통해 퇴장 메시지 전송
+        stompClient.current.publish({
+          destination: `/app/chat.room.${resolvedParams.id}.leave`,
+          body: JSON.stringify({
+            userId: user?.id,
+            nickname: user?.nickname,
+            isInitial: false
+          }),
+          headers: {
+            Authorization: `Bearer ${getUserToken()}`,
+          },
+        });
+
+        // WebSocket 연결 해제
+        stompClient.current.deactivate();
+        
+        // 채팅 목록 페이지로 이동
+        // router.push('/chat');
+      } else {
+        alert("연결이 끊어졌습니다. 다시 시도해주세요.");
+      }
+    } catch (error) {
+      console.error("채팅방 나가기 실패:", error);
+      alert("채팅방을 나가는데 실패했습니다.");
+    }
+  };
+
   if (loading) {
     return null;
   }
@@ -472,12 +559,20 @@ export default function ChatRoomPage({
                 </h1>
               </div>
             </div>
-            <button
-              onClick={() => setShowMemberList(true)}
-              className="p-1.5 hover:bg-gray-100 rounded-full"
-            >
-              <HiOutlineUserGroup className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowMemberList(true)}
+                className="p-1.5 hover:bg-gray-100 rounded-full"
+              >
+                <HiOutlineUserGroup className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setShowLeaveModal(true)}
+                className="p-1.5 hover:bg-gray-100 rounded-full text-red-500"
+              >
+                <HiOutlineXMark className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -492,7 +587,76 @@ export default function ChatRoomPage({
             연결이 끊어졌습니다. 재연결 중...
           </div>
         )}
-        {messages.map(renderMessage)}
+        <div className="space-y-2">
+          {messages.map((message, index) => {
+            console.log("message====",message)
+            // 시스템 메시지인 경우
+            if (message.systemMessage) {
+              return (
+                <div key={message.id} className="relative">
+                  <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2">
+                    <div className="w-full flex justify-center">
+                      <div className="bg-gray-100 text-gray-600 text-xs px-3 py-1.5 rounded-full inline-block">
+                        {message.content}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="h-8"></div> {/* 시스템 메시지를 위한 공간 */}
+                </div>
+              );
+            }
+
+            // 일반 메시지인 경우
+            const isMyMessage = message.sender?.id === user?.id;
+            return (
+              <div
+                key={message.id}
+                className={`flex ${isMyMessage ? "justify-end" : "justify-start"} mb-4`}
+              >
+                {!isMyMessage && message.sender && (
+                  <div className="flex items-center mr-3">
+                    <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-gray-100">
+                      <Image
+                        src={
+                          message.sender.profileImageUrl ||
+                          "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=60"
+                        }
+                        alt={`${message.sender.nickname}의 프로필 이미지`}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  </div>
+                )}
+                <div className="flex flex-col max-w-[70%]">
+                  {!isMyMessage && message.sender && (
+                    <div className="text-sm font-semibold text-gray-700 mb-1.5">
+                      {message.sender.nickname}
+                    </div>
+                  )}
+                  <div className="flex items-end gap-2">
+                    <div
+                      className={`rounded-2xl p-3.5 ${
+                        isMyMessage
+                          ? "bg-blue-500 text-white rounded-tr-none"
+                          : "bg-white text-gray-900 rounded-tl-none shadow-sm"
+                      }`}
+                    >
+                      <div className="text-sm leading-relaxed">{message.content}</div>
+                    </div>
+                    <div
+                      className={`text-xs ${
+                        isMyMessage ? "text-gray-500" : "text-gray-500"
+                      }`}
+                    >
+                      {formatTime(message.createdAt)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
         <div ref={messagesEndRef} className="h-0" />
       </div>
 
@@ -567,6 +731,48 @@ export default function ChatRoomPage({
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 나가기 확인 모달 */}
+      {showLeaveModal && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+          onClick={() => setShowLeaveModal(false)}
+        >
+          <div
+            className="bg-white w-full max-w-sm mx-4 rounded-2xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <HiOutlineXMark className="w-6 h-6 text-red-500" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                채팅방 나가기
+              </h3>
+              <p className="text-sm text-gray-500">
+                정말로 이 채팅방을 나가시겠습니까?
+                <br />
+                나가기를 하면 대화 내용이 모두 삭제됩니다.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLeaveModal(false)}
+                className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleLeaveChatRoom}
+                className="flex-1 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 font-medium"
+              >
+                나가기
+              </button>
             </div>
           </div>
         </div>

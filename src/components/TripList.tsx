@@ -16,6 +16,7 @@ import { useUser } from "@/hooks/useUser";
 import { useRouter } from "next/navigation";
 import { getImageUrl, getProfileImage } from "@/app/common/imgUtils";
 import { ProcessedTravel } from "@/app/common/travelUtils";
+import { categoryName } from "@/utils/category";
 
 interface TripListProps {
   trips: ProcessedTravel[];
@@ -100,6 +101,7 @@ export default function TripList({ trips, onTripClick, showEditButton = false }:
     ).length;
     return { pendingCount, approvedCount };
   };
+  console.log("trips===",trips)
 
   return (
     <div className="space-y-4">
@@ -190,11 +192,16 @@ export default function TripList({ trips, onTripClick, showEditButton = false }:
               <h3 className="text-base font-semibold text-gray-800 mb-1.5">
                 {trip.title}
               </h3>
+              {/* 카테고리 */}    
+              {trip.highlight && (
+                <p className="text-xs text-gray-500 mb-2 font-bold">{"주제: "+categoryName(trip.categoryId)}</p>
+              )}
 
               {/* 하이라이트 */}
               {trip.highlight && (
                 <p className="text-xs text-gray-500 mb-2">{trip.highlight}</p>
               )}
+              
 
               {/* 여행 정보 */}
               <div className="grid grid-cols-2 gap-1.5 text-xs text-gray-500 mb-2">

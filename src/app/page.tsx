@@ -219,6 +219,15 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gray-50">
+       <div className="text-center space-y-4 py-8">
+        <div className="text-2xl font-bold text-gray-800">
+          Coming Soon
+        </div>
+        <div className="text-lg text-gray-600">
+          새로운 여행의 시작
+        </div>
+        
+      </div>
       <div className="banner-slider">
         <Slider {...settings}>
           {banners.map((banner, index) => (
@@ -241,6 +250,7 @@ export default function Home() {
           ))}
         </Slider>
       </div>
+     
 
       <div className="relative mb-6">
         <div className="relative">
@@ -290,8 +300,6 @@ export default function Home() {
         ))}
       </div>
 
-      
-
       <section className="max-w-md mx-auto px-4 py-6 relative">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">추천 여행</h2>
@@ -303,40 +311,15 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* {error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-            <p className="text-red-600">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-2 text-sm text-red-600 hover:text-red-700 underline"
-            >
-              새로고침
-            </button>
-          </div>
-        ) : loading ? (
-          <div className="flex justify-center items-center h-40">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {recommendedTrips.map((trip, index) => (
-              <TripList
-                key={index}
-                trips={[trip]}
-                onTripClick={(tripId) => router.push(`/trip/${tripId}`)}
-              />
-            ))}
-          </div>
-        )} */}
-         <div className="space-y-4">
-            {recommendedTrips.map((trip, index) => (
-              <TripList
-                key={index}
-                trips={[trip]}
-                onTripClick={(tripId) => router.push(`/trip/${tripId}`)}
-              />
-            ))}
-          </div>
+        <div className="space-y-4">
+          {recommendedTrips.map((trip, index) => (
+            <TripList
+              key={index}
+              trips={[trip]}
+              onTripClick={(tripId) => router.push(`/trip/${tripId}`)}
+            />
+          ))}
+        </div>
 
         {user && (
           <div className="fixed bottom-[100px]  z-50" style={{ right: 'calc((100% - 22rem) / 2 + 1rem)' }}>
