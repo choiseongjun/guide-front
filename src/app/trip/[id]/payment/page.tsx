@@ -181,6 +181,11 @@ export default function PaymentPage({
             goodsName: trip?.title || "맞춤 여행 계획",
             returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/payment/result?tripId=${trip?.id}&message=${message}&userId=${user?.id}`,
             failUrl: window.location.href,
+            mobile: {
+              isMobile: true,
+              returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/payment/result?tripId=${trip?.id}&message=${message}&userId=${user?.id}`,
+              failUrl: window.location.href
+            },
             fnSuccess: (result: any) => {
               console.log("Payment result:", result);
               console.log("Transaction ID (tid):", result.tid);
