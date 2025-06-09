@@ -51,6 +51,7 @@ interface Participant {
 }
 
 interface Trip {
+  hasSchedule: boolean;
   id: number;
   title: string;
   highlight: string;
@@ -66,7 +67,7 @@ interface Trip {
   discountedPrice: number;
   providedItems: string;
   notProvidedItems: string;
-  status: 'PENDING' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
+  status: "PENDING" | "ONGOING" | "COMPLETED" | "CANCELLED";
   images: {
     id: number;
     imageUrl: string;
@@ -172,7 +173,12 @@ interface ImageModalProps {
   initialIndex: number;
 }
 
-const ImageModal = ({ isOpen, onClose, images, initialIndex }: ImageModalProps) => {
+const ImageModal = ({
+  isOpen,
+  onClose,
+  images,
+  initialIndex,
+}: ImageModalProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
   useEffect(() => {
@@ -270,7 +276,12 @@ interface ReviewImageModalProps {
   initialIndex: number;
 }
 
-const ReviewImageModal = ({ isOpen, onClose, images, initialIndex }: ReviewImageModalProps) => {
+const ReviewImageModal = ({
+  isOpen,
+  onClose,
+  images,
+  initialIndex,
+}: ReviewImageModalProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
   useEffect(() => {
@@ -393,7 +404,8 @@ export default function TripDetailPage({
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [showEvaluationModal, setShowEvaluationModal] = useState(false);
-  const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
+  const [selectedParticipant, setSelectedParticipant] =
+    useState<Participant | null>(null);
   const [evaluationRating, setEvaluationRating] = useState(5);
   const [isNegativeRating, setIsNegativeRating] = useState(false);
   const [evaluationContent, setEvaluationContent] = useState("");
@@ -402,14 +414,18 @@ export default function TripDetailPage({
   const [badMannerReason, setBadMannerReason] = useState("");
   const [showShareModal, setShowShareModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [activeTab, setActiveTab] = useState<"info" | "schedule" | "reviews" | "photos">("info");
+  const [activeTab, setActiveTab] = useState<
+    "info" | "schedule" | "reviews" | "photos"
+  >("info");
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showReviewImageModal, setShowReviewImageModal] = useState(false);
   const [selectedReviewImageIndex, setSelectedReviewImageIndex] = useState(0);
-  const [selectedReviewImages, setSelectedReviewImages] = useState<string[]>([]);
+  const [selectedReviewImages, setSelectedReviewImages] = useState<string[]>(
+    []
+  );
 
   useEffect(() => {
     const fetchTrip = async () => {
@@ -474,8 +490,8 @@ export default function TripDetailPage({
       setIsMobile(window.innerWidth <= 768);
     };
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   useEffect(() => {
@@ -493,8 +509,8 @@ export default function TripDetailPage({
       // SDK가 로드되지 않았다면 로드될 때까지 대기
       const script = document.querySelector('script[src*="kakao.js"]');
       if (script) {
-        script.addEventListener('load', initializeKakao);
-        return () => script.removeEventListener('load', initializeKakao);
+        script.addEventListener("load", initializeKakao);
+        return () => script.removeEventListener("load", initializeKakao);
       }
     }
   }, []);
@@ -588,9 +604,10 @@ export default function TripDetailPage({
         });
         setShowCancelModal(false);
       }
-    } catch (error:any) {
+    } catch (error: any) {
       console.error("참여 취소 실패:", error);
-      const errMessage = error?.response?.data?.message || "참여 취소에 실패했습니다.";
+      const errMessage =
+        error?.response?.data?.message || "참여 취소에 실패했습니다.";
       setErrorMessage(errMessage);
       setShowErrorModal(true);
     }
@@ -777,7 +794,7 @@ export default function TripDetailPage({
         reportedUserId: trip?.user.id,
         category: "TRAVEL",
         content: reportReason.trim(),
-        targetId: parseInt(resolvedParams.id)
+        targetId: parseInt(resolvedParams.id),
       });
 
       if (response.status === 200) {
@@ -786,8 +803,8 @@ export default function TripDetailPage({
         showSuccessToast("신고가 접수되었습니다.");
       }
     } catch (error) {
-      console.error('신고 실패:', error);
-      alert('신고 처리 중 오류가 발생했습니다.');
+      console.error("신고 실패:", error);
+      alert("신고 처리 중 오류가 발생했습니다.");
     }
   };
 
@@ -812,7 +829,7 @@ export default function TripDetailPage({
         content: evaluationContent.trim(),
         badMannerContent: isBadManner ? badMannerReason.trim() : null,
         travelId: trip.id,
-        isVerified: true
+        isVerified: true,
       });
 
       if (response.status === 200) {
@@ -833,7 +850,9 @@ export default function TripDetailPage({
 
   const fetchEvaluations = async () => {
     try {
-      const response = await instance.get(`/api/v1/travels/${resolvedParams.id}/reviews`);
+      const response = await instance.get(
+        `/api/v1/travels/${resolvedParams.id}/reviews`
+      );
       if (response.status === 200) {
         setEvaluations(response.data.data || []);
       }
@@ -850,19 +869,19 @@ export default function TripDetailPage({
 
   const handleShare = async (type: string) => {
     const shareUrl = `${window.location.origin}/trip/${resolvedParams.id}`;
-    const shareTitle = trip?.title || '여행 상세';
-    const shareText = trip?.highlight || '';
+    const shareTitle = trip?.title || "여행 상세";
+    const shareText = trip?.highlight || "";
 
     try {
       switch (type) {
-        case 'kakao':
+        case "kakao":
           if (window.Kakao) {
             window.Kakao.Link.sendDefault({
-              objectType: 'feed',
+              objectType: "feed",
               content: {
                 title: shareTitle,
                 description: shareText,
-                imageUrl: trip?.images[0]?.imageUrl || '',
+                imageUrl: trip?.images[0]?.imageUrl || "",
                 link: {
                   mobileWebUrl: shareUrl,
                   webUrl: shareUrl,
@@ -870,7 +889,7 @@ export default function TripDetailPage({
               },
               buttons: [
                 {
-                  title: '여행 상세 보기',
+                  title: "여행 상세 보기",
                   link: {
                     mobileWebUrl: shareUrl,
                     webUrl: shareUrl,
@@ -881,26 +900,34 @@ export default function TripDetailPage({
           }
           break;
 
-        case 'facebook':
-          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`);
+        case "facebook":
+          window.open(
+            `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+              shareUrl
+            )}`
+          );
           break;
 
-        case 'twitter':
-          window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(shareUrl)}`);
+        case "twitter":
+          window.open(
+            `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+              shareTitle
+            )}&url=${encodeURIComponent(shareUrl)}`
+          );
           break;
 
-        case 'instagram':
+        case "instagram":
           // 인스타그램은 직접 공유가 불가능하므로 링크 복사
           await navigator.clipboard.writeText(shareUrl);
-          showSuccessToast('인스타그램에 공유할 링크가 복사되었습니다.');
+          showSuccessToast("인스타그램에 공유할 링크가 복사되었습니다.");
           break;
 
-        case 'link':
+        case "link":
           await navigator.clipboard.writeText(shareUrl);
-          showSuccessToast('링크가 복사되었습니다.');
+          showSuccessToast("링크가 복사되었습니다.");
           break;
 
-        case 'native':
+        case "native":
           if (navigator.share) {
             await navigator.share({
               title: shareTitle,
@@ -912,8 +939,8 @@ export default function TripDetailPage({
       }
       setShowShareModal(false);
     } catch (error) {
-      console.error('공유하기 실패:', error);
-      alert('공유하기에 실패했습니다.');
+      console.error("공유하기 실패:", error);
+      alert("공유하기에 실패했습니다.");
     }
   };
 
@@ -922,11 +949,12 @@ export default function TripDetailPage({
     if (element) {
       const headerOffset = 120; // 헤더와 탭의 높이를 고려한 오프셋
       const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      const offsetPosition =
+        elementPosition + window.pageYOffset - headerOffset;
 
       window.scrollTo({
         top: offsetPosition,
-        behavior: "smooth"
+        behavior: "smooth",
       });
     }
   };
@@ -940,7 +968,7 @@ export default function TripDetailPage({
     return null;
   }
 
-  console.log('trip.status==',trip.status)
+  console.log("trip.status==", trip.status);
   return (
     <div className="min-h-screen bg-white">
       {/* 헤더 */}
@@ -955,7 +983,7 @@ export default function TripDetailPage({
             </button>
             <h1 className="text-xl font-bold ml-4">여행 상세</h1>
             <div className="ml-auto flex items-center gap-2">
-              <button 
+              <button
                 onClick={() => setShowShareModal(true)}
                 className="p-2 hover:bg-gray-100 rounded-full"
               >
@@ -1163,17 +1191,23 @@ export default function TripDetailPage({
           </div>
 
           {/* 참여자 목록 */}
-          {(
+          {
             <div className="mt-6">
               <h2 className="text-lg font-semibold mb-4">참여자 목록</h2>
               <div className="space-y-4">
                 {/* 참여 확정된 참여자 */}
-                {trip.participants.filter(p => p.status === "APPROVED").length > 0 && (
+                {trip.participants.filter((p) => p.status === "APPROVED")
+                  .length > 0 && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">참여 확정</h3>
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">
+                      참여 확정
+                    </h3>
                     <div className="space-y-2">
                       {trip.participants
-                        .filter(p => p.status === "APPROVED" && p.user.id !== user?.id)
+                        .filter(
+                          (p) =>
+                            p.status === "APPROVED" && p.user.id !== user?.id
+                        )
                         .map((participant) => (
                           <div
                             key={participant.id}
@@ -1182,18 +1216,24 @@ export default function TripDetailPage({
                             <div className="flex items-center gap-3">
                               <div className="relative w-10 h-10 rounded-full overflow-hidden">
                                 <Image
-                                  src={getProfileImage(participant.user.profileImageUrl)}
+                                  src={getProfileImage(
+                                    participant.user.profileImageUrl
+                                  )}
                                   alt={participant.user.nickname}
                                   fill
                                   className="object-cover"
                                 />
                               </div>
                               <div>
-                                <p className="font-medium">{participant.user.nickname}</p>
-                                <p className="text-sm text-gray-500">참여 확정</p>
+                                <p className="font-medium">
+                                  {participant.user.nickname}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  참여 확정
+                                </p>
                               </div>
                             </div>
-                            {trip.status === 'ONGOING' && user && (
+                            {trip.status === "ONGOING" && user && (
                               <button
                                 onClick={() => {
                                   setSelectedParticipant(participant);
@@ -1212,12 +1252,15 @@ export default function TripDetailPage({
                 )}
 
                 {/* 대기 중인 참여자 */}
-                {trip.participants.filter(p => p.status === "PENDING").length > 0 && (
+                {trip.participants.filter((p) => p.status === "PENDING")
+                  .length > 0 && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">대기 중</h3>
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">
+                      대기 중
+                    </h3>
                     <div className="space-y-2">
                       {trip.participants
-                        .filter(p => p.status === "PENDING")
+                        .filter((p) => p.status === "PENDING")
                         .map((participant) => (
                           <div
                             key={participant.id}
@@ -1226,14 +1269,18 @@ export default function TripDetailPage({
                             <div className="flex items-center gap-3">
                               <div className="relative w-10 h-10 rounded-full overflow-hidden">
                                 <Image
-                                  src={getProfileImage(participant.user.profileImageUrl)}
+                                  src={getProfileImage(
+                                    participant.user.profileImageUrl
+                                  )}
                                   alt={participant.user.nickname}
                                   fill
                                   className="object-cover"
                                 />
                               </div>
                               <div>
-                                <p className="font-medium">{participant.user.nickname}</p>
+                                <p className="font-medium">
+                                  {participant.user.nickname}
+                                </p>
                                 <p className="text-sm text-gray-500">대기 중</p>
                               </div>
                             </div>
@@ -1259,14 +1306,16 @@ export default function TripDetailPage({
                   </div>
                 )}
 
-                {trip.participants.filter(p => p.status === "APPROVED" || p.status === "PENDING").length === 0 && (
+                {trip.participants.filter(
+                  (p) => p.status === "APPROVED" || p.status === "PENDING"
+                ).length === 0 && (
                   <p className="text-center text-gray-500 py-4">
                     아직 참여 신청한 사람이 없습니다.
                   </p>
                 )}
               </div>
             </div>
-          )}
+          }
 
           {/* 제공/미제공 항목 */}
           <div className="mt-6">
@@ -1316,26 +1365,32 @@ export default function TripDetailPage({
         </div>
 
         {/* 일정 섹션 */}
-        <div id="schedule" className="bg-white p-4">
-          <h2 className="text-xl font-bold mb-4">여행 일정</h2>
-          <div className="space-y-4">
-            {trip.schedules.map((schedule) => (
-              <div
-                key={schedule.id}
-                className="border-l-2 border-blue-500 pl-4"
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-medium text-blue-500">
-                    Day {schedule.dayNumber}
-                  </span>
-                  <span className="text-sm text-gray-500">{schedule.time}</span>
+        {trip.hasSchedule && (
+          <div id="schedule" className="bg-white p-4">
+            <h2 className="text-xl font-bold mb-4">여행 일정</h2>
+            <div className="space-y-4">
+              {trip.schedules.map((schedule) => (
+                <div
+                  key={schedule.id}
+                  className="border-l-2 border-blue-500 pl-4"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-medium text-blue-500">
+                      Day {schedule.dayNumber}
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      {schedule.time}
+                    </span>
+                  </div>
+                  <h3 className="font-medium mb-1">{schedule.title}</h3>
+                  <p className="text-sm text-gray-600">
+                    {schedule.description}
+                  </p>
                 </div>
-                <h3 className="font-medium mb-1">{schedule.title}</h3>
-                <p className="text-sm text-gray-600">{schedule.description}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 리뷰 섹션 */}
         <div id="reviews" className="bg-white p-4">
@@ -1423,8 +1478,8 @@ export default function TripDetailPage({
                   {review.imageUrls && review.imageUrls.length > 0 && (
                     <div className="grid grid-cols-3 gap-2 mt-3">
                       {review.imageUrls.map((imageUrl, index) => (
-                        <div 
-                          key={index} 
+                        <div
+                          key={index}
                           className="relative aspect-square cursor-pointer"
                           onClick={() => {
                             setSelectedReviewImages(review.imageUrls || []);
@@ -1649,11 +1704,16 @@ export default function TripDetailPage({
                       </label>
                       <div className="space-y-2">
                         {trip?.participants
-                          .filter(p => p.status === "APPROVED" && p.user.id !== user?.id)
+                          .filter(
+                            (p) =>
+                              p.status === "APPROVED" && p.user.id !== user?.id
+                          )
                           .map((participant) => (
                             <button
                               key={participant.id}
-                              onClick={() => setSelectedParticipant(participant)}
+                              onClick={() =>
+                                setSelectedParticipant(participant)
+                              }
                               className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${
                                 selectedParticipant?.id === participant.id
                                   ? "border-blue-500 bg-blue-50 shadow-sm"
@@ -1662,13 +1722,17 @@ export default function TripDetailPage({
                             >
                               <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-offset-2 ring-white">
                                 <Image
-                                  src={getProfileImage(participant.user.profileImageUrl || "")}
+                                  src={getProfileImage(
+                                    participant.user.profileImageUrl || ""
+                                  )}
                                   alt={participant.user.nickname}
                                   fill
                                   className="object-cover"
                                 />
                               </div>
-                              <span className="font-medium">{participant.user.nickname}</span>
+                              <span className="font-medium">
+                                {participant.user.nickname}
+                              </span>
                             </button>
                           ))}
                       </div>
@@ -1718,13 +1782,17 @@ export default function TripDetailPage({
                               {star <= evaluationRating ? (
                                 <HiStar
                                   className={`w-8 h-8 ${
-                                    isNegativeRating ? "text-red-500" : "text-yellow-400"
+                                    isNegativeRating
+                                      ? "text-red-500"
+                                      : "text-yellow-400"
                                   }`}
                                 />
                               ) : (
                                 <HiOutlineStar
                                   className={`w-8 h-8 ${
-                                    isNegativeRating ? "text-red-200" : "text-gray-300"
+                                    isNegativeRating
+                                      ? "text-red-200"
+                                      : "text-gray-300"
                                   }`}
                                 />
                               )}
@@ -1760,7 +1828,8 @@ export default function TripDetailPage({
                       {isBadManner && (
                         <div className="mt-4 space-y-3 bg-red-50 p-4 rounded-xl">
                           <p className="text-sm text-red-600 font-medium">
-                            * 비매너 신고는 신중하게 해주세요. 허위 신고 시 제재를 받을 수 있습니다.
+                            * 비매너 신고는 신중하게 해주세요. 허위 신고 시
+                            제재를 받을 수 있습니다.
                           </p>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1768,7 +1837,9 @@ export default function TripDetailPage({
                             </label>
                             <textarea
                               value={badMannerReason}
-                              onChange={(e) => setBadMannerReason(e.target.value)}
+                              onChange={(e) =>
+                                setBadMannerReason(e.target.value)
+                              }
                               className="w-full p-3 border border-red-200 rounded-xl text-sm focus:ring-red-500 focus:border-red-500 bg-white"
                               rows={3}
                               placeholder="비매너 행동의 구체적인 사유를 작성해주세요..."
@@ -1788,7 +1859,11 @@ export default function TripDetailPage({
                         onChange={(e) => setEvaluationContent(e.target.value)}
                         className="w-full p-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                         rows={4}
-                        placeholder={isNegativeRating ? "개선이 필요한 점을 작성해주세요..." : "좋았던 점을 작성해주세요..."}
+                        placeholder={
+                          isNegativeRating
+                            ? "개선이 필요한 점을 작성해주세요..."
+                            : "좋았던 점을 작성해주세요..."
+                        }
                       />
                     </div>
                   </div>
@@ -1812,7 +1887,9 @@ export default function TripDetailPage({
                       </button>
                       <button
                         onClick={handleEvaluationSubmit}
-                        disabled={!selectedParticipant || !evaluationContent.trim()}
+                        disabled={
+                          !selectedParticipant || !evaluationContent.trim()
+                        }
                         className={`flex-1 py-3 rounded-xl font-medium transition-all ${
                           selectedParticipant && evaluationContent.trim()
                             ? isNegativeRating
@@ -1880,79 +1957,95 @@ export default function TripDetailPage({
                       {isMobile ? (
                         <>
                           <button
-                            onClick={() => handleShare('kakao')}
+                            onClick={() => handleShare("kakao")}
                             className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
                           >
                             <div className="w-12 h-12 rounded-full bg-[#FEE500] flex items-center justify-center">
                               <RiKakaoTalkFill className="w-6 h-6 text-[#3C1E1E]" />
                             </div>
-                            <span className="text-xs text-gray-600">카카오톡</span>
+                            <span className="text-xs text-gray-600">
+                              카카오톡
+                            </span>
                           </button>
                           <button
-                            onClick={() => handleShare('instagram')}
+                            onClick={() => handleShare("instagram")}
                             className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
                           >
                             <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 flex items-center justify-center">
                               <FaInstagram className="w-6 h-6 text-white" />
                             </div>
-                            <span className="text-xs text-gray-600">인스타그램</span>
+                            <span className="text-xs text-gray-600">
+                              인스타그램
+                            </span>
                           </button>
                           <button
-                            onClick={() => handleShare('native')}
+                            onClick={() => handleShare("native")}
                             className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
                           >
                             <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
                               <HiOutlineShare className="w-6 h-6 text-gray-600" />
                             </div>
-                            <span className="text-xs text-gray-600">더보기</span>
+                            <span className="text-xs text-gray-600">
+                              더보기
+                            </span>
                           </button>
                           <button
-                            onClick={() => handleShare('link')}
+                            onClick={() => handleShare("link")}
                             className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
                           >
                             <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
                               <HiOutlineLink className="w-6 h-6 text-gray-600" />
                             </div>
-                            <span className="text-xs text-gray-600">링크 복사</span>
+                            <span className="text-xs text-gray-600">
+                              링크 복사
+                            </span>
                           </button>
                         </>
                       ) : (
                         <>
                           <button
-                            onClick={() => handleShare('kakao')}
+                            onClick={() => handleShare("kakao")}
                             className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
                           >
                             <div className="w-12 h-12 rounded-full bg-[#FEE500] flex items-center justify-center">
                               <RiKakaoTalkFill className="w-6 h-6 text-[#3C1E1E]" />
                             </div>
-                            <span className="text-xs text-gray-600">카카오톡</span>
+                            <span className="text-xs text-gray-600">
+                              카카오톡
+                            </span>
                           </button>
                           <button
-                            onClick={() => handleShare('facebook')}
+                            onClick={() => handleShare("facebook")}
                             className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
                           >
                             <div className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center">
                               <BsFacebook className="w-6 h-6 text-white" />
                             </div>
-                            <span className="text-xs text-gray-600">페이스북</span>
+                            <span className="text-xs text-gray-600">
+                              페이스북
+                            </span>
                           </button>
                           <button
-                            onClick={() => handleShare('instagram')}
+                            onClick={() => handleShare("instagram")}
                             className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
                           >
                             <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 flex items-center justify-center">
                               <FaInstagram className="w-6 h-6 text-white" />
                             </div>
-                            <span className="text-xs text-gray-600">인스타그램</span>
+                            <span className="text-xs text-gray-600">
+                              인스타그램
+                            </span>
                           </button>
                           <button
-                            onClick={() => handleShare('link')}
+                            onClick={() => handleShare("link")}
                             className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
                           >
                             <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
                               <HiOutlineLink className="w-6 h-6 text-gray-600" />
                             </div>
-                            <span className="text-xs text-gray-600">링크 복사</span>
+                            <span className="text-xs text-gray-600">
+                              링크 복사
+                            </span>
                           </button>
                         </>
                       )}
@@ -2123,7 +2216,7 @@ export default function TripDetailPage({
         )}
 
         {/* 에러 모달 */}
-        <ErrorModal 
+        <ErrorModal
           isOpen={showErrorModal}
           message={errorMessage}
           onClose={() => setShowErrorModal(false)}
