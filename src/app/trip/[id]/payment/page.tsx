@@ -180,15 +180,13 @@ export default function PaymentPage({
             tripId: trip?.id,
             goodsName: trip?.title || "맞춤 여행 계획",
             returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/payment/result?tripId=${trip?.id}&message=${message}&userId=${user?.id}`,
-            failUrl: window.location.href,
-            mobile: {
-              isMobile: true,
-              returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/payment/result?tripId=${trip?.id}&message=${message}&userId=${user?.id}`,
-              failUrl: window.location.href
-            },
+            failUrl: `${window.location.origin}/payment/fail?tripId=${trip?.id}`,
             fnSuccess: (result: any) => {
               console.log("Payment result:", result);
               console.log("Transaction ID (tid):", result.tid);
+              if (result.tid) {
+                router.push(`/payment/complete?tripId=${trip?.id}&message=${message}&userId=${user?.id}`);
+              }
             },
             fnError: (error: any) => {
               console.error("Payment error:", error);
