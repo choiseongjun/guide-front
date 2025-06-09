@@ -86,26 +86,26 @@ export default function PaymentPage({
       .join("");
   }
 
-  // const sendParticipant = async () => {
-  //   try {
-  //     const response = await instance.post(
-  //       `/api/v1/travels/${resolvedParams.id}/participants`,
-  //       {
-  //         message,
-  //       }
-  //     );
+  const sendParticipant = async () => {
+    try {
+      const response = await instance.post(
+        `/api/v1/travels/${resolvedParams.id}/participants`,
+        {
+          message,
+        }
+      );
 
-  //     if (response.data.status === 200) {
-  //       // router.push(`/trip/${resolvedParams.id}/payment`);
-  //       router.push(`/payment/complete?tripId=${resolvedParams.id}`);
-  //     } else {
-  //       alert("참여 신청에 실패했습니다.");
-  //     }
-  //   } catch (error) {
-  //     console.error("참여 신청 실패:", error);
-  //     alert("참여 신청에 실패했습니다.");
-  //   }
-  // };
+      if (response.data.status === 200) {
+        // router.push(`/trip/${resolvedParams.id}/payment`);
+        router.push(`/payment/complete?tripId=${resolvedParams.id}`);
+      } else {
+        alert("참여 신청에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("참여 신청 실패:", error);
+      alert("참여 신청에 실패했습니다.");
+    }
+  };
   // const handlePayment = async () => {
   //   if (!trip) return;
 
@@ -164,38 +164,43 @@ export default function PaymentPage({
   //   }
   // };
   const handlePayment = () => {
-    try {
-      setIsLoading(true);
-
-      if (typeof window !== "undefined") {
-        const payElem: any = window;
-        const { AUTHNICE } = payElem;
-
-        AUTHNICE.requestPay({
-          clientId: "S2_73d2b43644334db8a44f9280c07f6388", // 테스트용 가맹점 식별코드
-          method: "card",
-          orderId: `TRIP_${Date.now()}`,
-          amount: finalPrice,
-          tripId: trip?.id,
-          goodsName: trip?.title || "맞춤 여행 계획",
-          returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/payment/result?tripId=${trip?.id}&message=${message}&userId=${user?.id}`,
-          failUrl: window.location.href,
-          fnSuccess: (result: any) => {
-            console.log("Payment result:", result);
-            console.log("Transaction ID (tid):", result.tid);
-          },
-          fnError: (error: any) => {
-            console.error("Payment error:", error);
-            alert("결제 처리 중 오류가 발생했습니다.");
-            setIsLoading(false);
-          },
-        });
+    if(finalPrice>0){
+      try {
+        setIsLoading(true);
+  
+        if (typeof window !== "undefined") {
+          const payElem: any = window;
+          const { AUTHNICE } = payElem;
+  
+          AUTHNICE.requestPay({
+            clientId: "S2_73d2b43644334db8a44f9280c07f6388", // 테스트용 가맹점 식별코드
+            method: "card",
+            orderId: `TRIP_${Date.now()}`,
+            amount: finalPrice,
+            tripId: trip?.id,
+            goodsName: trip?.title || "맞춤 여행 계획",
+            returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/payment/result?tripId=${trip?.id}&message=${message}&userId=${user?.id}`,
+            failUrl: window.location.href,
+            fnSuccess: (result: any) => {
+              console.log("Payment result:", result);
+              console.log("Transaction ID (tid):", result.tid);
+            },
+            fnError: (error: any) => {
+              console.error("Payment error:", error);
+              alert("결제 처리 중 오류가 발생했습니다.");
+              setIsLoading(false);
+            },
+          });
+        }
+      } catch (error) {
+        console.error("Payment error:", error);
+        alert("결제 처리 중 오류가 발생했습니다.");
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Payment error:", error);
-      alert("결제 처리 중 오류가 발생했습니다.");
-      setIsLoading(false);
+    }else{
+      sendParticipant()
     }
+    
   };
 
   if (!trip) {
@@ -348,3 +353,4 @@ export default function PaymentPage({
     </div>
   );
 }
+

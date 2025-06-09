@@ -132,20 +132,20 @@ function GuideProfileClient({ guideId }: { guideId: string }) {
             <div className="relative w-16 h-16">
               <Image
                 src={
-                  getProfileImage(guide.profileImageUrl) ||
+                  getProfileImage(guide?.profileImageUrl??"") ||
                   "/images/default-profile.png"
                 }
-                alt={guide.nickname}
+                alt={guide?.nickname??""}
                 fill
                 className="rounded-full object-cover"
               />
             </div>
             <div className="flex-1">
-              <h2 className="text-base font-semibold">{guide.nickname}</h2>
+              <h2 className="text-base font-semibold">{guide?.nickname}</h2>
               <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
                 <HiOutlineStar className="text-yellow-400 w-3.5 h-3.5" />
-                <span>{(guide.rating || 0).toFixed(1)}</span>
-                <span>({guide.reviewCount || 0}개의 리뷰)</span>
+                <span>{(guide?.rating || 0).toFixed(1)}</span>
+                <span>({guide?.reviewCount || 0}개의 리뷰)</span>
               </div>
             </div>
             <button
@@ -154,34 +154,34 @@ function GuideProfileClient({ guideId }: { guideId: string }) {
             >
               <HiOutlineChatBubbleLeftRight className="w-4 h-4" />
               <span>대화 신청</span>
-            </button>
+            </button> 
           </div>
 
-          <p className="mt-3 text-sm text-gray-600 leading-relaxed">{guide.introduction}</p>
+          <p className="mt-3 text-sm text-gray-600 leading-relaxed">{guide?.introduction??""}</p>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div className="flex items-center gap-1.5">
               <HiOutlineMapPin className="w-4 h-4 text-gray-400" />
               <span className="text-xs text-gray-500">
-                {(guide.specialties || []).join(", ") || "없음"}
-              </span>
+                {(guide?.specialties || []).join(", ") || "없음"}
+              </span> 
             </div>
             <div className="flex items-center gap-1.5">
               <HiOutlineLanguage className="w-4 h-4 text-gray-400" />
               <span className="text-xs text-gray-500">
-                {(guide.languages || []).join(", ") || "없음"}
+                {(guide?.languages || []).join(", ") || "없음"}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
               <HiOutlineUserGroup className="w-4 h-4 text-gray-400" />
               <span className="text-xs text-gray-500">
-                {guide.tripCount || 0}회의 여행
+                {guide?.tripCount || 0}회의 여행
               </span>
             </div>
             <div className="flex items-center gap-1.5">
               <HiOutlineCalendar className="w-4 h-4 text-gray-400" />
               <span className="text-xs text-gray-500">
-                {guide.followerCount || 0}명의 팔로워
+                {guide?.followerCount || 0}명의 팔로워
               </span>
             </div>
           </div>
