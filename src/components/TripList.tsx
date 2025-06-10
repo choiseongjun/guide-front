@@ -101,7 +101,6 @@ export default function TripList({ trips, onTripClick, showEditButton = false }:
     ).length;
     return { pendingCount, approvedCount };
   };
-  console.log("trips===",trips)
 
   return (
     <div className="space-y-4">

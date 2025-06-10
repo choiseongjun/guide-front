@@ -54,6 +54,7 @@ export default function Footer() {
                       <li>대표번호: 010-2547-2702</li>
                       <li>대표이메일: travelwithmemaster@gmail.com</li>
                       <li>사업자등록번호: 880-05-02957</li>
+                      <li>통신판매업신고번호: 2025-서울동작-0742</li>
                       <li>주소: 서울시 동작구 상도동 211-114 201호</li>
                       {/* <li className="flex items-center gap-2">
                         <HiOutlineEnvelope className="w-4 h-4" />
