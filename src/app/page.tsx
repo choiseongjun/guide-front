@@ -116,10 +116,8 @@ export default function Home() {
   };
 
   useEffect(() => {
-    
-
     fetchRecommendedTrips();
-  }, [loading]);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

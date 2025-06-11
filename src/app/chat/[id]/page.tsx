@@ -15,6 +15,7 @@ import SockJS from "sockjs-client";
 import instance from "@/app/api/axios";
 import { useUser } from "@/hooks/useUser";
 import { getUserToken } from "@/app/common/userUtils";
+import { getImageUrl, getProfileImage } from "@/app/common/imgUtils";
 
 interface Participant {
   id: number;
@@ -379,6 +380,8 @@ export default function ChatRoomPage({
           content: newMessage,
         };
 
+        console.log('messageData===',messageData)
+
         stompClient.current.publish({
           destination: "/app/chat.send",
           body: JSON.stringify(messageData),
@@ -443,8 +446,7 @@ export default function ChatRoomPage({
             <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-gray-100">
               <Image
                 src={
-                  message.sender.profileImageUrl ||
-                  "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=60"
+                  getProfileImage(message.sender.profileImageUrl)
                 }
                 alt={`${message.sender.nickname}의 프로필 이미지`}
                 fill
@@ -546,8 +548,7 @@ export default function ChatRoomPage({
                 <div className="relative w-7 h-7 rounded-full overflow-hidden">
                   <Image
                     src={
-                      chatRoom?.thumbnailUrl ||
-                      "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=60"
+                      getImageUrl(chatRoom?.thumbnailUrl??"") 
                     }
                     alt={`${chatRoom?.name || "채팅방"} 썸네일`}
                     fill
@@ -618,8 +619,7 @@ export default function ChatRoomPage({
                     <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-gray-100">
                       <Image
                         src={
-                          message.sender.profileImageUrl ||
-                          "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=60"
+                          getProfileImage(message.sender.profileImageUrl) 
                         }
                         alt={`${message.sender.nickname}의 프로필 이미지`}
                         fill
