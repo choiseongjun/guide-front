@@ -25,13 +25,20 @@ interface Participant {
 
 interface ChatRoom {
   id: number;
+  myUserId: number;
   name: string;
+  otherNickname: string;
+  myNickname: string;
   lastMessage: string | null;
   lastMessageTime: string | null;
   unreadCount: number;
   thumbnailUrl: string | null;
   participants: Participant[];
   type: string;
+  otherProfileImageUrl:string;
+  myProfileImageUrl:string;
+  otherNicknameImg:string;
+  myNicknameImg:string;
 }
 
 interface ChatRoomResponse {
@@ -111,23 +118,21 @@ export default function ChatListPage() {
 
     fetchData();
   }, [activeTab, user, isLoading]);
-
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await instance.get('/api/v1/users/me');
+      if (response.data.status === 200) {
+        setCurrentUserId(response.data.data.id);
+      }
+    } catch (error) {
+      console.error("현재 사용자 정보 조회 실패:", error);
+    }
+  };
   useEffect(() => {
     // if (!isLoading && !user) {
     //   router.push("/login");
     //   return;
     // }
-    const fetchCurrentUser = async () => {
-      try {
-        const response = await instance.get('/api/v1/users/me');
-        if (response.data.status === 200) {
-          setCurrentUserId(response.data.data.id);
-        }
-      } catch (error) {
-        console.error("현재 사용자 정보 조회 실패:", error);
-      }
-    };
-
     fetchCurrentUser();
   }, [isLoading, user, router]);
 
@@ -149,6 +154,51 @@ export default function ChatListPage() {
     (sum, chat) => sum + chat.unreadCount,
     0
   );
+
+  const privateNickNameRender =(chat:ChatRoom)=>{
+
+    console.log("chat.myUserId===",chat)
+    if(chat.myUserId === currentUserId){
+      return(
+        <div>
+          {chat.otherNickname}
+        </div>
+      )
+    }else{
+      return(
+        <div>
+          {chat.myNickname}
+        </div>
+      )
+    }
+    
+  }
+
+  const renderProfileImgPrivate= (chat:ChatRoom)=>{
+    
+    console.log("chat.myUserId===",chat)
+
+
+    if(chat.myUserId === currentUserId){
+      return(
+        <Image
+          src={getProfileImage(chat.otherNicknameImg)}
+          alt={chat.otherNickname}
+          fill
+          className="object-cover"
+        />
+      )
+    }else{
+      return(
+        <Image
+          src={getProfileImage(chat.myNicknameImg)}
+          alt={chat.myNickname}
+          fill
+          className="object-cover"
+        />
+      )
+    }
+  }
 
   const formatTimeAgo = (dateString: string | null) => {
     if (!dateString) return "";
@@ -200,7 +250,6 @@ export default function ChatListPage() {
     );
   }
 
-  console.log("filteredChats===",filteredChats)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -294,15 +343,9 @@ export default function ChatListPage() {
             {/* 채팅방 이미지 */}
             <div className="relative w-12 h-12 rounded-lg overflow-hidden">
               {chat.type === "DIRECT" ? (
-                <Image
-                  src={
-                    (getProfileImage(chat.thumbnailUrl ?? "")) ||
-                    "/images/default-profile.png"
-                  }
-                  alt={chat.name}
-                  fill
-                  className="object-cover"
-                />
+                <>
+                  {renderProfileImgPrivate(chat)}
+                </> 
               ) : (
                 <Image
                   src={
@@ -319,9 +362,18 @@ export default function ChatListPage() {
             {/* 채팅방 정보 */}
             <div className="ml-4 flex-1 min-w-0">
               <div className="flex items-center justify-between">
+                
+                {chat.type === "DIRECT"?
+                <h3 className="text-sm font-medium text-gray-900 truncate">
+                  {/* {chat.otherNickname} */}
+                  {privateNickNameRender(chat)}
+                </h3>
+                :
                 <h3 className="text-sm font-medium text-gray-900 truncate">
                   {chat.name}
                 </h3>
+                }
+                
                 <span className="text-xs text-gray-500">
                   {formatTimeAgo(chat.lastMessageTime)}
                 </span>

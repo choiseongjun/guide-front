@@ -90,6 +90,44 @@ export default function ChatRoomPage({
   const [showMemberList, setShowMemberList] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [hasEntered, setHasEntered] = useState(false);
+  const [isFirstConnection, setIsFirstConnection] = useState(true);
+  const hasSentJoinMessage = useRef(false);
+
+  // 메시지 조회 함수
+  const fetchMessages = async () => {
+    try {
+      const response = await instance.get<ChatMessageResponse>(
+        `/api/v1/chat-rooms/${resolvedParams.id}/messages`,
+        {
+          params: {
+            page,
+            size: 20,
+          },
+        }
+      );
+
+      if (response.data.status === 200) {
+        const { content, totalPages, number } = response.data.data;
+        const sortedContent = [...content].sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+        setMessages((prev) => {
+          const existingIds = new Set(prev.map((msg) => msg.id));
+          const newMessages = sortedContent.filter(
+            (msg) => !existingIds.has(msg.id)
+          );
+          return [...prev, ...newMessages];
+        });
+        setHasMore(number < totalPages - 1);
+      }
+    } catch (error) {
+      console.error("메시지 조회 실패:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 로그인 체크 및 리다이렉트
   useEffect(() => {
@@ -97,6 +135,15 @@ export default function ChatRoomPage({
       router.replace("/login");
     }
   }, [userLoading, user, router]);
+
+  // 채팅방 입장 상태 확인
+  useEffect(() => {
+    const enteredRooms = JSON.parse(localStorage.getItem('enteredChatRooms') || '[]');
+    if (enteredRooms.includes(resolvedParams.id)) {
+      setHasEntered(true);
+      setIsFirstConnection(false);
+    }
+  }, [resolvedParams.id]);
 
   // 채팅방 정보 조회
   useEffect(() => {
@@ -107,24 +154,38 @@ export default function ChatRoomPage({
         const response = await instance.get(
           `/api/v1/chat-rooms/${resolvedParams.id}`
         );
+        console.log("response====",response.data)
         if (response.data.status === 200) {
           setChatRoom(response.data.data);
           markMessagesAsRead();
 
-          // 초기 입장 메시지 전송
-          if (isInitialLoad && stompClient.current?.connected) {
+          // 초기 입장 메시지 전송 - 채팅방 생성 시에만
+          if (isFirstConnection && stompClient.current?.connected && !hasEntered && !hasSentJoinMessage.current) {
+            // 기존 메시지 조회 함수 호출
+            fetchMessages();
+            
             stompClient.current.publish({
               destination: `/app/chat.room.${resolvedParams.id}.join`,
               body: JSON.stringify({
                 userId: user.id,
                 nickname: user.nickname,
                 isInitial: true
-              }),
+              }), 
               headers: {
                 Authorization: `Bearer ${getUserToken()}`,
               },
             });
-            setIsInitialLoad(false);
+            
+            // localStorage에 입장 상태 저장
+            const enteredRooms = JSON.parse(localStorage.getItem('enteredChatRooms') || '[]');
+            if (!enteredRooms.includes(resolvedParams.id)) {
+              enteredRooms.push(resolvedParams.id);
+              localStorage.setItem('enteredChatRooms', JSON.stringify(enteredRooms));
+            }
+            
+            setHasEntered(true);
+            setIsFirstConnection(false);
+            hasSentJoinMessage.current = true;
           }
         }
       } catch (error) {
@@ -133,7 +194,7 @@ export default function ChatRoomPage({
     };
 
     fetchChatRoom();
-  }, [resolvedParams.id, user, userLoading, isInitialLoad]);
+  }, [resolvedParams.id, user, userLoading]);
 
   // WebSocket 연결
   useEffect(() => {
@@ -180,19 +241,6 @@ export default function ChatRoomPage({
               return [...prev, newMessage];
             });
             markMessagesAsRead();
-          }
-        );
-
-        // 입장/퇴장 메시지 구독
-        client.subscribe(
-          `/topic/chat.room.${resolvedParams.id}.system`,
-          (message) => {
-            const systemMessage = JSON.parse(message.body);
-            setMessages((prev) => {
-              const isDuplicate = prev.some((msg) => msg.id === systemMessage.id);
-              if (isDuplicate) return prev;
-              return [...prev, systemMessage];
-            });
           }
         );
 
@@ -261,19 +309,7 @@ export default function ChatRoomPage({
     connectWebSocket();
 
     return () => {
-      // 퇴장 메시지 전송
       if (stompClient.current?.connected) {
-        stompClient.current.publish({
-          destination: `/app/chat.room.${resolvedParams.id}.leave`,
-          body: JSON.stringify({
-            userId: user.id,
-            nickname: user.nickname,
-            isInitial: false
-          }),
-          headers: {
-            Authorization: `Bearer ${getUserToken()}`,
-          },
-        });
         stompClient.current.deactivate();
       }
       if (reconnectTimeoutRef.current) {
@@ -286,40 +322,6 @@ export default function ChatRoomPage({
   // 메시지 조회
   useEffect(() => {
     if (userLoading || !user) return;
-
-    const fetchMessages = async () => {
-      try {
-        const response = await instance.get<ChatMessageResponse>(
-          `/api/v1/chat-rooms/${resolvedParams.id}/messages`,
-          {
-            params: {
-              page,
-              size: 20,
-            },
-          }
-        );
-        if (response.data.status === 200) {
-          const { content, totalPages, number } = response.data.data;
-          const sortedContent = [...content].sort(
-            (a, b) =>
-              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          );
-          setMessages((prev) => {
-            const existingIds = new Set(prev.map((msg) => msg.id));
-            const newMessages = sortedContent.filter(
-              (msg) => !existingIds.has(msg.id)
-            );
-            return [...prev, ...newMessages];
-          });
-          setHasMore(number < totalPages - 1);
-        }
-      } catch (error) {
-        console.error("메시지 조회 실패:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchMessages();
   }, [resolvedParams.id, page, user, userLoading]);
 
@@ -506,18 +508,23 @@ export default function ChatRoomPage({
           body: JSON.stringify({
             userId: user?.id,
             nickname: user?.nickname,
-            isInitial: false
+            isInitial: true
           }),
           headers: {
             Authorization: `Bearer ${getUserToken()}`,
           },
         });
 
+        // localStorage에서 입장 상태 제거
+        const enteredRooms = JSON.parse(localStorage.getItem('enteredChatRooms') || '[]');
+        const updatedRooms = enteredRooms.filter((id: string) => id !== resolvedParams.id);
+        localStorage.setItem('enteredChatRooms', JSON.stringify(updatedRooms));
+
         // WebSocket 연결 해제
         stompClient.current.deactivate();
         
         // 채팅 목록 페이지로 이동
-        // router.push('/chat');
+        router.push('/chat');
       } else {
         alert("연결이 끊어졌습니다. 다시 시도해주세요.");
       }

@@ -34,7 +34,7 @@ export default function ServerStatusProvider({
     };
 
     // 초기 체크
-    checkServerStatus();
+    // checkServerStatus();
 
     // 30초마다 체크
     const interval = setInterval(checkServerStatus, 30000);

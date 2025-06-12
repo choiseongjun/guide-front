@@ -148,19 +148,19 @@ function SocialContent() {
   }, [selectedCategories, activeTab]);
 
   // 서버 상태 체크
-  useEffect(() => {
-    const checkServerStatus = async () => {
-      try {
-        await instance.get("/api/health");
-        setServerError(false);
-      } catch (error) {
-        setServerError(true);
-      }
-    };
+  // useEffect(() => {
+  //   const checkServerStatus = async () => {
+  //     try {
+  //       await instance.get("/api/health");
+  //       setServerError(false);
+  //     } catch (error) {
+  //       setServerError(true);
+  //     }
+  //   };
 
-    const interval = setInterval(checkServerStatus, 30000); // 30초마다 체크
-    return () => clearInterval(interval);
-  }, []);
+  //   const interval = setInterval(checkServerStatus, 30000); // 30초마다 체크
+  //   return () => clearInterval(interval);
+  // }, []);
 
   const toggleExpand = (postId: number) => {
     setExpandedPosts((prev) =>
