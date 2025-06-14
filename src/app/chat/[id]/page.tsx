@@ -235,6 +235,13 @@ export default function ChatRoomPage({
           `/topic/chat.room.${resolvedParams.id}`,
           (message) => {
             const newMessage = JSON.parse(message.body);
+            console.log("Received chat message:", newMessage); // 디버깅용 로그
+
+            if (!newMessage) {
+              console.log("Received empty message");
+              return;
+            }
+
             setMessages((prev) => {
               const isDuplicate = prev.some((msg) => msg.id === newMessage.id);
               if (isDuplicate) return prev;
@@ -247,6 +254,11 @@ export default function ChatRoomPage({
         // 읽지 않은 메시지 알림 구독
         client.subscribe(`/user/queue/chat.unread`, (message) => {
           const newMessage = JSON.parse(message.body);
+          console.log("Received unread message:", newMessage); // 디버깅용 로그
+          if (!newMessage) {
+            console.log("Received empty unread message");
+            return;
+          }
           setMessages((prev) => {
             const isDuplicate = prev.some((msg) => msg.id === newMessage.id);
             if (isDuplicate) return prev;
@@ -260,6 +272,7 @@ export default function ChatRoomPage({
           `/topic/chat.room.${resolvedParams.id}.read`,
           (message) => {
             const userId = JSON.parse(message.body);
+            console.log("Message read by user:", userId); // 디버깅용 로그
           }
         );
       };
